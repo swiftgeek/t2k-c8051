@@ -6,7 +6,7 @@
 
   Contents:     AD7718BRU ADC user interface
 
-  $Id: AD7718_adc.h 3852 2007-08-30 21:31:38Z amaudruz $
+  $Id$
 
 \********************************************************************/
 //  need to have T2KASUM defined

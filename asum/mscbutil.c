@@ -9,11 +9,12 @@
 
 \********************************************************************/
 
-#include "mscbemb.h"
 #include <intrins.h>
 #include <string.h>
+#include <stdio.h>
+#include "mscbemb.h"
 
-#ifdef EEPROM_SUPPORT
+#ifdef HAVE_EEPROM
 
 extern SYS_INFO sys_info;               // for eeprom functions
 extern MSCB_INFO_VAR *variables;
@@ -251,7 +252,7 @@ unsigned char gets_wait(char *str, unsigned char size, unsigned char timeout)
 
 /*------------------------------------------------------------------*/
 
-#ifdef LCD_SUPPORT // putchar is already used for LCD
+#ifdef HAVE_LCD // putchar is already used for LCD
 
 char putchar1(char c)
 {
@@ -266,7 +267,7 @@ char putchar1(char c)
    return c;
 }
 
-#else // LCD_SUPPORT
+#else // HAVE_LCD
 
 char putchar(char c)
 {
@@ -281,7 +282,7 @@ char putchar(char c)
    return c;
 }
 
-#endif // LCD_SUPPORT
+#endif // HAVE_LCD
 
 /*------------------------------------------------------------------*/
 
@@ -708,6 +709,32 @@ sbit led_9 = LED_9;
 
 /*------------------------------------------------------------------*/
 
+void sysclock_reset(void)
+/********************************************************************\
+
+  Routine: sysclock_reset
+
+  Purpose: Reset system clock and uptime counter
+
+*********************************************************************/
+{
+   unsigned char i;
+
+   _systime = 0;
+   _uptime = 0;
+   _uptime_cnt = 100;
+
+   for (i=0 ; i<N_LED ; i++) {
+     leds[i].mode = 0;
+     leds[i].timer = 0;
+     leds[i].interval = 0;
+     leds[i].n = 0;
+   }
+}
+
+/*------------------------------------------------------------------*/
+
+
 void sysclock_init(void)
 /********************************************************************\
 
@@ -717,8 +744,6 @@ void sysclock_init(void)
 
 *********************************************************************/
 {
-   unsigned char i;
-
    EA = 1;                      // general interrupt enable
    ET0 = 1;                     // Enable Timer 0 interrupt
    PT1 = 0;                     // Interrupt priority low
@@ -745,16 +770,7 @@ void sysclock_init(void)
    TL0 = 0x00;
    TR0 = 1;                     // start timer 0
 
-   _systime = 0;
-   _uptime = 0;
-   _uptime_cnt = 100;
-
-   for (i=0 ; i<N_LED ; i++) {
-     leds[i].mode = 0;
-     leds[i].timer = 0;
-     leds[i].interval = 0;
-     leds[i].n = 0;
-   }
+   sysclock_reset();
 }
 
 /*------------------------------------------------------------------*/
@@ -1179,7 +1195,7 @@ void delay_us(unsigned int us)
 
 /*------------------------------------------------------------------*/
 
-#ifdef EEPROM_SUPPORT
+#ifdef HAVE_EEPROM
 
 void eeprom_read(void * dst, unsigned char len, unsigned short *offset)
 /********************************************************************\
@@ -1368,7 +1384,7 @@ void eeprom_flash(void)
 
 /*------------------------------------------------------------------*/
 
-unsigned char eeprom_retrieve(void)
+unsigned char eeprom_retrieve(unsigned char flag)
 /********************************************************************\
 
   Routine: eeprom_retrieve
@@ -1392,24 +1408,27 @@ unsigned char eeprom_retrieve(void)
       status |= (1 << 0);
 
    // user channel variables
-   for (adr = 0 ; adr < _n_sub_addr ; adr++)
-      for (i = 0; variables[i].width; i++)
-         eeprom_read((char *)variables[i].ud + _var_size*adr,
-                     variables[i].width, &offset);
-
-   // check for second magic
-   eeprom_read(&magic, 2, &offset);
-   if (magic == 0x1234)
+   if (flag) {
+      for (adr = 0 ; adr < _n_sub_addr ; adr++)
+         for (i = 0; variables[i].width; i++)
+            eeprom_read((char *)variables[i].ud + _var_size*adr,
+                        variables[i].width, &offset);
+   
+      // check for second magic
+      eeprom_read(&magic, 2, &offset);
+      if (magic == 0x1234)
+         status |= (1 << 1);
+   } else
       status |= (1 << 1);
 
    return status;
 }
 
-#endif /* EEPROM_SUPPORT */
+#endif /* HAVE_EEPROM */
 
 /*------------------------------------------------------------------*/
 
-#ifdef LCD_SUPPORT
+#ifdef HAVE_LCD
 
 bit lcd_present;
 
@@ -1453,7 +1472,7 @@ sbit LCD_SD  = LCD ^ 0;
 
 /*------------------------------------------------------------------*/
 
-lcd_out(unsigned char d, bit df)
+void lcd_out(unsigned char d, bit df)
 {
    unsigned char timeout;
 
@@ -1463,7 +1482,7 @@ lcd_out(unsigned char d, bit df)
    LCD = LCD | 0xF0;            // data input
 #if defined(CPU_C8051F120)
    SFRPAGE = CONFIG_PAGE;
-   P2MDOUT = 0x0F;
+   P2MDOUT |= 0x0F;
 #ifdef SCS_2000
    LCD_1D = 0;                  // b to a for data
 #endif
@@ -1553,7 +1572,7 @@ void lcd_setup()
    SFRPAGE = CONFIG_PAGE;
    P2MDOUT = 0xFF;             // all push-pull
 #ifdef SCS_2000
-   P1MDOUT = 0xFF;
+   P1MDOUT |= 0x03;
    LCD_1D = 1;                 // a to b for data
    LCD_2D = 1;                 // a to b for control
 #endif
@@ -1576,7 +1595,7 @@ void lcd_setup()
    LCD = LCD | 0xF0;            // data input
 #if defined(CPU_C8051F120)
    SFRPAGE = CONFIG_PAGE;
-   P2MDOUT = 0x0F;
+   P2MDOUT |= 0x0F;
 #ifdef SCS_2000
    LCD_1D = 0;                  // b to a for data
 #endif
@@ -1596,7 +1615,7 @@ void lcd_setup()
    lcd_present = 1;
 
    lcd_out(0x24, 0); // function set: 4-bit, RE=1
-   lcd_out(0x09, 0); // ext function set: 4-line display
+   lcd_out(0x0B, 0); // ext function set: 4-line display, inverting cursor
    lcd_out(0x20, 0); // function set: 4-bit, RE=0
    lcd_out(0x0C, 0); // display on
    lcd_out(0x01, 0); // clear display
@@ -1663,6 +1682,14 @@ void lcd_clear()
    lcd_goto(0, 0);
 }
 
+void lcd_cursor(unsigned char flag)
+{
+   if (flag)
+      lcd_out(0x0F, 0); // display on, curson on, blink on
+   else
+      lcd_out(0x0C, 0); // display on, cursor off, blink off
+}
+
 /*------------------------------------------------------------------*/
 
 void lcd_goto(char x, char y)
@@ -1681,7 +1708,7 @@ void lcd_goto(char x, char y)
 
 char putchar(char c)
 {
-   if (c >= ' ')
+   if (c != '\r' && c != '\n')
       lcd_out(c, 1);
    return c;
 }
@@ -1694,39 +1721,291 @@ void lcd_puts(char *str)
       lcd_out(*str++, 1);
 }
 
+#endif // HAVE_LCD
+
+/*------------------------------------------------------------------*/
+
+#ifdef HAVE_RTC
+
+sbit RTC_IO  = P1 ^ 2;
+sbit RTC_CLK = P1 ^ 3;
+
 /********************************************************************\
 
-  Routine: scs_lcd1_read
+  Routine: Real time clock (RTC) routines
 
-  Purpose: Returns switch (button) state of SCS-LCD1 module
+  Purpose: Read and set date/time on DS1302 RTC chip on SCS-2001
 
 \********************************************************************/
 
-/*
-char scs_lcd1_read()
+
+/*------------------------------------------------------------------*/
+
+void rtc_output(unsigned char d)
 {
-char i, d;
+   unsigned char i;
 
-  LCD_CLK = 0;  // enable input
-  LCD_SD = 1;
+   for (i=0 ; i<8 ; i++) {
+      RTC_IO = d & 0x01;
+      delay_us(10);
+      RTC_CLK = 1;
+      delay_us(10);
+      RTC_CLK = 0;
 
-  LCD_P_W = 1;  // latch input
-  delay_us(1);
-  LCD_P_W = 0;
-
-  for (i=d=0 ; i<8 ; i++)
-    {
-    d |= LCD_SD;
-    d = (d | LCD_SD) << 1;
-
-    LCD_CLK = 1;
-    delay_us(1);
-    LCD_CLK = 0;
-    delay_us(1);
-    }
-
-  return d;
+      d >>= 1;
+   }
 }
-*/
 
-#endif
+/*------------------------------------------------------------------*/
+
+unsigned char rtc_read_byte(unsigned char adr)
+{
+   unsigned char idata i, d, m;
+
+   RTC_CLK = 0;
+
+   SFRPAGE = DAC1_PAGE;
+   DAC1L = 0xFF;
+   DAC1H = 0x0F;
+
+   delay_us(10); // wait for DAC
+
+   /* switch port to output */
+   SFRPAGE = CONFIG_PAGE;
+   P1MDOUT |= 0x04; 
+
+   rtc_output(adr);
+
+   /* switch port to input */
+   SFRPAGE = CONFIG_PAGE;
+   P1MDOUT &= ~ 0x04;
+   RTC_IO = 1;
+
+   delay_us(10);
+   for (i=d=0,m=1 ; i<8 ; i++) {
+      if (RTC_IO)
+         d |= m;
+      RTC_CLK = 1;
+      delay_us(10);
+      RTC_CLK = 0;
+      delay_us(10);
+      m <<= 1;
+   }
+
+   SFRPAGE = DAC1_PAGE;
+   DAC1L = 0;
+   DAC1H = 0;
+
+   delay_us(10); // wait for DAC
+
+   return d;
+}
+
+/*------------------------------------------------------------------*/
+
+void rtc_read(unsigned char d[6])
+{
+   unsigned char idata i, j, b, m;
+
+   RTC_CLK = 0;
+
+   SFRPAGE = DAC1_PAGE;
+   DAC1L = 0xFF;
+   DAC1H = 0x0F;
+
+   delay_us(10); // wait for DAC
+
+   /* switch port to output */
+   SFRPAGE = CONFIG_PAGE;
+   P1MDOUT |= 0x04; 
+
+   rtc_output(0xBF); // burst read
+
+   /* switch port to input */
+   SFRPAGE = CONFIG_PAGE;
+   P1MDOUT &= ~ 0x04;
+   RTC_IO = 1;
+
+   delay_us(10); // wait for RTC output
+
+   for (j=0 ; j<7 ; j++) {
+      for (i=b=0,m=1 ; i<8 ; i++) {
+         if (RTC_IO)
+            b |= m;
+         RTC_CLK = 1;
+         delay_us(10);
+         RTC_CLK = 0;
+         delay_us(10);
+         m <<= 1;
+      }
+
+      if (j<3)
+        d[5-j] = b;
+      else if (j < 5)
+        d[j-3] = b;
+      else if (j == 6)
+        d[2] = b;
+   }
+
+   SFRPAGE = DAC1_PAGE;
+   DAC1L = 0;
+   DAC1H = 0;
+
+   delay_us(10); // wait for DAC
+}
+
+/*------------------------------------------------------------------*/
+
+void rtc_write_byte(unsigned char adr, unsigned char d)
+{
+   RTC_CLK = 0;
+   SFRPAGE = DAC1_PAGE;
+   DAC1L = 0xFF;
+   DAC1H = 0x0F;
+
+   delay_us(10); // wait for DAC
+
+   /* switch port to output */
+   SFRPAGE = CONFIG_PAGE;
+   P1MDOUT |= 0x04; 
+
+   rtc_output(adr);
+   rtc_output(d);
+
+   SFRPAGE = DAC1_PAGE;
+   DAC1L = 0;
+   DAC1H = 0;
+
+   delay_us(10); // wait for DAC
+}
+
+/*------------------------------------------------------------------*/
+
+void rtc_write(unsigned char d[6])
+{
+   RTC_CLK = 0;
+   SFRPAGE = DAC1_PAGE;
+   DAC1L = 0xFF;
+   DAC1H = 0x0F;
+
+   delay_us(10); // wait for DAC
+
+   /* switch port to output */
+   SFRPAGE = CONFIG_PAGE;
+   P1MDOUT |= 0x04; 
+
+   rtc_output(0xBE); // clock burst write
+
+   rtc_output(d[5]);     // sec
+   rtc_output(d[4]);     // min
+   rtc_output(d[3]);     // hour
+   rtc_output(d[0]);     // date
+   rtc_output(d[1]);     // month
+   rtc_output(1);        // weekday
+   rtc_output(d[2]);     // year
+   rtc_output(0);        // WP
+
+   SFRPAGE = DAC1_PAGE;
+   DAC1L = 0;
+   DAC1H = 0;
+
+   delay_us(10); // wait for DAC
+}
+
+/*------------------------------------------------------------------*/
+
+void rtc_write_item(unsigned char item, unsigned char d)
+{
+   switch (item) {
+      case 0: rtc_write_byte(0x86, d); break; // day
+      case 1: rtc_write_byte(0x88, d); break; // month
+      case 2: rtc_write_byte(0x8C, d); break; // year
+      case 3: rtc_write_byte(0x84, d); break; // hour
+      case 4: rtc_write_byte(0x82, d); break; // minute
+      case 5: rtc_write_byte(0x80, d); break; // second
+   }
+}
+
+/*------------------------------------------------------------------*/
+
+void rtc_conv_date(unsigned char d[6], char *str)
+{
+   if (d[0] == 0xFF) { // no clock mounted
+      str[0] = str[1] = str[3] = str[4] = str[6] = str[7] = '?';
+      str[2] = str[5] = '-';
+      str[8] = 0;
+      return;
+   }
+   str[0] = '0'+d[0]/0x10;
+   str[1] = '0'+d[0]%0x10;
+   str[2] = '-';
+
+   str[3] = '0'+d[1]/0x10;
+   str[4] = '0'+d[1]%0x10;
+   str[5] = '-';
+
+   str[6] = '0'+d[2]/0x10;
+   str[7] = '0'+d[2]%0x10;
+   str[8] = 0;
+}
+
+/*------------------------------------------------------------------*/
+
+void rtc_conv_time(unsigned char d[6], char *str)
+{
+   if (d[0] == 0xFF) { // no clock mounted
+      str[0] = str[1] = str[3] = str[4] = str[6] = str[7] = '?';
+      str[2] = str[5] = ':';
+      str[8] = 0;
+      return;
+   }
+   str[0] = '0'+d[3]/0x10;
+   str[1] = '0'+d[3]%0x10;
+   str[2] = ':';
+
+   str[3] = '0'+d[4]/0x10;
+   str[4] = '0'+d[4]%0x10;
+   str[5] = ':';
+
+   str[6] = '0'+d[5]/0x10;
+   str[7] = '0'+d[5]%0x10;
+   str[8] = 0;
+}
+
+/*------------------------------------------------------------------*/
+
+void rtc_print()
+{
+   unsigned char xdata d[6];
+   char xdata str[10];
+
+   rtc_read(d);
+   if (d[0] != 0xFF) {
+      rtc_conv_date(d, str);
+      puts(str);
+      puts("  ");
+      rtc_conv_time(d, str);
+      puts(str);
+   }
+}
+
+/*------------------------------------------------------------------*/
+
+unsigned char rtc_present()
+{
+   unsigned char d;
+
+   d = rtc_read_byte(0);
+   return d != 0xFF;
+}
+
+/*------------------------------------------------------------------*/
+
+void rtc_init()
+{
+   /* remove write protection */
+   rtc_write_byte(0x8E, 0);
+}
+
+#endif // HAVE_RTC
+

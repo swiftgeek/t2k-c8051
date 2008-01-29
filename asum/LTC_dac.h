@@ -6,7 +6,7 @@
 
   Contents:     LTC1665/2600 DAC user interface
 
-  $Id: LTC_dac.h 3730 2007-07-03 21:06:12Z amaudruz $
+  $Id$
 
 \********************************************************************/
 //  need to have T2KASUM defined

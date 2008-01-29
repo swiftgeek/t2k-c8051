@@ -8,7 +8,7 @@
                 Midas Slow Control Bus protocol
                 for T2K-ASUM test board
 
-  $Id: t2k-asum.h 3862 2007-08-31 23:29:03Z amaudruz $
+  $Id$
 
 \********************************************************************/
 //  need to have T2KASUM defined
@@ -83,7 +83,8 @@
 #define CONTROL_BIAS_DAC  (1<<4)
 #define CONTROL_ASUM_TH   (1<<5)
 #define CONTROL_D_CHPUMP  (1<<6)
-//#define CONTROL_UNUSED    (1<<7)
+//Added by Bahman Sotoodian to turn of and on all the channels
+#define CONTROL_CHANNEL   (1<<7)
 
 /* CSR status bits */
 #define STATUS_QPUMP      (1<<0)

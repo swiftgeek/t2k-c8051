@@ -6,14 +6,14 @@
 
   Contents:     AD5301 DAC user interface
 
-  $Id: AD5301_dac.c 3853 2007-08-30 21:45:23Z amaudruz $
+  $Id$
 
 \********************************************************************/
 //  need to have T2KASUM defined
 
 
-#include "../../mscbemb.h"
-#include "../../protocols/SMBus_handler.h"
+#include "../asum/mscbemb.h"
+#include "../protocols/SMBus_handler.h"
 #include "AD5301_dac.h"
 
 void AD5301_Init(void)

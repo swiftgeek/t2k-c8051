@@ -7,7 +7,7 @@
 
   Version:		Rev 1.2
 
-  $Id: ADT7486A_tsensor.h 3870 2007-08-31 23:59:44Z amaudruz $
+  $Id$
 \**********************************************************************************/
 
 #ifndef  _ADT7486A_TSENSOR_H
@@ -19,7 +19,7 @@
 
 // Command Map (ADT7486A) - including WL and RL
 // Format is as follows:
-// #define CommandName writeLength, readLength, command, data(if applicable, defined by user), channel number
+// #define writeLeCommandName ngth, readLength, command, data(if applicable, defined by user), channel number
                              //dummy bytes are written for those
                              //not applicable to fit functin prototype
 #define Ping      0x00, 0x00, 0x00, 0x00, 0x00

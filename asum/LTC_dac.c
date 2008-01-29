@@ -6,13 +6,13 @@
 
   Contents:     LTC1665/2600 DAC user interface
 
-  $Id: LTC_dac.c 3852 2007-08-30 21:31:38Z amaudruz $
+  $Id$
 
 \********************************************************************/
 //  need to have T2KASUM defined
 
-#include "../../mscbemb.h"
-#include "../../protocols/SPI_handler.h"
+#include "mscbemb.h"
+#include "../protocols/SPI_handler.h"
 #include "LTC_dac.h"
 
 /* LTC1665/2600 pins (8-bit DACs)*/

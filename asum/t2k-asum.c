@@ -7,14 +7,14 @@
                 Midas Slow Control Bus protocol
                 for T2K-ASUM test board
 
-  $Id: t2k-asum.c 3872 2007-09-01 00:32:12Z amaudruz $
+  $Id$
 
 \********************************************************************/
 //  need to have T2KASUM defined.
 
 #include <stdio.h>
 #include <math.h>
-#include "../../mscbemb.h"
+#include "mscbemb.h"
 #include "t2k-asum.h"
 #include "ADT7486A_tsensor.h"
 #include "PCA9539_io.h"
@@ -89,7 +89,7 @@ void user_init(unsigned char init)
    /* default settings, set only when EEPROM is being erased and written */
 	if(init)
 	{
-		user_data.control = 0x7E; //temperature and adc readings ON
+		user_data.control = 0x1; //Turn on the charge pump 
 		user_data.status   = 0x00;
 		user_data.biasEn   = 0xFF;
 		user_data.dac_asumThreshold   = 0x80;
@@ -130,6 +130,7 @@ void user_init(unsigned char init)
    pca_operation(Q_PUMP_OFF); //Initially turn it off	
 	PCA9539_Init(); //PCA General I/O (Bais Enables) initialization	
 	AD5301_Init(); //I2C DAC initialization (D_CH_PUMP)	
+	user_data.control = 0x81;
 }
 
 /*---- PCA initilalization -----------------------------------------*/
@@ -203,6 +204,7 @@ void Hardware_Update(void)
 {
     // Hardware Update routine
     // Write down what you want to do here at each control state
+	 
 
    watchdog_refresh(0);	
 }
@@ -216,6 +218,21 @@ void user_loop(void)
 
 
 	/*** Write down what you want to do here at each control state ***/
+	
+	//Added by Bahman Sotoodian to turn on and off all the channels
+	//Update the Bias_Enable status	
+	if( user_data.control &	CONTROL_CHANNEL )
+	{
+		PCA9539_Cmd(ALL_LOW);	
+	}
+	else if(user_data.control & CONTROL_BIAS_EN)
+	{
+		PCA9539_Cmd(ADDR_PCA9539, 0x03, ~user_data.biasEn, PCA9539_WRITE);
+	}			
+	else 
+	{
+		PCA9539_Cmd(ALL_HIGH);
+	}
 
 	if(user_data.control & CONTROL_TEMP_MEAS)
 	{
@@ -263,11 +280,6 @@ void user_loop(void)
 		QPUMP_LED = LED_OFF;
 	}
 
-	//Update the Bias_Enable status
-	if(user_data.control & CONTROL_BIAS_EN)
-	{
-		PCA9539_Cmd(ADDR_PCA9539, 0x03, ~user_data.biasEn, PCA9539_WRITE);
-	}			
 
 
 	//Update the Charge Pump Threshold voltage

@@ -6,15 +6,15 @@
 
   Contents:     AD7718BRU ADC user interface
 
-  $Id: AD7718_adc.c 3852 2007-08-30 21:31:38Z amaudruz $
+  $Id$
 
 \********************************************************************/
 //  need to have T2KASUM defined
 
 #include <math.h>
-#include "../../mscbemb.h"
+#include "../asum/mscbemb.h"
 #include "AD7718_adc.h"
-#include "../../protocols/SPI_handler.h"
+#include "../protocols/SPI_handler.h"
 
 /* AD7718 related pins */
 sbit ADC_ResetN = P1 ^ 1;       // !Reset

@@ -6,7 +6,7 @@
 
   Contents:     PCA9539 I/O register user interface
 
-  $Id: PCA9539_io.h 3730 2007-07-03 21:06:12Z amaudruz $
+  $Id$
 
 \********************************************************************/
 //  need to have T2KASUM defined

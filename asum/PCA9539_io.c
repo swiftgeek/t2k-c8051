@@ -8,14 +8,14 @@
   				This chip is used to enable different switches for
 				the Charge Pump
 
-  $Id: PCA9539_io.c 3854 2007-08-30 21:45:53Z amaudruz $
+  $Id$
 
 \********************************************************************/
 //  need to have T2KASUM defined
 
 
-#include "../../mscbemb.h"
-#include "../../protocols/SMBus_handler.h"
+#include "mscbemb.h"
+#include "../protocols/SMBus_handler.h"
 #include "PCA9539_io.h"
 
 void PCA9539_Init(void)
@@ -41,7 +41,11 @@ void PCA9539_Cmd(unsigned char addr, unsigned char cmd, unsigned char datByte, b
 	    if (!ACK) return; // No slave ACK. Address is wrong or slave is missing.
 	    readValue = SMBus_ReadByte();  // receive the register's data
 		//store to mscb user_data here
-	    SMBus_Stop();
+	    
+		//Added by Bahman Sotoodin to update the D_BiasEn
+		datByte = readValue;
+		
+		SMBus_Stop();
 	}
 	else //writing
 	{		

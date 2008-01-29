@@ -14,14 +14,14 @@
 				- added averaging scheme
 				- Applied more modulization (SST_ReadByte() function)
 
-  $Id: ADT7486A_tsensor.c 3852 2007-08-30 21:31:38Z amaudruz $
+  $Id$
 \**********************************************************************************/
 
 // --------------------------------------------------------
 //  Include files
 // --------------------------------------------------------
-#include "../../mscbemb.h"
-#include "../../protocols/SST_handler.h"
+#include "../asum/mscbemb.h"
+#include "../protocols/SST_handler.h"
 #include "ADT7486A_tsensor.h"
 
 void ADT7486A_Init(void)

@@ -89,27 +89,27 @@
 #ifdef   fgd_008     // T2K-FGD SiPM 8-channel bias board K. Mizouchi Sep/19/2006
 #define  FGD_008
 #endif
-#ifdef tsr			 // Temperature Sensor Array Readback    Brian Lee May 05/2007
+#ifdef tsr           // Temperature Sensor Array Readback    Brian Lee May 05/2007
 #define TSR
 #endif
-#ifdef t2kasum		 // T2K-ASUM test board					 Brian Lee June 07/2007
+#ifdef t2kasum       // T2K-ASUM test board          Brian Lee June 07/2007
 #define T2KASUM
 #endif
-#ifdef gpib_test
-#define GPIB_TEST
+#ifdef titan_rf      // GPIB
+#define TITAN_RF
 #endif
-#ifdef treval_12x
+#ifdef rf_gpib_310      // GPIB
+#define RF_GPIB_310
+#endif
+#ifdef treval_12x    // Evaluation card
 #define TREVAL_12X
-#endif
-#ifdef treval_06x
-#define TREVAL_06X
 #endif
 
 /*---- CPU specific items ------------------------------------------*/
 
 /* default flags */
 #define USE_WATCHDOG
-#define EEPROM_SUPPORT
+#define HAVE_EEPROM
 
 /*--------------------------------*/
 #if defined(SCS_210)
@@ -145,7 +145,7 @@ sbit RS485_ENABLE = P1 ^ 0;
 //#define EXT_WATCHDOG
 //sbit EXT_WATCHDOG_PIN = P2 ^ 1;
 
-#undef EEPROM_SUPPORT
+#undef HAVE_EEPROM
 
 /*--------------------------------*/
 #elif defined(SUBM_260)
@@ -157,7 +157,7 @@ sbit RS485_ENABLE = P1 ^ 0;
 #define LED_ON 0
 sbit RS485_ENABLE = P0 ^ 4;
 
-#undef EEPROM_SUPPORT
+#undef HAVE_EEPROM
 
 /*--------------------------------*/
 #elif defined(SCS_300) || defined(SCS_310)
@@ -188,7 +188,7 @@ sbit RS485_ENABLE = P0 ^ 3;
 #define LED_ON 0
 sbit RS485_ENABLE = P3 ^ 5;
 
-#undef EEPROM_SUPPORT
+#undef HAVE_EEPROM
 
 /*--------------------------------*/
 #elif defined(SCS_400) || defined(SCS_500)
@@ -229,7 +229,7 @@ sbit RS485_ENABLE = P3 ^ 5;
 sbit RS485_ENABLE = P0 ^ 5;
 sbit RS485_SEC_ENABLE = P0 ^ 4;
 
-#define LCD_SUPPORT
+#define HAVE_LCD
 
 /*--------------------------------*/
 #elif defined(SCS_1001)
@@ -246,7 +246,7 @@ sbit RS485_SEC_ENABLE = P0 ^ 4;
 //#define EXT_WATCHDOG              // use external watchdog
 sbit EXT_WATCHDOG_PIN = P1 ^ 4;
 
-#define LCD_SUPPORT
+#define HAVE_LCD
 
 /*--------------------------------*/
 #elif defined(SCS_2000)
@@ -262,9 +262,10 @@ sbit RS485_SEC_ENABLE = P0 ^ 4;
 //#define EXT_WATCHDOG              // use external watchdog
 //sbit EXT_WATCHDOG_PIN = DAC0;
 
-#define LCD_SUPPORT
+#define HAVE_LCD
 #define LCD_8BIT
 #define DYN_VARIABLES
+#define HAVE_RTC
 
 /*--------------------------------*/
 #elif defined(HVR_200)
@@ -272,7 +273,7 @@ sbit RS485_SEC_ENABLE = P0 ^ 4;
 #define CPU_C8051F120
 
 #define LED_0 P1 ^ 6
-#define LED_1 P1 ^ 7 
+#define LED_1 P1 ^ 7
 #define LED_ON 1
 sbit RS485_ENABLE = P0 ^ 5;
 
@@ -282,8 +283,8 @@ sbit RS485_ENABLE = P0 ^ 5;
 #define CPU_C8051F310
 
 #define LED_0 P2 ^ 4
-#define LED_1 P2 ^ 5 
-#define LED_2 P2 ^ 6 
+#define LED_1 P2 ^ 5
+#define LED_2 P2 ^ 6
 #define LED_3 P2 ^ 7
 #define LED_ON 1
 sbit RS485_ENABLE = P0 ^ 7;
@@ -294,8 +295,8 @@ sbit RS485_ENABLE = P0 ^ 7;
 #define CPU_C8051F310
 
 #define LED_0 P2 ^ 7
-#define LED_1 P2 ^ 6 
-#define LED_2 P2 ^ 5 
+#define LED_1 P2 ^ 6
+#define LED_2 P2 ^ 5
 #define LED_3 P2 ^ 4
 #define LED_4 P2 ^ 3
 #define LED_ON 1
@@ -307,8 +308,8 @@ sbit RS485_ENABLE = P0 ^ 7;
 #define CPU_C8051F120
 
 #define LED_0 P1 ^ 7
-#define LED_1 P1 ^ 6 
-#define LED_2 P1 ^ 5 
+#define LED_1 P1 ^ 6
+#define LED_2 P1 ^ 5
 #define LED_3 P1 ^ 4
 #define LED_4 P1 ^ 3
 #define LED_5 P1 ^ 2
@@ -341,18 +342,18 @@ sbit RS485_ENABLE = P0 ^ 4;
 #define  CPU_C8051F310
 
 // Add a new entry for the T2K-FGD SiPM 8-channel bias board
-// K. Mizouchi Sep/19/2006 
+// K. Mizouchi Sep/19/2006
 //
-// LED_0, which is used as a primary led in the system, is 
-// connected to a spare pin (NC) and secondary LED, LED_1, 
-// is made to be undefined. It is only used in mscbutil 
+// LED_0, which is used as a primary led in the system, is
+// connected to a spare pin (NC) and secondary LED, LED_1,
+// is made to be undefined. It is only used in mscbutil
 // libraries and we don't have it physically.
-// 
-// We define the SELECT_LED_DACX pin here, because we want to 
-// use led_xxxx() in mscbutil.c for DAC LED control. 
+//
+// We define the SELECT_LED_DACX pin here, because we want to
+// use led_xxxx() in mscbutil.c for DAC LED control.
 #define LED_0 P2 ^ 4
 
-#if defined(LED_1) 
+#if defined(LED_1)
 #undef LED_1
 #endif
 
@@ -397,8 +398,8 @@ sbit RS485_ENABLE = P0 ^ 3;
 #define SST1_REF P1 ^ 1
 #define SST2_REF P1 ^ 0
 
-#define SST1 P2 ^ 0 //SST1 line
-#define SST2 P2 ^ 1 //SST2 line
+#define MSCB_SST1 P2 ^ 0 //SST1 line
+#define MSCB_SST2 P2 ^ 1 //SST2 line
 
 #define SST1_ClientResponse P0 ^ 6 //Comparator 0 output
 #define SST2_ClientResponse P0 ^ 7 //Comparator 1 output
@@ -441,7 +442,7 @@ sbit RS485_ENABLE = P0 ^ 3; //MSCB communication enable port
 #define SST1_REF P2 ^ 1
 //#define SST2_REF P1 ^ 0
 
-#define SST1 P2 ^ 0 //SST1 line
+#define MSCB_SST1 P2 ^ 0 //SST1 line
 //#define SST2 P2 ^ 1 //SST2 line
 
 #define SST_ClientResponse (char) ((CPT0CN & 0x40) >> 6)
@@ -452,6 +453,13 @@ sbit RS485_ENABLE = P0 ^ 3; //MSCB communication enable port
 
 sbit P2_1 = SST1_REF; // the bit that controls and reads from P1 ^ 1
 //sbit P1_0 = SST2_REF; // the bit that controls and reads from P1 ^ 0
+
+#define MSCB_I2C_SDA P0 ^ 0
+#define MSCB_I2C_SCL P0 ^ 1
+
+#define MSCB_SPI_SCK P0 ^ 7
+#define MSCB_SPI_MISO P1 ^ 2
+#define MSCB_SPI_MOSI P1 ^ 3
 
 sbit RS485_ENABLE = P0 ^ 3; //MSCB communication enable port
 /*--------------------------------*/
@@ -464,24 +472,34 @@ sbit RS485_ENABLE = P0 ^ 3; //MSCB communication enable port
 #define LED_ON 0
 sbit RS485_ENABLE = P3 ^ 5;
 /*--------------------------------*/
+#elif defined(TITAN_RF)
+#include <c8051F310.h>   // 120-ver2
+#define CPU_C8051F310
+
+#define LED_0 P3 ^ 4     // 3-ver2
+#define LED_1 P3 ^ 3     // 4-ver2
+#define LED_ON 0
+sbit RS485_ENABLE = P3 ^ 5;
+/*--------------------------------*/
+#elif defined(RF_GPIB_310)
+#include <c8051F310.h>
+#define CPU_C8051F310
+
+#define LED_0 P0 ^ 6
+#define LED_1 P0 ^ 2
+#define LED_ON 0
+sbit RS485_ENABLE = P0 ^ 3;
+/*--------------------------------*/
 #elif defined(TREVAL_12X)
 #include <c8051F120.h>
 #define CPU_C8051F120
 
-#define LED_0 P3 ^ 4
-#define LED_1 P3 ^ 3
-#define LED_ON 0
-sbit RS485_ENABLE = P3 ^ 5;
-/*--------------------------------*/
-#elif defined(TREVAL_06X)
-#include <c8051F060.h>
-#define CPU_C8051F120
-
-#define LED_0 P3 ^ 4
-#define LED_1 P3 ^ 3
+#define LED_0 P1 ^ 6
+#define LED_1 P1 ^ 7
 #define LED_ON 0
 sbit RS485_ENABLE = P0 ^ 2;
 /*--------------------------------*/
+
 #else
 #error Please define SCS_xxx or HVR_xxx in project options
 #endif
@@ -507,7 +525,7 @@ sbit RS485_ENABLE = P0 ^ 2;
 #else
 #define N_LED 0
 #endif
-       
+
 /* map SBUF0 & Co. to SBUF */
 #if !defined(CPU_C8051F020) && !defined(CPU_C8051F120) && !defined(CPU_C8051F310) && !defined(CPU_C8051F320)
 #define SCON0    SCON
@@ -540,7 +558,7 @@ sbit RS485_ENABLE = P0 ^ 2;
 #define UART1_DEVICE                     // use direct device communication
 #endif
 
-#if defined(UART1_DEVICE) && defined(LCD_SUPPORT)
+#if defined(UART1_DEVICE) && defined(HAVE_LCD)
 char putchar1(char c);                   // putchar cannot be used with LCD support
 #endif
 
@@ -643,6 +661,7 @@ char putchar1(char c);                   // putchar cannot be used with LCD supp
 
 #define CMD_FREEZE      0x41
 #define CMD_SYNC        0x49
+#define CMD_SET_TIME    0x4E
 #define CMD_UPGRADE     0x50
 #define CMD_USER        0x58
 
@@ -825,6 +844,7 @@ unsigned char crc8_add(unsigned char crc, unsigned int c);
 
 void lcd_setup();
 void lcd_clear();
+void lcd_cursor(unsigned char flag);
 void lcd_goto(char x, char y);
 void lcd_putc(char c);
 void lcd_puts(char *str);
@@ -835,7 +855,7 @@ unsigned char gets_wait(char *str, unsigned char size, unsigned char timeout);
 void flush(void);
 
 void eeprom_flash(void);
-unsigned char eeprom_retrieve(void);
+unsigned char eeprom_retrieve(unsigned char flag);
 void setup_variables(void);
 
 void uart_init(unsigned char port, unsigned char baud);
@@ -846,6 +866,7 @@ void send_remote_var(unsigned char i);
 unsigned char ping(unsigned short addr);
 
 void sysclock_init(void);
+void sysclock_reset(void);
 unsigned long time(void);
 unsigned long uptime(void);
 
@@ -853,3 +874,15 @@ unsigned char user_func(unsigned char *data_in, unsigned char *data_out);
 
 void set_n_sub_addr(unsigned char n);
 unsigned char cur_sub_addr(void);
+
+void rtc_init(void);
+unsigned char rtc_present(void);
+void rtc_write(unsigned char d[6]);
+void rtc_read(unsigned char d[6]);
+void rtc_write_item(unsigned char item, unsigned char d);
+void rtc_conv_date(unsigned char d[6], char *str);
+void rtc_conv_time(unsigned char d[6], char *str);
+void rtc_print(void);
+
+
+

@@ -6,7 +6,7 @@
 
   Contents:     AD5301 DAC user interface
 
-  $Id: AD5301_dac.h 3852 2007-08-30 21:31:38Z amaudruz $
+  $Id$
 
 \********************************************************************/
 //  need to have T2KASUM defined

@@ -43,7 +43,7 @@ extern unsigned char idata _n_sub_addr;
 
 extern char code node_name[];
 
-char code svn_rev[] = "$Rev$";
+char code svn_rev_main[] = "$Rev$";
 
 /*------------------------------------------------------------------*/
 
@@ -68,8 +68,12 @@ unsigned char xdata in_buf[64], out_buf[64]; /* limited by USB block size */
 unsigned char idata in_buf[20], out_buf[8];
 #endif
 
-unsigned char idata i_in, last_i_in, final_i_in, i_out, n_out, cmd_len;
-unsigned char idata crc_code, addr_mode, n_variables, _flkey=0;
+unsigned char idata i_in, last_i_in, final_i_in, i_out, cmd_len;
+unsigned char idata crc_code, addr_mode, n_variables;
+
+/* use absolute value between main program and upgrader */
+unsigned char idata _flkey _at_ 0x80;
+unsigned char idata n_out _at_ 0x81;
 
 unsigned char idata _cur_sub_addr, _var_size;
 
@@ -78,6 +82,13 @@ unsigned char var_to_send = 0xFF;
 #endif
 
 SYS_INFO sys_info;
+
+#ifdef HAVE_RTC
+/* buffer for setting RTC */
+unsigned char xdata rtc_bread[6];
+unsigned char xdata rtc_bwrite[6];
+bit rtc_set;
+#endif
 
 /*------------------------------------------------------------------*/
 
@@ -97,7 +108,6 @@ bit configured_addr;            // TRUE if node address is configured
 bit configured_vars;            // TRUE if variables are configured
 bit flash_allowed;              // TRUE 5 sec after booting node
 bit wrong_cpu;                  // TRUE if code uses xdata and CPU does't have it
-bit out_buf_empty;              // TRUE if out_buf has been sent completely
 
 /*------------------------------------------------------------------*/
 
@@ -105,7 +115,7 @@ bit out_buf_empty;              // TRUE if out_buf has been sent completely
 
 void setup(void)
 {
-   unsigned char adr, flags;
+   unsigned char adr, flags, d;
    unsigned short i;
    unsigned char *p;
 
@@ -124,6 +134,14 @@ void setup(void)
    XBR1 = 0x00;
    XBR2 = 0x44;
 
+#ifdef TREVAL_12X
+   XBR1 = 0x00;                 // Sysclk (0x80) Disable
+   XBR2 = 0x40;                 // UART1 Disable
+   P0MDOUT |= 0x4;              // P0.2: RS485_ENABLE
+   P1MDOUT = 0x60;              // P1.6..7 : Pushpull LED
+   RS485_ENABLE = 0;            // disable RS485 driver
+#endif
+
 #ifdef SCS_210 // run SCS_210 at 24.5 MHz
    /* Select internal quartz oscillator */
    SFRPAGE   = LEGACY_PAGE;
@@ -132,28 +150,23 @@ void setup(void)
    SFRPAGE   = CONFIG_PAGE;
    OSCICN    = 0x83;            // divide by 1
    CLKSEL    = 0x00;            // select internal oscillator
-#elif defined(TREVAL_06X)
-   SFRPAGE   = LEGACY_PAGE;
-   FLSCL     = 0xB0;            // set flash read time for 100 MHz
-
-   SFRPAGE   = CONFIG_PAGE;
-
-   OSCICN    = 0x83;
-   CLKSEL    = 0x02;            // select PLL as sysclk src
 #else          // run SCS_1001 at 98 MHz
    /* Select internal quartz oscillator */
    SFRPAGE   = LEGACY_PAGE;
    FLSCL     = 0xB0;            // set flash read time for 100 MHz
 
    SFRPAGE   = CONFIG_PAGE;
+   OSCICN    = 0x83;            // divide by 1
+   CLKSEL    = 0x00;            // select internal oscillator
+
    PLL0CN    |= 0x01;
    PLL0DIV   = 0x01;
    PLL0FLT   = 0x01;
    PLL0MUL   = 0x04;
-   for (i = 0; i < 15; i++);    // Wait 5us for initialization
+   for (i = 0 ; i < 15; i++);   // Wait 5us for initialization
    PLL0CN    |= 0x02;
-   while ((PLL0CN & 0x10) == 0);
-   OSCICN    = 0x83;
+   for (i = 0 ; i<50000 && ((PLL0CN & 0x10) == 0) ; i++);
+
    CLKSEL    = 0x02;            // select PLL as sysclk src
 #endif
 
@@ -227,6 +240,10 @@ void setup(void)
    wrong_cpu = 0;
    _flkey = 0;
 
+#ifdef HAVE_RTC
+   rtc_set = 0;
+#endif
+
    RS485_ENABLE = 0;
    i_in = i_out = n_out = 0;
    _cur_sub_addr = 0;
@@ -248,7 +265,7 @@ void setup(void)
    uart_init(1, BD_115200);
 #endif
 
-#ifdef LCD_SUPPORT
+#ifdef HAVE_LCD
    lcd_setup();
 #endif
 
@@ -266,16 +283,24 @@ void setup(void)
    /* check if variables are in xdata and xdata is present */
    if (n_variables > 0) {
       p = variables[0].ud;
+      d = *p;
       *p = 0x55;
       if (*p != 0x55)
          wrong_cpu = 1;
       *p = 0xAA;
       if (*p != 0xAA)
          wrong_cpu = 1;
+      *p = d;
    }
 
    /* retrieve EEPROM data */
-   flags = eeprom_retrieve();
+#ifdef CPU_C8051F120
+   SFRPAGE = LEGACY_PAGE;
+#endif
+   if ((RSTSRC & 0x02) > 0)
+      flags = eeprom_retrieve(1); // vars on cold start
+   else
+      flags = eeprom_retrieve(0);
 
    if ((flags & (1 << 0)) == 0) {
       configured_addr = 0;
@@ -289,10 +314,10 @@ void setup(void)
       configured_addr = 1;
 
    /* store SVN revision */
-   sys_info.svn_revision = (svn_rev[6]-'0')*1000+
-                           (svn_rev[7]-'0')*100+
-                           (svn_rev[8]-'0')*10+
-                           (svn_rev[9]-'0');
+   sys_info.svn_revision = (svn_rev_main[6]-'0')*1000+
+                           (svn_rev_main[7]-'0')*100+
+                           (svn_rev_main[8]-'0')*10+
+                           (svn_rev_main[9]-'0');
 
    if ((flags & (1 << 1)) == 0) {
 
@@ -346,8 +371,7 @@ void serial_int(void) interrupt 4
 
       i_out++;                   // increment output counter
       if (i_out == n_out) {
-         i_out = 0;              // send buffer empty, clear pointer
-         out_buf_empty = 1;      // and set flag
+         i_out = n_out = 0;      // send buffer empty, clear pointer
          DELAY_US(10);
          RS485_ENABLE = 0;       // disable RS485 driver
       } else {
@@ -437,7 +461,6 @@ static void send_obuf(unsigned char n)
 #endif
 
    n_out = n;
-   out_buf_empty = 0;
    RS485_ENABLE = 1;
    DELAY_US(INTERCHAR_DELAY);
    SBUF0 = out_buf[0];
@@ -571,7 +594,11 @@ void interprete(void)
       RS485_ENABLE = 1;
 
       send_byte(CMD_ACK + 7, &crc);      // send acknowledge, variable data length
+#ifdef HAVE_RTC
+      send_byte(30, &crc);               // send data length
+#else
       send_byte(24, &crc);               // send data length
+#endif
       send_byte(PROTOCOL_VERSION, &crc); // send protocol version
 
       send_byte(n_variables, &crc);      // send number of variables
@@ -587,6 +614,11 @@ void interprete(void)
 
       for (i = 0; i < 16; i++)  // send node name
          send_byte(sys_info.node_name[i], &crc);
+
+#ifdef HAVE_RTC
+      for (i = 0; i < 6 ; i++)
+         send_byte(rtc_bread[i], &crc);
+#endif
 
       send_byte(crc, NULL);     // send CRC code
 
@@ -662,10 +694,11 @@ void interprete(void)
 
       break;
 
-   case (CMD_SET_NAME):
+   case CMD_SET_NAME:
       /* set node name in RAM */
       for (i = 0; i < 16 && i < in_buf[1]; i++)
          sys_info.node_name[i] = in_buf[2 + i];
+      sys_info.node_name[15] = 0;
 
       /* copy address to EEPROM */
       flash_param = 1;
@@ -684,6 +717,15 @@ void interprete(void)
 
    case CMD_SYNC:
       SYNC_MODE = in_buf[1];
+      break;
+
+   case CMD_SET_TIME:
+#ifdef HAVE_RTC
+      led_blink(0, 1, 50);
+      for (i=0 ; i<6 ; i++)
+         rtc_bwrite[i] = in_buf[i+1];
+      rtc_set = 1;
+#endif
       break;
 
    case CMD_UPGRADE:
@@ -1065,7 +1107,7 @@ void upgrade()
 
    /* wait for acknowledge to be sent */
    for (i=0 ; i<10000 ; i++) {
-      if (out_buf_empty)
+      if (n_out == 0)
          break;
       DELAY_US(10);
    }
@@ -1389,6 +1431,10 @@ erase_ok:
 
 \*------------------------------------------------------------------*/
 
+#ifdef HAVE_RTC
+unsigned long xdata rtc_last;   
+#endif
+
 void yield(void)
 {
    watchdog_refresh(0);
@@ -1418,16 +1464,16 @@ void yield(void)
    }
 
    /* flash EEPROM if variables just got initialized */
-   /*if (!configured_vars && flash_allowed) {
+   if (!configured_vars && flash_allowed) {
       _flkey = 0xF1;
       eeprom_flash();
       configured_vars = 1;
-   }*/
+   }
 
    if (flash_program && flash_allowed) {
       flash_program = 0;
 
-#ifdef LCD_SUPPORT
+#ifdef HAVE_LCD
       lcd_clear();
       lcd_goto(0, 0);
       puts("    Upgrading"); 
@@ -1439,8 +1485,20 @@ void yield(void)
       upgrade();
    }
 
+#ifdef HAVE_RTC
+   if (rtc_set) {
+      rtc_write(rtc_bwrite);
+      rtc_set = 0;
+   }
+
+   if (time() > rtc_last+90 || time() < rtc_last) {
+      rtc_last = time();
+      rtc_read(rtc_bread);
+   }
+#endif
+
    /* allow flash 3 sec after reboot */
-   if (time() > 300)
+   if (!flash_allowed && time() > 300)
       flash_allowed = 1;
 
 }
