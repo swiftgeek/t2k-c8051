@@ -1,0 +1,82 @@
+C51 COMPILER V8.10   LTC1669_DAC                                                           02/19/2008 13:55:18 PAGE 1   
+
+
+C51 COMPILER V8.10, COMPILATION OF MODULE LTC1669_DAC
+OBJECT MODULE PLACED IN LTC1669_dac.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE LTC1669_dac.c BROWSE DEFINE(FEB64,_PCA_INTERNAL_,_SMB_PROTOCOL_,_LTC1669_) 
+                    -DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          /********************************************************************\
+   2          
+   3            Name:         LTC1669_dac.c
+   4            Created by:   Bahman Sotoodian                                                                Feb/19/2007
+   5          
+   6          
+   7            Contents:     LTC1669 DAC user interface
+   8          
+   9            $Id:$
+  10          
+  11          \********************************************************************/
+  12          //  need to have FEB64 defined
+  13          
+  14          #ifdef _LTC1669_
+  15          
+  16          #include "../feb64/mscbemb.h"
+  17          #include "../protocols/SMBus_handler.h"
+  18          #include "LTC1669_dac.h"
+  19          
+  20          void LTC1669_Init(void)
+  21          {
+  22   1              SMBus_Init(); // SMBus initialization (should be called after pca_operation)
+  23   1      }
+  24          
+  25          void LTC1669_Cmd(unsigned char addr, unsigned char datMSB, unsigned char datLSB, bit flag)
+  26          {
+  27   1              unsigned char readValue = 0;
+  28   1              watchdog_refresh(0);
+  29   1              if(flag == LTC1669_READ) //reading
+  30   1              {
+  31   2                      //The SMBus_WriteByte function would write in the SMBus Data Register and would 
+  32   2                      //specify the next operation. If Read has been passed to it, the slave would be ready for 
+  33   2                      //the read operation and if the Write has been passed in the master would be ready for write operation
+  34   2                      
+  35   2                      SMBus_Start(); //make start bit
+  36   2                      SMBus_WriteByte(addr, READ); //send address with a Read flag on             
+  37   2                      if (!AA) return; // No slave ACK. Address is wrong or slave is missing.     
+  38   2                      readValue = SMBus_ReadByte();  // set data word
+  39   2                      //store to mscb user_data here
+  40   2                  SMBus_Stop();
+  41   2              }
+  42   1              else //writing
+  43   1              {               
+  44   2                      SMBus_Start();
+  45   2                      SMBus_WriteByte(addr, WRITE);
+  46   2      //              if(!AA) return;
+  47   2                      SMBus_WriteByte(Command, CMD);
+  48   2      //              if(!AA) return;
+  49   2                      SMBus_WriteByte(datLSB, VAL);
+  50   2      //              if(!AA) return;
+  51   2                      SMBus_WriteByte(datMSB, VAL);
+  52   2      //              if(!AA) return;
+  53   2                      SMBus_Stop();
+  54   2              }
+C51 COMPILER V8.10   LTC1669_DAC                                                           02/19/2008 13:55:18 PAGE 2   
+
+  55   1      }
+  56          #endif
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     74    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       4
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

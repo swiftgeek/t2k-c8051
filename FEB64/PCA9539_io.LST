@@ -1,0 +1,91 @@
+C51 COMPILER V8.10   PCA9539_IO                                                            02/19/2008 13:55:18 PAGE 1   
+
+
+C51 COMPILER V8.10, COMPILATION OF MODULE PCA9539_IO
+OBJECT MODULE PLACED IN PCA9539_io.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE PCA9539_io.c BROWSE DEFINE(FEB64,_PCA_INTERNAL_,_SMB_PROTOCOL_,_LTC1669_) D
+                    -EBUG OBJECTEXTEND
+
+line level    source
+
+   1          /********************************************************************\
+   2          
+   3            Name:         PCA9539_io.c
+   4            Created by:   Bahman Sotoodian                                                        Feb/11/2008
+   5          
+   6          
+   7            Contents:     PCA9539 I/O register user interface
+   8                                          This chip is used to enable different switches for
+   9                                          the Charge Pump and aslo set the Backplane address
+  10          
+  11            $Id:$
+  12          
+  13          \********************************************************************/
+  14          //  Need to have FEB64 defined
+  15          
+  16          #ifdef _PCA9539_
+              
+              #include "mscbemb.h"
+              #include "../protocols2/SMBus_handler.h"
+              #include "PCA9539_io.h"
+              
+              void PCA9539_Init(void)
+              {
+                      SMBus_Init(); // SMBus initialization (should be called after pca_operation)
+                      PCA9539_Cmd(Bias_OUTPUT_ENABLE);                // Put all pins 0 to Output modes
+                      PCA9539_Cmd(Bias_ALL_LOW);                              // All Biases are enabled
+                      PCA9539_Cmd(BackPlane_OUTPUT_ENABLE);   // Put all pins 1 to Output modes
+                      PCA9539_Cmd(BackPlane_ALL_LOW);                    // All Backplane Addr are enabled
+              }
+              
+              void PCA9539_Cmd(unsigned char addr, unsigned char cmd, unsigned char datByte, bit flag)
+              {
+                      unsigned char readValue = 0;
+                      watchdog_refresh(0);
+                      if(flag == PCA9539_READ) //reading
+                      {
+                              SMBus_Start(); //make start bit
+                              SMBus_WriteByte(addr, WRITE);
+                              if (!AA) return; // No slave ACK. Address is wrong or slave is missing.
+                              SMBus_WriteByte(cmd, CMD);
+                              if (!AA) return;
+                              SMBus_Start(); //make repeated start bit
+                              SMBus_WriteByte(addr, READ); //send address with a Write flag on 
+                          if (!AA) return; // No slave ACK. Address is wrong or slave is missing.
+                          readValue = SMBus_ReadByte();  // receive the register's data
+                              //store to mscb user_data here
+                          
+                              //Added by Bahman Sotoodin to update the D_BiasEn
+                              datByte = readValue;
+                              
+                              SMBus_Stop();
+                      }
+                      else //writing
+                      {               
+C51 COMPILER V8.10   PCA9539_IO                                                            02/19/2008 13:55:18 PAGE 2   
+
+                              SMBus_Start();
+                              SMBus_WriteByte(addr, WRITE);
+              //              if(!AA) return;
+                              SMBus_WriteByte(cmd, CMD);
+              //              if(!AA) return;
+                              SMBus_WriteByte(datByte, VAL);
+              //              if(!AA) return;
+                              SMBus_Stop();
+                      }
+              }
+              #endif
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
