@@ -23,18 +23,28 @@
 #include <math.h>
 #include "mscbemb.h"
 #include "feb64.h"
+
+#ifdef _ADC_INTERNAL_
+#include "adc_internal.h"
+#endif
+#ifdef _PCA_INTERNAL_
+#include "pca_internal.h"
+#endif
+
 #ifdef _PCA9539_
 #include "PCA9539_io.h"
 #endif
-// #include "ADT7486A_tsensor.h"
-// #include "AD5301_dac.h"
+
 #ifdef _LTC1669_
 #include "LTC1669_dac.h"
 #endif
+
+
+// #include "ADT7486A_tsensor.h"
+// #include "AD5301_dac.h"
 // #include "AD7718_adc.h"
 
 #define N_CHN 8
-#define VREF       2.4f
 
 /* declare number of sub-addresses to framework */
 unsigned char idata _n_sub_addr = 1;
@@ -199,33 +209,35 @@ MSCB_INFO_VAR code vars[] = {
 
 
 MSCB_INFO_VAR *variables = vars;
+extern SYS_INFO sys_info;
+
+//unsigned char ADT7486A_addrArray[] = {ADT7486A_ADDR_ARRAY};
+
 
 /********************************************************************\
-
-  Application specific init and inout/output routines
-
+  Application specific init and in/output routines
 \********************************************************************/
 
 /*---- User init function ------------------------------------------*/
-
-extern SYS_INFO sys_info;
-//unsigned char ADT7486A_addrArray[] = {ADT7486A_ADDR_ARRAY};
-
 void user_init(unsigned char init)
 {
    short int add;
 
 	add = cur_sub_addr();
-//   /* all outputs are set to open drain on pin1 and pin2 */
+
+//
+// Initial setting for communitation and overall ports (if needed).
+//-----------------------------------------------------------------------------
    SFRPAGE  = CONFIG_PAGE;
-   // P0MDOUT contains Tx in pushpull
-   P0MDOUT |= 0x20;   // add RS485_ENABLE in pushpull
-   P1MDOUT = 0x00;
-   P2MDOUT = 0x00;
+                      // P0MDOUT contains Tx in push-pull
+   P0MDOUT |= 0x20;   // add RS485_ENABLE in push-pull
+
+//   P1MDOUT = 0x00;
+//   P2MDOUT = 0x00;
    
-	
-	init = 1;
-   /* default settings, set only when EEPROM is being erased and written */
+//	
+// default settings, set only when EEPROM is being erased and written
+//-----------------------------------------------------------------------------
 //	if(init)
 //	{
 //		user_data.control = 0x7D; //Turn on the charge pump 
@@ -245,101 +257,66 @@ void user_init(unsigned char init)
 //		sys_info.node_addr = 0xFF00;
 //	}   
 
-	/* Cross Bar Settings */
-
-	/* Comparator 0 Settings */
-//BS	CPT0CN = 0xC0; //Enable Comparator0 (functional, the one above is only for CrossBar)
-
-//	CPT0MX = 0x22; //Comparator0 MUX selection
-	        //Negative input is set to P2 ^ 1, and Positive input is set to P2 ^ 0
-	        // (P2 ^ 0 is the SST1, so we want to compare SST1 with the threshold voltage
-	        //of !~0.8V on P2 ^ 1
-//BS	CPT0MD = 0x02; //Comparator0 Mode Selection
-	        //Use default, adequate TYP (CP0 Response Time, no edge triggered interrupt)
-
-	//Set P2 ^ 1 to Open-Drain and Analog Input so that it accepts the ~650mV set by voltage divider
-//BS	P2MDOUT &= 0xFD;
-//	P2MDIN &= 0xFD;
-
-   /* set-up / initialize circuit components (order is important)*/
-
-#ifdef _ADC_INTERNAL_
-  /* enable ADC */
-  SFRPAGE = ADC0_PAGE;
-  ADC0CN = 0xC0;   // ADC0 Enabled
-  // Tracking on request (ADBUSY)
-  // left-justified
-  ADC0CF  = 0x80;  // ADC conversion 16 clocks
-  ADC0CF |= 0x00;  // PGA gain = 1
-
-  REF0CN = 0x03;    // VREF0 Bias & Buffer enable
-#endif
-
-#ifdef _ADT7486_
-   ADT7486A_Init(); //Temperature measurements related initialization
-#endif
-
-
-//	AD7718_Init(); //ADC initialization 		 
-
+/*-----------------------------------------------------------------------------------*/
+/* set-up / initialize circuit components (order is important)                       */
+/*                                                                                   */
+/*-----------------------------------------------------------------------------------*/
+//
+// Charge Pump frequency setup
+//-----------------------------------------------------------------------------
 #ifdef _PCA_INTERNAL_
-	pca_operation(Q_PUMP_INIT); //Charge Pump initialization (crossbar settings)
-    pca_operation(Q_PUMP_ON);   //Initially turn it on	
+  pca_operation(Q_PUMP_INIT); //Charge Pump initialization (crossbar settings)
+  pca_operation(Q_PUMP_ON);   //Initially turn it on	
 #endif
 
+//
+// Miscellaneous ADCs (V/I Monitoring)
+//-----------------------------------------------------------------------------
+#ifdef _ADC_INTERNAL_
+  adc_internal_init();
+#endif
+
+//
+// SST Temperatures
+//-----------------------------------------------------------------------------
+#ifdef _ADT7486_
+  ADT7486A_Init(); //Temperature measurements related initialization
+#endif
+
+//
+// Charge Pump DAC
+//-----------------------------------------------------------------------------
 #ifdef _LTC1669_	
-	LTC1669_Init(); //I2C DAC initialization (D_CH_PUMP)
-	user_data.control1 = 0x41; //Set the control bit for Qpump and the Qpump threashold enable bit
+  LTC1669_Init(); //I2C DAC initialization (D_CH_PUMP)
+  user_data.control1 = 0x41; //Set the control bit for Qpump and the Qpump threashold enable bit
 #endif
 
+//
+// Bias Voltage switches
+//-----------------------------------------------------------------------------
 #ifdef _PCA9539_
-	PCA9539_Init(); //PCA General I/O (Bais Enables and Backplane Addr) initialization	
+  PCA9539_Init(); //PCA General I/O (Bais Enables and Backplane Addr) initialization	
 #endif
 
 //#ifdef _AD5301_
 //	AD5301_Init(); 	
 //	user_data.control = 0x81;
 //#endif
+//	AD7718_Init(); //ADC initialization 		 
+
+
+//
+// Physical address retrieval 
+//-----------------------------------------------------------------------------
+
+//
+// FLASH memory Initialization
+//-----------------------------------------------------------------------------
+
 }
 
-#ifdef _PCA_INTERNAL_
-/*---- PCA initilalization -----------------------------------------*/
-void pca_operation(unsigned char mode)
-{
-	
-	if (mode == Q_PUMP_INIT) 
-	{
-		/* PCA setup for Frequency Output Mode on CEX0 */
-		SFRPAGE  = CONFIG_PAGE;
-		P0MDOUT |= 0x10; // Add pin 4 (CHG_PMP_CLK) to PushPull
-		XBR0     = 0x0D; // Route SMB (SDA and SCL); Route UART (TX and RX);and Route CEX0(CHG_PMP_CLK) to their pins 
-//        XBR1    |= 0x80; // -PAA- Enable SYSCLK to pin
-		XBR2     = 0x40; // Enable Xbar
-
-		SFRPAGE  = LEGACY_PAGE;
-		PCA0MD   = 0x02;  // Sysclk (default CKCON [2MHz])
-		PCA0CPL0 = 0x00;
-		PCA0CPM0 = 0x46; // ECM, TOG, PWM
-		PCA0CPH0 = 6 ;   // (for ~2MHz)		       
-		PCA0CN   = 0x40; // Enable PCA Run Control 
-	} 
-	else if (mode == Q_PUMP_OFF) 
-	{
-		SFRPAGE  = LEGACY_PAGE;
-		PCA0CN   = 0x00 ;   //Turn off the PCA counter
-		//XBR0 = (XBR0 & 0xC7) | 0x00; // Turn off Frequency Output Mode (All PCA0 I/O unavailable at port pins)
-	} 
-	else if (mode == Q_PUMP_ON)
-	{
-		SFRPAGE  = LEGACY_PAGE;
-		PCA0CN   = 0x40 ;   //Turn on the PCA counter
-		//XBR0 = (XBR0 & 0xC7) | 0x08; // Turn on Frequency Output Mode
-	}
-}
-#endif // _PCA_INTERNAL_
 
 /*---- User write function -----------------------------------------*/
-
 #pragma NOAREGS
 
 void user_write(unsigned char index) reentrant
@@ -359,7 +336,6 @@ void user_write(unsigned char index) reentrant
 }
 
 /*---- User read function ------------------------------------------*/
-
 unsigned char user_read(unsigned char index)
 {
    if (index);
@@ -367,7 +343,6 @@ unsigned char user_read(unsigned char index)
 }
 
 /*---- User function called via CMD_USER command -------------------*/
-
 unsigned char user_func(unsigned char *data_in, unsigned char *data_out)
 {
    /* echo input data */
@@ -376,64 +351,17 @@ unsigned char user_func(unsigned char *data_in, unsigned char *data_out)
    return 2;
 }
 
-#ifdef _ADC_INTERNAL_
-/*------------------------------------------------------------------*/
-unsigned int adc_read(unsigned char channel)
-{
-  /* set MUX */
-  SFRPAGE = ADC0_PAGE;
-  AMX0SL = (channel & 0x0F);
-
-  ADC0CF  = 0x80;  // ADC conversion 16 clocks
-  ADC0CF |= 0x00;  // PGA gain = 1 (0x06 = 0.5)
-  AMX0CF = 0x00;   // Input 0..8 in single ended mode
-
-
-  DISABLE_INTERRUPTS;
-
-  AD0INT = 0;
-  AD0BUSY = 1;
-  AD0BUSY = 1;
-
-  while(AD0BUSY == 1);
-
-  ENABLE_INTERRUPTS;
-
-  return (ADC0L + ((ADC0H & 0x03) * 256));
-}
-
-/*------------------------------------------------------------------*/
-float read_voltage(unsigned char channel)
-{
-  unsigned int  i;
-  float         voltage;
-  unsigned long uv_average;
-  signed long vsum_average;
-
-  vsum_average = 0;
-  for (i=0 ; i<100 ; i++) {
-    uv_average = adc_read(channel);
-    vsum_average = (uv_average & 0x0800) ? vsum_average - ((~uv_average + 0x0001) & 0x0FFF) : vsum_average + uv_average;
-    yield();
-  }
-
-  /* convert to V */
-  voltage = (float)  vsum_average / 100;    // averaging
-  voltage = (float)  voltage / 1024.0 * VREF;   // conversion
-
-  return voltage;
-}
-#endif
-
 /*---- User loop function ------------------------------------------*/
 void user_loop(void)
 {
   unsigned char channel;
   float volt, *p;
 
-  p = &(user_data.BiasVGbl);
 
 #ifdef _ADC_INTERNAL_
+  // If order of ADC needs to be as in the structure, lookup table 
+  // has to be implemented (current readout order is hardware driven).
+  p = &(user_data.BiasVGbl);
   for (channel=0 ; channel<N_CHN ; channel++) {
     volt = read_voltage(channel);
 	DISABLE_INTERRUPTS;
