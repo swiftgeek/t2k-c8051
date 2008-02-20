@@ -107,7 +107,7 @@ struct user_data_type {
 	unsigned char BiasEN;	      // Bias Enable Switch control bits	
 	unsigned int AsumDac;
 	unsigned char QpumpDac;
-	unsigned char BiasDac [64];
+/*	unsigned char BiasDac [64];
 	
 	float BiasVGbl;
 	float BiasIGbl;
@@ -134,6 +134,7 @@ struct user_data_type {
 
 	unsigned long BiasVadc[8];
 	unsigned long BiasIadc[8];
+	*/
 }; 
 
 /********************************************************************\
