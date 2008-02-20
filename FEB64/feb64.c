@@ -9,6 +9,7 @@
 					 Use "define" for turning functions ON
 					 Possible defines:
 					 _PCA_INTERNAL_ : Q pump 
+					 _ADC_INTERNAL_ : Misc V/I monitoring
 					 _PCA9539_      : Bias switches
 					 _ADT7486_      : SST Temperature
                 	 _AD5301_       : Q pump DAC
@@ -32,6 +33,9 @@
 #endif
 // #include "AD7718_adc.h"
 
+#define N_CHN 8
+#define VREF       2.4f
+
 /* declare number of sub-addresses to framework */
 unsigned char idata _n_sub_addr = 1;
 
@@ -44,6 +48,9 @@ sbit QPUMP = P0 ^ 4;
 /* Testing the SMBus's Clock */
 sbit Clock = P0 ^ 3;
 
+unsigned int adc_read(unsigned char channel);
+float        read_voltage(unsigned char channel);
+
  
 struct user_data_type xdata user_data;
 
@@ -55,7 +62,15 @@ MSCB_INFO_VAR code vars[] = {
    1, UNIT_BYTE,            0, 0,           0, "BiasEN",       &user_data.BiasEN,      // 3
    2, UNIT_BYTE,            0, 0,           0, "AsumDac",      &user_data.AsumDac,     // 4
    1, UNIT_BYTE,            0, 0,           0, "QpumpDac",     &user_data.QpumpDac,    // 5
-
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "BiasVGbl",   &user_data.BiasVGbl,    // 70 
+   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "BiasIGbl",   &user_data.BiasIGbl,    // 71  
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pAVMon",     &user_data.pAVMon, 	 // 72   
+   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "pAIMon",     &user_data.pAIMon, 	 // 73
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pDVMon",     &user_data.pDVMon, 	 // 74 
+   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "pDIMon",     &user_data.pDIMon, 	 // 75
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "nAVMon",     &user_data.nAVMon, 	 // 76
+   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "nAIMon",     &user_data.nAIMon, 	 // 77
+/*
    1,UNIT_BYTE,             0, 0,           0, "BiasDa1",     &user_data.BiasDac[0],  // 6
    1,UNIT_BYTE,             0, 0,           0, "BiasDa2",     &user_data.BiasDac[1],  // 7
    1,UNIT_BYTE,             0, 0,           0, "BiasDa3",     &user_data.BiasDac[2],  // 8
@@ -122,14 +137,6 @@ MSCB_INFO_VAR code vars[] = {
    1,UNIT_BYTE,             0, 0,           0, "BiasDa64",    &user_data.BiasDac[63], // 69
    
    
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "BiasVGbl",   &user_data.BiasVGbl,    // 70 
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "BiasIGbl",   &user_data.BiasIGbl,    // 71  
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pAVMon",     &user_data.pAVMon, 	 // 72   
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "pAIMon",     &user_data.pAIMon, 	 // 73
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pDVMon",     &user_data.pDVMon, 	 // 74 
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "pDIMon",     &user_data.pDIMon, 	 // 75
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "nAVMon",     &user_data.nAVMon, 	 // 76
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "nAIMon",     &user_data.nAIMon, 	 // 77
    
    4, UNIT_BYTE,			0, 0,			0,  "BiasVADC",  &user_data.BiasVADC, 	 // 78
    4, UNIT_BYTE,			0, 0,			0,  "BiasIADC",  &user_data.BiasIADC, 	 // 79 
@@ -185,6 +192,8 @@ MSCB_INFO_VAR code vars[] = {
    4, UNIT_BYTE,			0, 0,			0,  "BiasIad6",  &user_data.BiasIadc[5], // 123
    4, UNIT_BYTE,			0, 0,			0,  "BiasIad7",  &user_data.BiasIadc[6], // 124
    4, UNIT_BYTE,			0, 0,			0,  "BiasIad8",  &user_data.BiasIadc[7], // 125
+*/
+
    0
 };
 
@@ -209,7 +218,8 @@ void user_init(unsigned char init)
 	add = cur_sub_addr();
 //   /* all outputs are set to open drain on pin1 and pin2 */
    SFRPAGE  = CONFIG_PAGE;
-   P0MDOUT |= 0x20;   // RS485_ENABLE in pushpull
+   // P0MDOUT contains Tx in pushpull
+   P0MDOUT |= 0x20;   // add RS485_ENABLE in pushpull
    P1MDOUT = 0x00;
    P2MDOUT = 0x00;
    
@@ -253,6 +263,18 @@ void user_init(unsigned char init)
 
    /* set-up / initialize circuit components (order is important)*/
 
+#ifdef _ADC_INTERNAL_
+  /* enable ADC */
+  SFRPAGE = ADC0_PAGE;
+  ADC0CN = 0xC0;   // ADC0 Enabled
+  // Tracking on request (ADBUSY)
+  // left-justified
+  ADC0CF  = 0x80;  // ADC conversion 16 clocks
+  ADC0CF |= 0x00;  // PGA gain = 1
+
+  REF0CN = 0x03;    // VREF0 Bias & Buffer enable
+#endif
+
 #ifdef _ADT7486_
    ADT7486A_Init(); //Temperature measurements related initialization
 #endif
@@ -270,7 +292,7 @@ void user_init(unsigned char init)
 	user_data.control1 = 0x41; //Set the control bit for Qpump and the Qpump threashold enable bit
 #endif
 
-#/ifdef _PCA9539_
+#ifdef _PCA9539_
 	PCA9539_Init(); //PCA General I/O (Bais Enables and Backplane Addr) initialization	
 #endif
 
@@ -354,12 +376,72 @@ unsigned char user_func(unsigned char *data_in, unsigned char *data_out)
    return 2;
 }
 
+#ifdef _ADC_INTERNAL_
+/*------------------------------------------------------------------*/
+unsigned int adc_read(unsigned char channel)
+{
+  /* set MUX */
+  SFRPAGE = ADC0_PAGE;
+  AMX0SL = (channel & 0x0F);
+
+  ADC0CF  = 0x80;  // ADC conversion 16 clocks
+  ADC0CF |= 0x00;  // PGA gain = 1 (0x06 = 0.5)
+  AMX0CF = 0x00;   // Input 0..8 in single ended mode
+
+
+  DISABLE_INTERRUPTS;
+
+  AD0INT = 0;
+  AD0BUSY = 1;
+  AD0BUSY = 1;
+
+  while(AD0BUSY == 1);
+
+  ENABLE_INTERRUPTS;
+
+  return (ADC0L + ((ADC0H & 0x03) * 256));
+}
+
+/*------------------------------------------------------------------*/
+float read_voltage(unsigned char channel)
+{
+  unsigned int  i;
+  float         voltage;
+  unsigned long uv_average;
+  signed long vsum_average;
+
+  vsum_average = 0;
+  for (i=0 ; i<100 ; i++) {
+    uv_average = adc_read(channel);
+    vsum_average = (uv_average & 0x0800) ? vsum_average - ((~uv_average + 0x0001) & 0x0FFF) : vsum_average + uv_average;
+    yield();
+  }
+
+  /* convert to V */
+  voltage = (float)  vsum_average / 100;    // averaging
+  voltage = (float)  voltage / 1024.0 * VREF;   // conversion
+
+  return voltage;
+}
+#endif
 
 /*---- User loop function ------------------------------------------*/
 void user_loop(void)
 {
-	signed char chNum = 0;
-//	watchdog_refresh(0);
+  unsigned char channel;
+  float volt, *p;
+
+  p = &(user_data.BiasVGbl);
+
+#ifdef _ADC_INTERNAL_
+  for (channel=0 ; channel<N_CHN ; channel++) {
+    volt = read_voltage(channel);
+	DISABLE_INTERRUPTS;
+      p[channel] = volt;
+    ENABLE_INTERRUPTS;
+  }
+#endif
+
 	
 /*
 	if(user_data.control1 & CONTROL_QPUMP)

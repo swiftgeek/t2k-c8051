@@ -6,15 +6,15 @@
 
   Contents:     LTC1669 DAC user interface
 
-  $Id:$
+  $Id$
 
 \********************************************************************/
 //  need to have FEB64 defined
 
 #ifdef _LTC1669_
 
-#include "../feb64/mscbemb.h"
-#include "../protocols2/SMBus_handler.h"
+#include "mscbemb.h"
+#include "../protocols/SMBus_handler.h"
 #include "LTC1669_dac.h"
 
 void LTC1669_Init(void)

@@ -5,7 +5,7 @@
 
   Contents:     Midas Slow Control Bus protocol commands
 
-  $Id: mscbemb.h 38 2008-01-29 23:19:00Z fgddaq $
+  $Id$
 
 \********************************************************************/
 
@@ -775,7 +775,7 @@ typedef struct {
    unsigned char prefix;        // unit prefix PRFX_xxx
    unsigned char status;        // status (not yet used)
    unsigned char flags;         // flags MSCBF_xxx
-   char name[9];                // name
+   char name[8];                // name
    void *ud;                    // point to user data buffer
 
 #if defined(SCS_1000) || defined(SCS_1001) || defined(SCS_2000)

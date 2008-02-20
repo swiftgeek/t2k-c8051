@@ -5,7 +5,7 @@
 
   Contents:     Midas Slow Control Bus protocol main program
 
-  $Id: mscbmain.c 38 2008-01-29 23:19:00Z fgddaq $
+  $Id$
 
 \********************************************************************/
 
@@ -43,7 +43,7 @@ extern unsigned char idata _n_sub_addr;
 
 extern char code node_name[];
 
-char code svn_rev_main[] = "$Rev: 38 $";
+char code svn_rev_main[] = "$Rev$";
 
 /*------------------------------------------------------------------*/
 
@@ -225,7 +225,7 @@ void setup(void)
    sysclock_init();
 
    /* enable watchdog with default timeout */
-   watchdog_enable(0);
+//   watchdog_enable(0);
 
    /* default LED mode */
    for (i=0 ; i<N_LED ; i++)

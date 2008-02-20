@@ -5,7 +5,7 @@
 
   Contents:     Various utility functions for MSCB protocol
 
-  $Id: mscbutil.c 38 2008-01-29 23:19:00Z fgddaq $
+  $Id$
 
 \********************************************************************/
 

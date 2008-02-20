@@ -8,7 +8,7 @@
   				This chip is used to enable different switches for
 				the Charge Pump and aslo set the Backplane address
 
-  $Id:$
+  $Id$
 
 \********************************************************************/
 //  Need to have FEB64 defined
@@ -16,7 +16,7 @@
 #ifdef _PCA9539_
 
 #include "mscbemb.h"
-#include "../protocols2/SMBus_handler.h"
+#include "../protocols/SMBus_handler.h"
 #include "PCA9539_io.h"
 
 void PCA9539_Init(void)
