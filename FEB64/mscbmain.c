@@ -207,7 +207,7 @@ void setup(void)
 #else
 
    XBR0 = 0x04;                 // Enable RX/TX
-   XBR1 = 0x80;   				  // Pusk SYSCLK to XBR 
+   XBR1 = 0x00;                 //  
    XBR2 = 0x40;                 // Enable crossbar
 
    PRT0CF = 0x01;               // P0.0: TX = Push Pull
@@ -225,7 +225,7 @@ void setup(void)
    sysclock_init();
 
    /* enable watchdog with default timeout */
-  // watchdog_enable(0);
+   watchdog_enable(0);
 
    /* default LED mode */
    for (i=0 ; i<N_LED ; i++)
