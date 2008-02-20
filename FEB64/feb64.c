@@ -223,6 +223,8 @@ void user_init(unsigned char init)
 {
    short int add;
 
+  // PAA- to be removed when if (init) is valid
+  add = init;
 	add = cur_sub_addr();
 
 //
@@ -314,8 +316,6 @@ void user_init(unsigned char init)
 //-----------------------------------------------------------------------------
 
 }
-
-
 /*---- User write function -----------------------------------------*/
 #pragma NOAREGS
 

@@ -10,7 +10,6 @@
 \********************************************************************/
 
 #ifdef _PCA_INTERNAL_
-#define _PCA_INTERNAL_
 
 #include "mscbemb.h"
 #include "pca_internal.h"
