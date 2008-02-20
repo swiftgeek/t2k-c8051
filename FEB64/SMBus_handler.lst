@@ -1,4 +1,4 @@
-C51 COMPILER V8.10   SMBUS_HANDLER                                                         02/19/2008 13:55:18 PAGE 1   
+C51 COMPILER V8.10   SMBUS_HANDLER                                                         02/19/2008 14:38:36 PAGE 1   
 
 
 C51 COMPILER V8.10, COMPILATION OF MODULE SMBUS_HANDLER
@@ -62,7 +62,7 @@ line level    source
   52   1      }
   53          
   54          // --------------------------------------------------------
-C51 COMPILER V8.10   SMBUS_HANDLER                                                         02/19/2008 13:55:18 PAGE 2   
+C51 COMPILER V8.10   SMBUS_HANDLER                                                         02/19/2008 14:38:36 PAGE 2   
 
   55          //  SMBus_Write_CD :
   56          //      Write a single command and data word to the SMBus as a Master
@@ -126,7 +126,7 @@ line level    source
  114   1        while(SI == 0);
  115   1        {
  116   2          //if SI doesn't turn on for longer than the defined SIwaitTime
-C51 COMPILER V8.10   SMBUS_HANDLER                                                         02/19/2008 13:55:18 PAGE 3   
+C51 COMPILER V8.10   SMBUS_HANDLER                                                         02/19/2008 14:38:36 PAGE 3   
 
  117   2          if((time() - startTime) > SMBUS_SI_WAITTIME)
  118   2          {

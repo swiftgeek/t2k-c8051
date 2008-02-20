@@ -55,7 +55,7 @@ MSCB_INFO_VAR code vars[] = {
    1, UNIT_BYTE,            0, 0,           0, "BiasEN",       &user_data.BiasEN,      // 3
    2, UNIT_BYTE,            0, 0,           0, "AsumDac",      &user_data.AsumDac,     // 4
    1, UNIT_BYTE,            0, 0,           0, "QpumpDac",     &user_data.QpumpDac,    // 5
-/*
+
    1,UNIT_BYTE,             0, 0,           0, "BiasDa1",     &user_data.BiasDac[0],  // 6
    1,UNIT_BYTE,             0, 0,           0, "BiasDa2",     &user_data.BiasDac[1],  // 7
    1,UNIT_BYTE,             0, 0,           0, "BiasDa3",     &user_data.BiasDac[2],  // 8
@@ -185,7 +185,6 @@ MSCB_INFO_VAR code vars[] = {
    4, UNIT_BYTE,			0, 0,			0,  "BiasIad6",  &user_data.BiasIadc[5], // 123
    4, UNIT_BYTE,			0, 0,			0,  "BiasIad7",  &user_data.BiasIadc[6], // 124
    4, UNIT_BYTE,			0, 0,			0,  "BiasIad8",  &user_data.BiasIadc[7], // 125
-  */
    0
 };
 
@@ -271,7 +270,7 @@ void user_init(unsigned char init)
 	user_data.control1 = 0x41; //Set the control bit for Qpump and the Qpump threashold enable bit
 #endif
 
-#ifdef _PCA9539_
+#/ifdef _PCA9539_
 	PCA9539_Init(); //PCA General I/O (Bais Enables and Backplane Addr) initialization	
 #endif
 

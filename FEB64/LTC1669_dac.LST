@@ -1,4 +1,4 @@
-C51 COMPILER V8.10   LTC1669_DAC                                                           02/19/2008 13:55:18 PAGE 1   
+C51 COMPILER V8.10   LTC1669_DAC                                                           02/19/2008 14:38:36 PAGE 1   
 
 
 C51 COMPILER V8.10, COMPILATION OF MODULE LTC1669_DAC
@@ -24,7 +24,7 @@ line level    source
   14          #ifdef _LTC1669_
   15          
   16          #include "../feb64/mscbemb.h"
-  17          #include "../protocols/SMBus_handler.h"
+  17          #include "../protocols2/SMBus_handler.h"
   18          #include "LTC1669_dac.h"
   19          
   20          void LTC1669_Init(void)
@@ -62,7 +62,7 @@ line level    source
   52   2      //              if(!AA) return;
   53   2                      SMBus_Stop();
   54   2              }
-C51 COMPILER V8.10   LTC1669_DAC                                                           02/19/2008 13:55:18 PAGE 2   
+C51 COMPILER V8.10   LTC1669_DAC                                                           02/19/2008 14:38:36 PAGE 2   
 
   55   1      }
   56          #endif

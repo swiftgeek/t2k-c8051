@@ -5,13 +5,7 @@ C:\Docs\Projects\t2k\c8051\FEB64\feb64.obj,
 C:\Docs\Projects\t2k\c8051\FEB64\mscbmain.obj,
 C:\Docs\Projects\t2k\c8051\FEB64\mscbutil.obj,
 C:\Docs\Projects\t2k\c8051\FEB64\PCA9539_io.obj,
-C:\Docs\Projects\t2k\c8051\protocols2\SMBus_handler.obj  TO C:\Docs\Projects\t2k\c8051\FEB64\feb64 RS(256) PL(68) PW(78) 
+C:\Docs\Projects\t2k\c8051\protocols2\SMBus_handler.obj  TO C:\Docs\Projects\t2k\c8051\FEB64\feb64 RS(256) PL(68) PW(78)  
 
-*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
-    SEGMENT: ?PR?CUR_SUB_ADDR?MSCBMAIN
-
-*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
-    SEGMENT: ?PR?_DELAY_MS?MSCBUTIL
-
-Program Size: data=130.0 xdata=423 code=10309
-LINK/LOCATE RUN COMPLETE.  2 WARNING(S),  0 ERROR(S)
+Program Size: data=122.0 xdata=423 code=10302
+LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)
