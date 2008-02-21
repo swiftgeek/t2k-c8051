@@ -12,14 +12,15 @@
 					 _ADC_INTERNAL_ : Misc V/I monitoring
 					 _PCA9539_      : Bias switches
 					 _ADT7486_      : SST Temperature
-                	 _AD5301_       : Q pump DAC
+                _AD5301_       : Q pump DAC
+define(_PCA9539_)  define(_LTC1669_) define(_SMB_PROTOCOL_) 
 
-  $Id$
+  $Id:$
 
 \********************************************************************/
 //  need to have FEB64 defined.
 
-#include <stdio.h>
+#include <stdio.h> 
 #include <math.h>
 #include "mscbemb.h"
 #include "feb64.h"
@@ -44,7 +45,8 @@
 // #include "AD5301_dac.h"
 // #include "AD7718_adc.h"
 
-#define N_CHN 8
+// Number of active internal ADCs
+#define INTERNAL_N_CHN 8
 
 /* declare number of sub-addresses to framework */
 unsigned char idata _n_sub_addr = 1;
@@ -290,7 +292,8 @@ void user_init(unsigned char init)
 //-----------------------------------------------------------------------------
 #ifdef _LTC1669_	
   LTC1669_Init(); //I2C DAC initialization (D_CH_PUMP)
-  user_data.control1 = 0x41; //Set the control bit for Qpump and the Qpump threashold enable bit
+  user_data.control1 = 0x41; //Set the control bit for Qpump and the Qpump threshold enable bit
+  user_data.QpumpDac = 0xFF; //Checking the Qpump_dac	
 #endif
 
 //
@@ -298,6 +301,7 @@ void user_init(unsigned char init)
 //-----------------------------------------------------------------------------
 #ifdef _PCA9539_
   PCA9539_Init(); //PCA General I/O (Bais Enables and Backplane Addr) initialization	
+  user_data.control1 |= 0x80; //Checking the switches dac	
 #endif
 
 //#ifdef _AD5301_
@@ -355,22 +359,21 @@ unsigned char user_func(unsigned char *data_in, unsigned char *data_out)
 void user_loop(void)
 {
   unsigned char channel;
-  float volt, *p;
-
+  float volt, *uiMonitoring;
 
 #ifdef _ADC_INTERNAL_
-  // If order of ADC needs to be as in the structure, lookup table 
-  // has to be implemented (current readout order is hardware driven).
-  p = &(user_data.BiasVGbl);
-  for (channel=0 ; channel<N_CHN ; channel++) {
+//
+// Internal ADCs monitoring Voltages and Currents
+//-----------------------------------------------------------------------------
+  uiMonitoring = &(user_data.BiasVGbl);
+  for (channel=0 ; channel<INTERNAL_N_CHN ; channel++) {
     volt = read_voltage(channel);
-	DISABLE_INTERRUPTS;
-      p[channel] = volt;
+	 DISABLE_INTERRUPTS;		
+	 uiMonitoring [internal_adc_map[channel]] = volt;		
     ENABLE_INTERRUPTS;
   }
 #endif
 
-	
 /*
 	if(user_data.control1 & CONTROL_QPUMP)
 	{
@@ -380,8 +383,21 @@ void user_loop(void)
 	{
 		pca_operation(Q_PUMP_OFF);
 	}
-    
-	//Update the Charge Pump Threshold voltage
+   	
+*/
+	//Added to turn on and off all the channels	
+	if( user_data.control1 & CONTROL_CHANNEL )
+	{
+    	// chNum = 0; 
+
+		#ifdef _PCA9539_
+   		PCA9539_Cmd(Bias_ALL_LOW);	
+   		PCA9539_Cmd(Bias_ALL_HIGH);	
+		#endif
+	}
+
+
+//Update the Charge Pump Threshold voltage
 	if(user_data.control1 & CONTROL_D_CHPUMP)
 	{
 		#ifdef _LTC1669_	
@@ -389,19 +405,7 @@ void user_loop(void)
 		#endif 
 	}
 	
-
-	//Added to turn on and off all the channels	
-	if( user_data.control1 & CONTROL_CHANNEL )
-	{
-    	chNum = 0; 
-
-		#ifdef _PCA9539_
-   		PCA9539_Cmd(Bias_ALL_LOW);	
-		#endif
-	}
-*/
-
-delay_ms(10);
+ delay_ms(10);
 
 }
 

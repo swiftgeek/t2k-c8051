@@ -43,7 +43,6 @@ unsigned int adc_read(unsigned char channel)
 
   AD0INT = 0;
   AD0BUSY = 1;
-  AD0BUSY = 1;
 
   while(AD0BUSY == 1);
 
@@ -58,17 +57,19 @@ float read_voltage(unsigned char channel)
   unsigned int  i;
   float         voltage;
   unsigned long uv_average;
-  signed long vsum_average;
+  signed long   vsum_average;
 
   vsum_average = 0;
-  for (i=0 ; i<100 ; i++) {
+
+// Averaging on 10 measurements for now.
+  for (i=0 ; i<10 ; i++) {
     uv_average = adc_read(channel);
     vsum_average = (uv_average & 0x0800) ? vsum_average - ((~uv_average + 0x0001) & 0x0FFF) : vsum_average + uv_average;
     yield();
   }
 
   /* convert to V */
-  voltage = (float)  vsum_average / 100;    // averaging
+  voltage = (float)  vsum_average / 10;         // averaging
   voltage = (float)  voltage / 1024.0 * VREF;   // conversion
 
   return voltage;

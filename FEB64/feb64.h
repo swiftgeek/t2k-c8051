@@ -15,6 +15,13 @@
 #ifndef  _FEB64_H
 #define  _FEB64_H
 
+// Mapping of the channels for the FEB64 card
+unsigned char code internal_adc_map[8] = {0,1,4,2,6,7,3,5};
+
+// Device Address maping
+#define ADDR_LTC1669   0x20
+
+
 // charge pump state for PCA control
 #define Q_PUMP_INIT          1           
 #define Q_PUMP_OFF           2           
@@ -26,30 +33,30 @@
 //  
 // -------------------- Control Register Map -----------------------------
 // Bit: Name        Default Description     
-// [MSB]
-//  7 : CONTROL_CHANNEL (0) (force CPU idle)    			 1 : enable
-//  6 : (not assigned)  X
-//  5 : CONTROL_ISENSOR 1   I measurement       0 : disable, 1 : enable
-//  4 : CONTROL_TSENSOR 1   T measurement       0 : disable, 1 : enable
-//  3 : (not assigned)  X
-//  2 : CONTROL_IB_CTL  0   Int-bias cntrl mode 0 : disable, 1 : enable
-//  1 : CONTROL_EXT_IN  0   Ext/In bias switch  0 : INTRNL,  1 : EXTRNL   
-//  0 : CONTROL_QPUMP   0   Internal Q-Pump     0 : disable, 1 : enable
 // [LSB]
+//  0 : CONTROL_QPUMP   0   Internal Q-Pump     0 : disable, 1 : enable
+//  1 : CONTROL_EXT_IN  0   Ext/In bias switch  0 : INTRNL,  1 : EXTRNL   
+//  2 : CONTROL_IB_CTL  0   Int-bias cntrl mode 0 : disable, 1 : enable
+//  3 : (not assigned)  X
+//  4 : CONTROL_TSENSOR 1   T measurement       0 : disable, 1 : enable
+//  5 : CONTROL_ISENSOR 1   I measurement       0 : disable, 1 : enable
+//  6 : (not assigned)  X
+//  7 : CONTROL_CHANNEL (0) (force CPU idle)    			 1 : enable
+// [MSB]
 // -----------------------------------------------------------------------
 //
 // -------------------- Status Register Map ------------------------------
 // Bit: Name                Description     
-// [MSB]
-//  7 : STATUS_RAMP_DOWN    HV Rumping down     0 : idle,    1 : processing
-//  6 : STATUS_RAMP_UP      HV Rumping up       0 : idle,    1 : processing
-//  5 : STATUS_ILIMIT       Current Limit       0 :          1 : observed
-//  4 : (not assigned))
-//  3 : STATUS_IB_CTL       INT bias control    0 : disable, 1 : enable
-//  2 : STATUS_EXT_BIAS     EXT bias            0 : disable, 1 : enable
-//  1 : STATUS_INT_BIAS     INT bias            0 : disable, 1 : enable
-//  0 : STATUS_QPUMP        Q-Pump status       0 : stopped, 1 : running
 // [LSB]
+//  0 : STATUS_QPUMP        Q-Pump status       0 : stopped, 1 : running
+//  1 : STATUS_INT_BIAS     INT bias            0 : disable, 1 : enable
+//  2 : STATUS_EXT_BIAS     EXT bias            0 : disable, 1 : enable
+//  3 : STATUS_IB_CTL       INT bias control    0 : disable, 1 : enable
+//  4 : (not assigned))
+//  5 : STATUS_ILIMIT       Current Limit       0 :          1 : observed
+//  6 : STATUS_RAMP_UP      HV Rumping up       0 : idle,    1 : processing
+//  7 : STATUS_RAMP_DOWN    HV Rumping down     0 : idle,    1 : processing
+// [MSB]
 // -----------------------------------------------------------------------
 //
 // [Abbreviations]
