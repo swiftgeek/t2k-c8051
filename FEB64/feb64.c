@@ -15,7 +15,7 @@
                 _AD5301_       : Q pump DAC
 define(_PCA9539_)  define(_LTC1669_) define(_SMB_PROTOCOL_) 
 
-  $Id:$
+  $Id$
 
 \********************************************************************/
 //  need to have FEB64 defined.
@@ -51,7 +51,8 @@ define(_PCA9539_)  define(_LTC1669_) define(_SMB_PROTOCOL_)
 /* declare number of sub-addresses to framework */
 unsigned char idata _n_sub_addr = 1;
 
-char code node_name[] = "FEB64";
+char code  node_name[] = "FEB64";
+char idata svn_rev_code[] = "$Rev$";
 
 /* Charge Pump */
 char qpump;
@@ -223,7 +224,18 @@ extern SYS_INFO sys_info;
 /*---- User init function ------------------------------------------*/
 void user_init(unsigned char init)
 {
-   short int add;
+   char i, add;
+
+  /* Format the SVN and store this code SVN revision into the system */
+  for (i=0;i<4;i++) {
+  	 if (svn_rev_code[6+i] < 48) {
+	    svn_rev_code[6+i] = '0';
+    }
+  }
+   sys_info.svn_revision = (svn_rev_code[6]-'0')*1000+
+                           (svn_rev_code[7]-'0')*100+
+                           (svn_rev_code[8]-'0')*10+
+                           (svn_rev_code[9]-'0');
 
   // PAA- to be removed when if (init) is valid
   add = init;
@@ -391,6 +403,7 @@ void user_loop(void)
     	// chNum = 0; 
 
 		#ifdef _PCA9539_
+        //-PAA- Toggle switches for test
    		PCA9539_Cmd(Bias_ALL_LOW);	
    		PCA9539_Cmd(Bias_ALL_HIGH);	
 		#endif
