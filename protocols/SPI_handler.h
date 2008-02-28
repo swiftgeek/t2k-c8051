@@ -1,26 +1,24 @@
 /**********************************************************************************\
-  Name:         SPI_handler.c
-  Created by:   Brian Lee                Jun/14/2007
+  Name:         SPI_handler.h
+  Created by:   Brian           Feb/25/2008
 
 
-  Contents:     SPI protocol for T2K-FGD experiment
+  Contents:     SPI protocol
 
-  Version:    Rev 1.0
-
-  Last updated:
 
   $Id$
 \**********************************************************************************/
-//  need to have T2KASUM defined
 
 #ifndef  _SPI_HANDLER_H
 #define  _SPI_HANDLER_H
 
-#define SPI_DELAY 1 //in us
+#define SPI_DELAY 50 //in us
 
 void SPI_Init(void);
 void SPI_ClockOnce(void);
 void SPI_WriteByte(unsigned char dataToSend);
+void SPI_WriteUInt(unsigned int  dataToSend);
 unsigned char SPI_ReadByte(void);
+unsigned int  SPI_ReadUInt(void);
 
 #endif

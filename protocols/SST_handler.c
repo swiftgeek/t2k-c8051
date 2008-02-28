@@ -8,7 +8,7 @@
   Version:    Rev 1.2
 
   Last updated: Jun/08/2007
-          - Finished Commenting (Rev 1.0 Completed)
+        - Finished Commenting (Rev 1.0 Completed)
         - Got rid of exp function, replaced with different and simpler algorithm
         - Separated some funtions to another file called ADT7486A_tsensor.c and .h
           (Rev 1.1)
@@ -21,21 +21,21 @@
 // --------------------------------------------------------
 //  Include files
 // --------------------------------------------------------
-#include "../asum/mscbemb.h"
+#include "../feb64/mscbemb.h"
 #include "SST_handler.h"
 
 /* SST related variables */
 sbit SST = MSCB_SST1; //This variable chooses between SST lines (e.g. SST1, SST2, etc)
-				 //Default to SST1
-				 //SFR definitions of SST1 and SST2 ports are defined in mscbemb.h
+                      //Default to SST1
+                      //SFR definitions of SST1 and SST2 ports are defined in mscbemb.h
 
 #ifndef SST_ClientResponse
 sbit SST_ClientResponse = SST1_ClientResponse; //Response read through
-											   			  //comparator output
+                                               //comparator output
 #endif
 
 /* CRC-8 Table for Polynomial x^8 + x^2 + x^1 + 1 (used for FCS in SST Protocol) */
-unsigned char code FCS_data[] = {
+unsigned char xdata FCS_data[] = {
   0x00, 0x07, 0x0e, 0x09, 0x1c, 0x1b, 0x12, 0x15,
   0x38, 0x3f, 0x36, 0x31, 0x24, 0x23, 0x2a, 0x2d,
   0x70, 0x77, 0x7e, 0x79, 0x6c, 0x6b, 0x62, 0x65,
@@ -104,9 +104,9 @@ void SST_Init(void)
     void
 
 \**********************************************************************************/
-{	
-	//Clear the SST signals (drive Low for a certain period)
-	SST_Clear();
+{ 
+  //Clear the SST signals (drive Low for a certain period)
+  SST_Clear();
 }
 
 void SST_Clear(void)
@@ -177,7 +177,7 @@ void SST_DrvLow(void)
   SST = 0; //drive the rest of T_BIT low
   delay_us(T_BIT - T_H0);
 }
-  
+
 unsigned char SST_DrvClientResponse(void)
 /**********************************************************************************\
 
@@ -198,10 +198,10 @@ unsigned char SST_DrvClientResponse(void)
 {
   // Drive SST to logic "0" (high 1/4, low 3/4) to let Client
   // drive SST to its desired state
-  P2MDOUT |= 0x01; //put SST line to push-pull mode
+ // P3MDOUT |= 0x08; //put SST (SST_DRV) line to push-pull mode
   SST = 1; //Drv high (originator drives SST bus high to toggle client's response
-
-  P2MDOUT &= 0xFE; //put back to open-drain to listen to client's response
+  delay_us (1);
+  SST = 0;
 
   delay_us(T_BIT / 2); //delay for half of T_BIT time
 
@@ -238,7 +238,7 @@ void SST_WriteByte(unsigned char datByte)
 \**********************************************************************************/
 {
   //declare local variables
-  unsigned char toBeDrv = 0;
+  unsigned char xdata toBeDrv = 0;
   int i = 0;
 
   for(i = 7; i >= 0; i--) //8bits in 1 byte
@@ -261,9 +261,9 @@ void SST_WriteByte(unsigned char datByte)
 
 unsigned char SST_ReadByte(void)
 {
-  unsigned char din = 0;
-  unsigned char dataReceived = 0;
-  signed char j = 0;
+  unsigned char xdata din = 0;
+  unsigned char xdata dataReceived = 0;
+  signed char xdata j = 0;
 
   for(j = 7; j >= 0; j--) //writeFCS, 1byte
   {

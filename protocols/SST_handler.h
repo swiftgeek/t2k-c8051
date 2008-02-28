@@ -35,4 +35,3 @@ void SST_DrvLow(void);
 unsigned char SST_DrvClientResponse(void);
 
 #endif
-
