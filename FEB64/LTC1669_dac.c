@@ -22,9 +22,9 @@ void LTC1669_Init(void)
 	SMBus_Init(); // SMBus initialization (should be called after pca_operation)
 }
 
-void LTC1669_Cmd(unsigned char addr, unsigned char datMSB, unsigned char datLSB, bit flag)
+void LTC1669_Cmd1(unsigned char addr, unsigned int input, bit flag)
 {
-	unsigned char readValue = 0;
+	unsigned char xdata readValue = 0;
 	watchdog_refresh(0);
 	if(flag == LTC1669_READ) //reading
 	{
@@ -33,8 +33,8 @@ void LTC1669_Cmd(unsigned char addr, unsigned char datMSB, unsigned char datLSB,
 		//the read operation and if the Write has been passed in the master would be ready for write operation
 		
 		SMBus_Start(); //make start bit
-		SMBus_WriteByte(addr, READ); //send address with a Read flag on 	    
-		if (!AA) return; // No slave ACK. Address is wrong or slave is missing.	    
+		SMBus_WriteByte(addr, READ_CYCLE); //send address with a Read flag on 	    
+//		if (!AA) return; // No slave ACK. Address is wrong or slave is missing.	    
 		readValue = SMBus_ReadByte();  // set data word
 		//store to mscb user_data here
 	    SMBus_Stop();
@@ -42,13 +42,13 @@ void LTC1669_Cmd(unsigned char addr, unsigned char datMSB, unsigned char datLSB,
 	else //writing
 	{		
 		SMBus_Start();
-		SMBus_WriteByte(addr, WRITE);
+		SMBus_WriteByte(addr, WRITE_CYCLE);
 //		if(!AA) return;
-		SMBus_WriteByte(Command, CMD);
+		SMBus_WriteByte(Command, CMD_CYCLE);
 //		if(!AA) return;
-		SMBus_WriteByte(datLSB, VAL);
+		SMBus_WriteByte(input, WRITE_CYCLE);
 //		if(!AA) return;
-		SMBus_WriteByte(datMSB, VAL);
+		SMBus_WriteByte((input>>8), WRITE_CYCLE);
 //		if(!AA) return;
 		SMBus_Stop();
 	}

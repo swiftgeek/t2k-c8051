@@ -18,6 +18,7 @@
 
 extern SYS_INFO sys_info;               // for eeprom functions
 extern MSCB_INFO_VAR *variables;
+//extern MSCB_INFO_VAR *xdataStruct
 
 #endif
 

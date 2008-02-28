@@ -9,8 +9,6 @@
 
 \********************************************************************/
 
-#ifdef _PCA_INTERNAL_
-
 #include "mscbemb.h"
 #include "pca_internal.h"
 
@@ -40,5 +38,5 @@ void pca_operation(unsigned char mode)
 		SFRPAGE  = LEGACY_PAGE;
 		PCA0CN   = 0x40 ;   //Turn on the PCA counter
     }
+	
 }
-#endif

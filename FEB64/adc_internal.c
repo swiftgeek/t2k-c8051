@@ -9,8 +9,6 @@
 
 \********************************************************************/
 
-#ifdef _ADC_INTERNAL_
-
 #include "mscbemb.h"
 #include "adc_internal.h"
 
@@ -24,7 +22,7 @@ void adc_internal_init(void)
   ADC0CF  = 0x80;  // ADC conversion 16 clocks
   ADC0CF |= 0x00;  // PGA gain = 1
 
-  REF0CN = 0x03;   // VREF0 Bias & Buffer enable
+  REF0CN = 0x07;   // Temperature, VREF0 Bias & Buffer enable
 }
 
 /*------------------------------------------------------------------*/
@@ -34,12 +32,13 @@ unsigned int adc_read(unsigned char channel)
   SFRPAGE = ADC0_PAGE;
   AMX0SL = (channel & 0x0F);
 
-  ADC0CF  = 0x80;  // ADC conversion 16 clocks
-  ADC0CF |= 0x00;  // PGA gain = 1 (0x06 = 0.5)
-  AMX0CF = 0x00;   // Input 0..8 in single ended mode
+  AMX0CF = 0x00;   // Input 0.. 7 + Temperature in single ended mode
 
 
   DISABLE_INTERRUPTS;
+
+  AD0INT = 0;
+  AD0BUSY = 1;
 
   AD0INT = 0;
   AD0BUSY = 1;
@@ -48,31 +47,28 @@ unsigned int adc_read(unsigned char channel)
 
   ENABLE_INTERRUPTS;
 
-  return (ADC0L + ((ADC0H & 0x03) * 256));
+  return (((ADC0H & 0x03) << 8) + ADC0L);
 }
 
 /*------------------------------------------------------------------*/
 float read_voltage(unsigned char channel)
 {
-  unsigned int  i;
-  float         voltage;
-  unsigned long uv_average;
-  signed long   vsum_average;
-
-  vsum_average = 0;
+  unsigned int  xdata i;
+  float         xdata voltage;
+  unsigned int  xdata rawbin;
+  unsigned long xdata rawsum = 0;
 
 // Averaging on 10 measurements for now.
   for (i=0 ; i<10 ; i++) {
-    uv_average = adc_read(channel);
-    vsum_average = (uv_average & 0x0800) ? vsum_average - ((~uv_average + 0x0001) & 0x0FFF) : vsum_average + uv_average;
+    rawbin = adc_read(channel);
+    rawsum += rawbin;
     yield();
   }
 
   /* convert to V */
-  voltage = (float)  vsum_average / 10;         // averaging
-  voltage = (float)  voltage / 1024.0 * VREF;   // conversion
+  voltage = (float)  rawsum / 10;              // averaging
+  voltage = (float)  voltage / 1024.0 * VREF;  // conversion
 
   return voltage;
 }
-#endif
 

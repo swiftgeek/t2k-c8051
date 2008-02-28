@@ -39,6 +39,7 @@ unsigned char user_read(unsigned char index);
 void user_loop(void);
 
 extern MSCB_INFO_VAR *variables;
+//extern MSCB_INFO_VAR *xdataStruct
 extern unsigned char idata _n_sub_addr;
 
 extern char code node_name[];

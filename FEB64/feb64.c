@@ -1,36 +1,45 @@
 /********************************************************************\
   Name:         feb64.c
-  Created by:   Bahman Sotoodian  							Feb/11/2008
+  Created by:   Bahman Sotoodian                Feb/11/2008
 
 
   Contents:     Application specific (user) part of
                 Midas Slow Control Bus protocol
                 for FEB64 board
-					 Use "define" for turning functions ON
-					 Possible defines:
-					 _PCA_INTERNAL_ : Q pump 
-					 _ADC_INTERNAL_ : Misc V/I monitoring
-					 _PCA9539_      : Bias switches
-					 _ADT7486_      : SST Temperature
-                _AD5301_       : Q pump DAC
-define(_PCA9539_)  define(_LTC1669_) define(_SMB_PROTOCOL_) 
 
-  $Id$
+               Use "define" for turning functions ON
+               Possible defines:
+       SMB      _PCA9539_      : Bias switches and Backplane readback
+       SST      _ADT7486A_     : SST Temperature
+       SMB      _LTC1669_      : Q pump DAC
+       SPI      _LTC1665_      : SiPm_DACs
+       SPI      _LTC2600_      : Asum DAC
+Memory usage:  
+define(FEB64) define(_SPI_PROTOCOL_) define(_LTC1665_) define(_SMB_PROTOCOL_) define (_LTC1669_)  define(_LTC2600_) define(_SST_PROTOCOL_) define(_ADT7486A_)
+Program Size: data=139.6 xdata=274 code=13497
 
+CODE: 16KB(0x4000), paging in 512B(0x200) 
+CODE(?PR?UPGRADE?MSCBMAIN (0x3A00))  leave some gap (0x200)
+
+$Id$
 \********************************************************************/
-//  need to have FEB64 defined.
 
-#include <stdio.h> 
+#include <stdio.h>
 #include <math.h>
 #include "mscbemb.h"
 #include "feb64.h"
 
-#ifdef _ADC_INTERNAL_
-#include "adc_internal.h"
-#endif
-#ifdef _PCA_INTERNAL_
 #include "pca_internal.h"
-#endif
+#include "adc_internal.h"
+
+// Bias DAC position 
+#define NCHANNEL_BIAS     64
+#define FIRST_BIAS        16
+#define LAST_BIAS        NCHANNEL_BIAS + FIRST_BIAS
+
+//  UIReg 
+bit     biasChange;
+unsigned char xdata biasIndex;
 
 #ifdef _PCA9539_
 #include "PCA9539_io.h"
@@ -40,181 +49,187 @@ define(_PCA9539_)  define(_LTC1669_) define(_SMB_PROTOCOL_)
 #include "LTC1669_dac.h"
 #endif
 
+#ifdef _LTC1665_
+#include "LTC1665_dac.h"
+#endif
 
-// #include "ADT7486A_tsensor.h"
-// #include "AD5301_dac.h"
-// #include "AD7718_adc.h"
+#ifdef _LTC2600_
+#include "LTC2600_dac.h"
+#endif
 
-// Number of active internal ADCs
-#define INTERNAL_N_CHN 8
+#ifdef  _ADT7486A_
+#include "ADT7486A_tsensor.h"
+#define FIRST_INDEX	89
+bit     doTemperature;
+#endif
 
-/* declare number of sub-addresses to framework */
-unsigned char idata _n_sub_addr = 1;
 
+//
+// Global declarations
+//-----------------------------------------------------------------------------
 char code  node_name[] = "FEB64";
 char idata svn_rev_code[] = "$Rev$";
+// declare globally the number of sub-addresses to framework
+unsigned char idata _n_sub_addr = 1;
 
-/* Charge Pump */
-char qpump;
-sbit QPUMP = P0 ^ 4;         
+// For time base tasks (see in loop)
+unsigned long xdata UIcurrentTime=0;
+unsigned long xdata  TcurrentTime=0;
 
-/* Testing the SMBus's Clock */
-sbit Clock = P0 ^ 3;
+//
+// User Data structure declaration
+//-----------------------------------------------------------------------------
 
-unsigned int adc_read(unsigned char channel);
-float        read_voltage(unsigned char channel);
 
- 
-struct user_data_type xdata user_data;
-
-/* User Data structure declaration */
 MSCB_INFO_VAR code vars[] = {
-   1, UNIT_BYTE,            0, 0,           0, "Control1",     &user_data.control1,    // 0
-   1, UNIT_BYTE,            0, 0,           0, "Control2",     &user_data.control2,    // 1   
-   1, UNIT_BYTE,            0, 0,           0, "Status",       &user_data.status,      // 2
-   1, UNIT_BYTE,            0, 0,           0, "BiasEN",       &user_data.BiasEN,      // 3
-   2, UNIT_BYTE,            0, 0,           0, "AsumDac",      &user_data.AsumDac,     // 4
-   1, UNIT_BYTE,            0, 0,           0, "QpumpDac",     &user_data.QpumpDac,    // 5
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "BiasVGbl",   &user_data.BiasVGbl,    // 70 
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "BiasIGbl",   &user_data.BiasIGbl,    // 71  
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pAVMon",     &user_data.pAVMon, 	 // 72   
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "pAIMon",     &user_data.pAIMon, 	 // 73
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pDVMon",     &user_data.pDVMon, 	 // 74 
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "pDIMon",     &user_data.pDIMon, 	 // 75
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "nAVMon",     &user_data.nAVMon, 	 // 76
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "nAIMon",     &user_data.nAIMon, 	 // 77
-/*
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa1",     &user_data.BiasDac[0],  // 6
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa2",     &user_data.BiasDac[1],  // 7
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa3",     &user_data.BiasDac[2],  // 8
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa4",     &user_data.BiasDac[3],  // 9
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa5",     &user_data.BiasDac[4],  // 10
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa6",     &user_data.BiasDac[5],  // 11
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa7",     &user_data.BiasDac[6],  // 12
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa8",     &user_data.BiasDac[7],  // 13
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa9",     &user_data.BiasDac[8],  // 14
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa10",    &user_data.BiasDac[9],  // 15
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa11",    &user_data.BiasDac[10], // 16
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa12",    &user_data.BiasDac[11], // 17
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa13",    &user_data.BiasDac[12], // 18
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa14",    &user_data.BiasDac[13], // 19
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa15",    &user_data.BiasDac[14], // 20
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa16",    &user_data.BiasDac[15], // 21
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa17",    &user_data.BiasDac[16], // 22
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa18",    &user_data.BiasDac[17], // 23
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa19",    &user_data.BiasDac[18], // 24
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa20",    &user_data.BiasDac[19], // 25
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa21",    &user_data.BiasDac[20], // 26
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa22",    &user_data.BiasDac[21], // 27 
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa23",    &user_data.BiasDac[22], // 28
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa24",    &user_data.BiasDac[23], // 29
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa25",    &user_data.BiasDac[24], // 30
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa26",    &user_data.BiasDac[25], // 31
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa27",    &user_data.BiasDac[26], // 32
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa28",    &user_data.BiasDac[27], // 33
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa29",    &user_data.BiasDac[28], // 34
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa30",    &user_data.BiasDac[29], // 35
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa31",    &user_data.BiasDac[30], // 36
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa32",    &user_data.BiasDac[31], // 37
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa33",    &user_data.BiasDac[32], // 38
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa34",    &user_data.BiasDac[33], // 39
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa35",    &user_data.BiasDac[34], // 40
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa36",    &user_data.BiasDac[35], // 41
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa37",    &user_data.BiasDac[36], // 42
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa38",    &user_data.BiasDac[37], // 43
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa39",    &user_data.BiasDac[38], // 44
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa40",    &user_data.BiasDac[39], // 45
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa41",    &user_data.BiasDac[40], // 46
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa42",    &user_data.BiasDac[41], // 47  
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa43",    &user_data.BiasDac[42], // 48
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa44",    &user_data.BiasDac[43], // 49
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa45",    &user_data.BiasDac[44], // 50
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa46",    &user_data.BiasDac[45], // 51
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa47",    &user_data.BiasDac[46], // 52
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa48",    &user_data.BiasDac[47], // 53
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa49",    &user_data.BiasDac[48], // 54
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa50",    &user_data.BiasDac[49], // 55
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa51",    &user_data.BiasDac[50], // 56
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa52",    &user_data.BiasDac[51], // 57
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa53",    &user_data.BiasDac[52], // 58
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa54",    &user_data.BiasDac[53], // 59
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa55",    &user_data.BiasDac[54], // 60
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa56",    &user_data.BiasDac[55], // 61
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa57",    &user_data.BiasDac[56], // 62
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa58",    &user_data.BiasDac[57], // 63
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa59",    &user_data.BiasDac[58], // 64
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa60",    &user_data.BiasDac[59], // 65
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa61",    &user_data.BiasDac[60], // 66
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa62",    &user_data.BiasDac[61], // 67
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa63",    &user_data.BiasDac[62], // 68
-   1,UNIT_BYTE,             0, 0,           0, "BiasDa64",    &user_data.BiasDac[63], // 69
-   
-   
-   
-   4, UNIT_BYTE,			0, 0,			0,  "BiasVADC",  &user_data.BiasVADC, 	 // 78
-   4, UNIT_BYTE,			0, 0,			0,  "BiasIADC",  &user_data.BiasIADC, 	 // 79 
-   4, UNIT_BYTE,			0, 0,			0,  "pAVADC",    &user_data.pAVADC, 	 // 80
-   4, UNIT_BYTE,			0, 0,			0,  "pAIADC",    &user_data.pAIADC, 	 // 81 
-   4, UNIT_BYTE,			0, 0,			0,  "pDVADC",    &user_data.pDVADC, 	 // 82
-   4, UNIT_BYTE,			0, 0,			0,  "pDIADC",    &user_data.pDIADC, 	 // 83
-   4, UNIT_BYTE,			0, 0,			0,  "nAVADC",    &user_data.nAVADC, 	 // 84 
-   4, UNIT_BYTE,	   		0, 0,			0,  "nAIADC",    &user_data.nAIADC, 	 // 85 
-   
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp1",       &user_data.Temp[0],    // 86
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp2",       &user_data.Temp[1],    // 87  
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp3",       &user_data.Temp[2],    // 88  
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp4",       &user_data.Temp[3],    // 89  
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp5",       &user_data.Temp[4],    // 90  
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp6",       &user_data.Temp[5],    // 91  
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp7",       &user_data.Temp[6],    // 92  
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp8",       &user_data.Temp[7],    // 93  
+   1, UNIT_BYTE,            0, 0,           0, "Control1",   &user_data.control1, // 0
+   1, UNIT_BYTE,            0, 0,           0, "Control2",   &user_data.control2, // 1
+   1, UNIT_BYTE,            0, 0,           0, "Status",     &user_data.status,   // 2
+   1, UNIT_BYTE,            0, 0,           0, "swBiasEN",   &user_data.swBiasEN, // 3
+   2, UNIT_BYTE,            0, 0,           0, "rBPlane",    &user_data.rBPlane,  //
+   2, UNIT_BYTE,            0, 0,           0, "rAsum",      &user_data.rAsum,    // 4
+   2, UNIT_BYTE,            0, 0,           0, "rQpump",     &user_data.rQpump,   // 5
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBias",      &user_data.VBias,    // 70
+   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBias",      &user_data.IBias,    // 71
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pAVMon",     &user_data.pAVMon,    // 72
+   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "pAIMon",     &user_data.pAIMon,    // 73
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pDVMon",     &user_data.pDVMon,    // 74
+   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "pDIMon",     &user_data.pDIMon,    // 75
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "nAVMon",     &user_data.nAVMon,    // 76
+   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "nAIMon",     &user_data.nAIMon,    // 77
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "uCTemp",     &user_data.uCTemp,    // 77
 
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "BiasVgr1",   &user_data.BiasVgrp[0], // 94 
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "BiasVgr2",   &user_data.BiasVgrp[1], // 95
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "BiasVgr3",   &user_data.BiasVgrp[2], // 96
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "BiasVgr4",   &user_data.BiasVgrp[3], // 97
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "BiasVgr5",   &user_data.BiasVgrp[4], // 98
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "BiasVgr6",   &user_data.BiasVgrp[5], // 99
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "BiasVgr7",   &user_data.BiasVgrp[6], // 100
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "BiasVgr8",   &user_data.BiasVgrp[7], // 101
-   
+   1,UNIT_BYTE,             0, 0,           0, "rBias00",    &user_data.rBias[0],  // 6
+   1,UNIT_BYTE,             0, 0,           0, "rBias01",    &user_data.rBias[1],  // 7
+   1,UNIT_BYTE,             0, 0,           0, "rBias02",    &user_data.rBias[2],  // 8
+   1,UNIT_BYTE,             0, 0,           0, "rBias03",    &user_data.rBias[3],  // 9
+   1,UNIT_BYTE,             0, 0,           0, "rBias04",    &user_data.rBias[4],  // 10
+   1,UNIT_BYTE,             0, 0,           0, "rBias05",    &user_data.rBias[5],  // 11
+   1,UNIT_BYTE,             0, 0,           0, "rBias06",    &user_data.rBias[6],  // 12
+   1,UNIT_BYTE,             0, 0,           0, "rBias07",    &user_data.rBias[7],  // 13
+   1,UNIT_BYTE,             0, 0,           0, "rBias08",    &user_data.rBias[8],  // 14
+   1,UNIT_BYTE,             0, 0,           0, "rBias09",    &user_data.rBias[9],  // 15
+   1,UNIT_BYTE,             0, 0,           0, "rBias10",    &user_data.rBias[10], // 16
+   1,UNIT_BYTE,             0, 0,           0, "rBias11",    &user_data.rBias[11], // 17
+   1,UNIT_BYTE,             0, 0,           0, "rBias12",    &user_data.rBias[12], // 18
+   1,UNIT_BYTE,             0, 0,           0, "rBias13",    &user_data.rBias[13], // 19
+   1,UNIT_BYTE,             0, 0,           0, "rBias14",    &user_data.rBias[14], // 20
+   1,UNIT_BYTE,             0, 0,           0, "rBias15",    &user_data.rBias[15], // 21
+   1,UNIT_BYTE,             0, 0,           0, "rBias16",    &user_data.rBias[16], // 22
+   1,UNIT_BYTE,             0, 0,           0, "rBias17",    &user_data.rBias[17], // 23
+   1,UNIT_BYTE,             0, 0,           0, "rBias18",    &user_data.rBias[18], // 24
+   1,UNIT_BYTE,             0, 0,           0, "rBias19",    &user_data.rBias[19], // 25
+   1,UNIT_BYTE,             0, 0,           0, "rBias20",    &user_data.rBias[20], // 26
+   1,UNIT_BYTE,             0, 0,           0, "rBias21",    &user_data.rBias[21], // 27
+   1,UNIT_BYTE,             0, 0,           0, "rBias22",    &user_data.rBias[22], // 28
+   1,UNIT_BYTE,             0, 0,           0, "rBias23",    &user_data.rBias[23], // 29
+   1,UNIT_BYTE,             0, 0,           0, "rBias24",    &user_data.rBias[24], // 30
+   1,UNIT_BYTE,             0, 0,           0, "rBias25",    &user_data.rBias[25], // 31
+   1,UNIT_BYTE,             0, 0,           0, "rBias26",    &user_data.rBias[26], // 32
+   1,UNIT_BYTE,             0, 0,           0, "rBias27",    &user_data.rBias[27], // 33
+   1,UNIT_BYTE,             0, 0,           0, "rBias28",    &user_data.rBias[28], // 34
+   1,UNIT_BYTE,             0, 0,           0, "rBias29",    &user_data.rBias[29], // 35
+   1,UNIT_BYTE,             0, 0,           0, "rBias30",    &user_data.rBias[30], // 36
+   1,UNIT_BYTE,             0, 0,           0, "rBias31",    &user_data.rBias[31], // 37
+   1,UNIT_BYTE,             0, 0,           0, "rBias32",    &user_data.rBias[32], // 38
+   1,UNIT_BYTE,             0, 0,           0, "rBias33",    &user_data.rBias[33], // 39
+   1,UNIT_BYTE,             0, 0,           0, "rBias34",    &user_data.rBias[34], // 40
+   1,UNIT_BYTE,             0, 0,           0, "rBias35",    &user_data.rBias[35], // 41
+   1,UNIT_BYTE,             0, 0,           0, "rBias36",    &user_data.rBias[36], // 42
+   1,UNIT_BYTE,             0, 0,           0, "rBias37",    &user_data.rBias[37], // 43
+   1,UNIT_BYTE,             0, 0,           0, "rBias38",    &user_data.rBias[38], // 44
+   1,UNIT_BYTE,             0, 0,           0, "rBias39",    &user_data.rBias[39], // 45
+   1,UNIT_BYTE,             0, 0,           0, "rBias40",    &user_data.rBias[40], // 46
+   1,UNIT_BYTE,             0, 0,           0, "rBias41",    &user_data.rBias[41], // 47
+   1,UNIT_BYTE,             0, 0,           0, "rBias42",    &user_data.rBias[42], // 48
+   1,UNIT_BYTE,             0, 0,           0, "rBias43",    &user_data.rBias[43], // 49
+   1,UNIT_BYTE,             0, 0,           0, "rBias44",    &user_data.rBias[44], // 50
+   1,UNIT_BYTE,             0, 0,           0, "rBias45",    &user_data.rBias[45], // 51
+   1,UNIT_BYTE,             0, 0,           0, "rBias46",    &user_data.rBias[46], // 52
+   1,UNIT_BYTE,             0, 0,           0, "rBias47",    &user_data.rBias[47], // 53
+   1,UNIT_BYTE,             0, 0,           0, "rBias48",    &user_data.rBias[48], // 54
+   1,UNIT_BYTE,             0, 0,           0, "rBias49",    &user_data.rBias[49], // 55
+   1,UNIT_BYTE,             0, 0,           0, "rBias50",    &user_data.rBias[50], // 56
+   1,UNIT_BYTE,             0, 0,           0, "rBias51",    &user_data.rBias[51], // 57
+   1,UNIT_BYTE,             0, 0,           0, "rBias52",    &user_data.rBias[52], // 58
+   1,UNIT_BYTE,             0, 0,           0, "rBias53",    &user_data.rBias[53], // 59
+   1,UNIT_BYTE,             0, 0,           0, "rBias54",    &user_data.rBias[54], // 60
+   1,UNIT_BYTE,             0, 0,           0, "rBias55",    &user_data.rBias[55], // 61
+   1,UNIT_BYTE,             0, 0,           0, "rBias56",    &user_data.rBias[56], // 62
+   1,UNIT_BYTE,             0, 0,           0, "rBias57",    &user_data.rBias[57], // 63
+   1,UNIT_BYTE,             0, 0,           0, "rBias58",    &user_data.rBias[58], // 64
+   1,UNIT_BYTE,             0, 0,           0, "rBias59",    &user_data.rBias[59], // 65
+   1,UNIT_BYTE,             0, 0,           0, "rBias60",    &user_data.rBias[60], // 66
+   1,UNIT_BYTE,             0, 0,           0, "rBias61",    &user_data.rBias[61], // 67
+   1,UNIT_BYTE,             0, 0,           0, "rBias62",    &user_data.rBias[62], // 68
+   1,UNIT_BYTE,             0, 0,           0, "rBias63",    &user_data.rBias[63], // 69
 
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "BiasIgr1",   &user_data.BiasIgrp[0], // 102
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "BiasIgr2",   &user_data.BiasIgrp[1], // 103
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "BiasIgr3",   &user_data.BiasIgrp[2], // 104
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "BiasIgr4",   &user_data.BiasIgrp[3], // 105
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "BiasIgr5",   &user_data.BiasIgrp[4], // 106
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "BiasIgr6",   &user_data.BiasIgrp[5], // 107
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "BiasIgr7",   &user_data.BiasIgrp[6], // 108
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "BiasIgr8",   &user_data.BiasIgrp[7], // 109
-      
-   4, UNIT_BYTE,			0, 0,			0,  "BiasVad1",  &user_data.BiasVadc[0], // 110
-   4, UNIT_BYTE,			0, 0,			0,  "BiasVad2",  &user_data.BiasVadc[1], // 111
-   4, UNIT_BYTE,			0, 0,			0,  "BiasVad3",  &user_data.BiasVadc[2], // 112
-   4, UNIT_BYTE,			0, 0,			0,  "BiasVad4",  &user_data.BiasVadc[3], // 113
-   4, UNIT_BYTE,			0, 0,			0,  "BiasVad5",  &user_data.BiasVadc[4], // 114
-   4, UNIT_BYTE,			0, 0,			0,  "BiasVad6",  &user_data.BiasVadc[5], // 115
-   4, UNIT_BYTE,			0, 0,			0,  "BiasVad7",  &user_data.BiasVadc[6], // 116
-   4, UNIT_BYTE,			0, 0,			0,  "BiasVad8",  &user_data.BiasVadc[7], // 117
+ /*
 
-   4, UNIT_BYTE,			0, 0,			0,  "BiasIad1",  &user_data.BiasIadc[0], // 118
-   4, UNIT_BYTE,			0, 0,			0,  "BiasIad2",  &user_data.BiasIadc[1], // 119
-   4, UNIT_BYTE,			0, 0,			0,  "BiasIad3",  &user_data.BiasIadc[2], // 120
-   4, UNIT_BYTE,			0, 0,			0,  "BiasIad4",  &user_data.BiasIadc[3], // 121
-   4, UNIT_BYTE,			0, 0,			0,  "BiasIad5",  &user_data.BiasIadc[4], // 122
-   4, UNIT_BYTE,			0, 0,			0,  "BiasIad6",  &user_data.BiasIadc[5], // 123
-   4, UNIT_BYTE,			0, 0,			0,  "BiasIad7",  &user_data.BiasIadc[6], // 124
-   4, UNIT_BYTE,			0, 0,			0,  "BiasIad8",  &user_data.BiasIadc[7], // 125
+   4, UNIT_BYTE,      0, 0,     0,  "rVBias",   &user_data.rVBias,   // 78
+   4, UNIT_BYTE,      0, 0,     0,  "rIBias",  &user_data.rIBias,    // 79
+   4, UNIT_BYTE,      0, 0,     0,  "rpAV",    &user_data.rpAV,    // 80
+   4, UNIT_BYTE,      0, 0,     0,  "rpAI",    &user_data.rpAI,    // 81
+   4, UNIT_BYTE,      0, 0,     0,  "rpDV",    &user_data.rpDV,    // 82
+   4, UNIT_BYTE,      0, 0,     0,  "rpDI",    &user_data.rpDI,    // 83
+   4, UNIT_BYTE,      0, 0,     0,  "rnAV",    &user_data.rnAV,    // 84
+   4, UNIT_BYTE,      0, 0,     0,  "rnAI",    &user_data.rnAI,    // 85
 */
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp0",       &user_data.Temp[0],    // 86
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp1",       &user_data.Temp[1],    // 87
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp2",       &user_data.Temp[2],    // 88
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp3",       &user_data.Temp[3],    // 89
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp4",       &user_data.Temp[4],    // 90
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp5",       &user_data.Temp[5],    // 91
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp6",       &user_data.Temp[6],    // 92
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp7",       &user_data.Temp[7],    // 93
+/*
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon0",   &user_data.VBMon[0], // 94
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon1",   &user_data.VBMon[1], // 95
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon2",   &user_data.VBMon[2], // 96
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon3",   &user_data.VBMon[3], // 97
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon4",   &user_data.VBMon[4], // 98
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon5",   &user_data.VBMon[5], // 99
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon6",   &user_data.VBMon[6], // 100
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon7",   &user_data.VBMon[7], // 101
 
+
+   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBMon0",   &user_data.IBMon[0], // 102
+   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBMon1",   &user_data.IBMon[1], // 103
+   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBMon2",   &user_data.IBMon[2], // 104
+   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBMon3",   &user_data.IBMon[3], // 105
+   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBMon4",   &user_data.IBMon[4], // 106
+   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBMon5",   &user_data.IBMon[5], // 107
+   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBMon6",   &user_data.IBMon[6], // 108
+   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBMon7",   &user_data.IBMon[7], // 109
+
+   4, UNIT_BYTE,      0, 0,     0,  "rVBMon0",  &user_data.rVBMon[0], // 110
+   4, UNIT_BYTE,      0, 0,     0,  "rVBMon1",  &user_data.rVBMon[1], // 111
+   4, UNIT_BYTE,      0, 0,     0,  "rVBMon2",  &user_data.rVBMon[2], // 112
+   4, UNIT_BYTE,      0, 0,     0,  "rVBMon3",  &user_data.rVBMon[3], // 113
+   4, UNIT_BYTE,      0, 0,     0,  "rVBMon4",  &user_data.rVBMon[4], // 114
+   4, UNIT_BYTE,      0, 0,     0,  "rVBMon5",  &user_data.rVBMon[5], // 115
+   4, UNIT_BYTE,      0, 0,     0,  "rVBMon6",  &user_data.rVBMon[6], // 116
+   4, UNIT_BYTE,      0, 0,     0,  "rVBMon7",  &user_data.rVBMon[7], // 117
+
+   4, UNIT_BYTE,      0, 0,     0,  "rIBMon0",  &user_data.rIBMon[0], // 118
+   4, UNIT_BYTE,      0, 0,     0,  "rIBMon1",  &user_data.rIBMon[1], // 119
+   4, UNIT_BYTE,      0, 0,     0,  "rIBMon2",  &user_data.rIBMon[2], // 120
+   4, UNIT_BYTE,      0, 0,     0,  "rIBMon3",  &user_data.rIBMon[3], // 121
+   4, UNIT_BYTE,      0, 0,     0,  "rIBMon4",  &user_data.rIBMon[4], // 122
+   4, UNIT_BYTE,      0, 0,     0,  "rIBMon5",  &user_data.rIBMon[5], // 123
+   4, UNIT_BYTE,      0, 0,     0,  "rIBMon6",  &user_data.rIBMon[6], // 124
+   4, UNIT_BYTE,      0, 0,     0,  "rIBMon7",  &user_data.rIBMon[7], // 125
+
+*/
    0
 };
+MSCB_INFO_VAR *variables = vars;   // Structure mapping
 
-
-MSCB_INFO_VAR *variables = vars;
+// Get sysinfo if necessary
 extern SYS_INFO sys_info;
 
-//unsigned char ADT7486A_addrArray[] = {ADT7486A_ADDR_ARRAY};
+unsigned char ADT7486A_addrArray[] = {ADT7486A_ADDR_ARRAY0,ADT7486A_ADDR_ARRAY1,ADT7486A_ADDR_ARRAY2,ADT7486A_ADDR_ARRAY3};
 
 
 /********************************************************************\
@@ -224,12 +239,12 @@ extern SYS_INFO sys_info;
 /*---- User init function ------------------------------------------*/
 void user_init(unsigned char init)
 {
-   char i, add;
-
+   char        xdata i, add;
+   signed char xdata j;
   /* Format the SVN and store this code SVN revision into the system */
   for (i=0;i<4;i++) {
-  	 if (svn_rev_code[6+i] < 48) {
-	    svn_rev_code[6+i] = '0';
+     if (svn_rev_code[6+i] < 48) {
+      svn_rev_code[6+i] = '0';
     }
   }
    sys_info.svn_revision = (svn_rev_code[6]-'0')*1000+
@@ -237,99 +252,137 @@ void user_init(unsigned char init)
                            (svn_rev_code[8]-'0')*10+
                            (svn_rev_code[9]-'0');
 
-  // PAA- to be removed when if (init) is valid
-  add = init;
-	add = cur_sub_addr();
+  add = cur_sub_addr();
+
+// Initialize control
+   user_data.control1 = 0;
 
 //
-// Initial setting for communitation and overall ports (if needed).
+// default settings, set only when EEPROM is being erased and written
+//-----------------------------------------------------------------------------
+  if(init)
+  {
+    user_data.control1   = 0x7E;    //Turn off the charge pump
+    user_data.status     = 0x00;
+    user_data.swBiasEN   = 0xFF;    //Turn on all the switches
+    user_data.rAsum      = 0x80;    //BS not sure to what value initialize it
+    user_data.rQpump     = 0x00;    //Set to the lowest scale
+    for(j=0;j<64;j++)
+      user_data.rBias[j] = 0xFF;   //Set the DAC to lowest value
+    sys_info.group_addr   = 400;
+    sys_info.node_addr    = 0xFF00;
+  }
+
+//
+// Initial setting for communication and overall ports (if needed).
 //-----------------------------------------------------------------------------
    SFRPAGE  = CONFIG_PAGE;
                       // P0MDOUT contains Tx in push-pull
    P0MDOUT |= 0x20;   // add RS485_ENABLE in push-pull
-
-//   P1MDOUT = 0x00;
-//   P2MDOUT = 0x00;
-   
-//	
-// default settings, set only when EEPROM is being erased and written
-//-----------------------------------------------------------------------------
-//	if(init)
-//	{
-//		user_data.control = 0x7D; //Turn on the charge pump 
-//		user_data.status   = 0x00;
-//		user_data.biasEn   = 0xFF;
-//		user_data.dac_asumThreshold   = 0x80;
-//		user_data.dac_chPump   = 0x00; //set to lowest scale, just to be safe
-//		user_data.biasDac1   = 0xFF;
-//		user_data.biasDac2   = 0xFF;
-//		user_data.biasDac3   = 0xFF;
-//		user_data.biasDac4   = 0xFF;
-//		user_data.biasDac5   = 0xFF;
-//		user_data.biasDac6   = 0xFF;
-//		user_data.biasDac7   = 0xFF;
-//		user_data.biasDac8   = 0xFF;		
-//		sys_info.group_addr = 400;
-//		sys_info.node_addr = 0xFF00;
-//	}   
 
 /*-----------------------------------------------------------------------------------*/
 /* set-up / initialize circuit components (order is important)                       */
 /*                                                                                   */
 /*-----------------------------------------------------------------------------------*/
 //
-// Charge Pump frequency setup
+// uC Charge Pump frequency setup
 //-----------------------------------------------------------------------------
-#ifdef _PCA_INTERNAL_
   pca_operation(Q_PUMP_INIT); //Charge Pump initialization (crossbar settings)
-  pca_operation(Q_PUMP_ON);   //Initially turn it on	
-#endif
+  pca_operation(Q_PUMP_OFF);   //Initially turn it off
 
 //
-// Miscellaneous ADCs (V/I Monitoring)
+// uC Miscellaneous ADCs (V/I Monitoring)
 //-----------------------------------------------------------------------------
-#ifdef _ADC_INTERNAL_
+  SFRPAGE  = CONFIG_PAGE;
+  P3MDOUT |= 0x1C; //Setting the Regulators control pins to push pull
+
+  // V/I internal ADCs
   adc_internal_init();
-#endif
+
+  // Turn on Vregs
+  EN_pD5V  = ON;
+  EN_pA5V  = ON;
+  EN_nA5V  = ON;
 
 //
 // SST Temperatures
 //-----------------------------------------------------------------------------
-#ifdef _ADT7486_
+#ifdef _ADT7486A_
+
+  SFRPAGE  = CONFIG_PAGE;
+  P1MDOUT |= 0x01; // Setting the SST_DRV (SST) to push pull
+  SFRPAGE  = CPT1_PAGE;
+  CPT1CN  |= 0x80; // Enable the Comparator 1
+  CPT1MD   = 0x02; //Comparator1 Mode Selection
+                   //Use default, adequate TYP (CP1 Response Time, no edge triggered interrupt)
+
   ADT7486A_Init(); //Temperature measurements related initialization
+
+  doTemperature = 1;
 #endif
 
 //
-// Charge Pump DAC
+// SPI Dac (Bias voltages)
 //-----------------------------------------------------------------------------
-#ifdef _LTC1669_	
-  LTC1669_Init(); //I2C DAC initialization (D_CH_PUMP)
-  user_data.control1 = 0x41; //Set the control bit for Qpump and the Qpump threshold enable bit
-  user_data.QpumpDac = 0xFF; //Checking the Qpump_dac	
+#ifdef _LTC1665_
+  SFRPAGE  = CONFIG_PAGE;
+  P2MDOUT |= 0x18; // Setting the SPI_MOSI and SPI_SCK to push pull
+  P0MDOUT |= 0xC0; // Setting the BIAS_DAC_CSn1 and BIAS_DAC_CSn2 to push pull
+  P3MDOUT |= 0x63; // Setting the BIAS_DAC_CSn3,4,5,6 to push pull
+  P0MDOUT |= 0x60; // Setting the BIAS_DAC_CSn7,8 to push pull
+
+  LTC1665_Init();
+
+// MSCB request flag
+   biasChange = 0;
 #endif
 
 //
-// Bias Voltage switches
+// SPI ASUM DAC
+//-----------------------------------------------------------------------------
+#ifdef _LTC2600_
+  SFRPAGE  = CONFIG_PAGE;
+  P1MDOUT |= 0x10; // Setting the SUM_DAC_CSn to push pull
+  P2MDOUT |= 0x18; // Setting the SPI_MOSI and SPI_SCK to push pull
+  LTC2600_Init();
+#endif
+
+//
+// SMB Charge Pump DAC
+//-----------------------------------------------------------------------------
+#ifdef _LTC1669_
+  LTC1669_Init(); //I2C DAC initialization (D_CH_PUMP)
+
+  user_data.control1 |= CONTROL_CHANNEL;      // ON
+  user_data.control1 &= ~(CONTROL_D_CHPUMP);  // OFF
+
+//  user_data.control1 = 0x41; //Set the control bit for Qpump and the Qpump threshold enable bit
+
+//  user_data.rQpump = 0xFFFF; //Checking the Qpump_dac
+#endif
+
+//
+// SMB Bias Voltage switches
 //-----------------------------------------------------------------------------
 #ifdef _PCA9539_
-  PCA9539_Init(); //PCA General I/O (Bais Enables and Backplane Addr) initialization	
-  user_data.control1 |= 0x80; //Checking the switches dac	
+  PCA9539_Init(); //PCA General I/O (Bais Enables and Backplane Addr) initialization
+
+
+//-PAA-
+//  PCA9539_Cmd(Bias_OUTPUT_ENABLE);    // Put all pins 0 to Output modes
+//  PCA9539_Cmd(Bias_ALL_LOW);        // All Biases are enabled
+//  PCA9539_Cmd(BackPlane_INPUT_ENABLE);  // Put all pins 1 to Input modes
+  user_data.control1 |= 0x80; //Checking the switches dac
 #endif
 
-//#ifdef _AD5301_
-//	AD5301_Init(); 	
-//	user_data.control = 0x81;
-//#endif
-//	AD7718_Init(); //ADC initialization 		 
-
-
 //
-// Physical address retrieval 
+// Physical address retrieval
 //-----------------------------------------------------------------------------
 
 //
-// FLASH memory Initialization
+// EEPROM memory Initialization/Retrieval
 //-----------------------------------------------------------------------------
+
 
 }
 /*---- User write function -----------------------------------------*/
@@ -345,10 +398,12 @@ void user_write(unsigned char index) reentrant
        // preserve common command bits for all channels
        command = user_data.control1;
        mask    = CONTROL_QPUMP; // common bits
-
        user_data.control1 &= ~mask;
        user_data.control1 |= (command & mask);
-   }
+   } else if ((index >= FIRST_BIAS) && (index < LAST_BIAS)) {
+       biasChange = 1;
+       biasIndex = (index - FIRST_BIAS);
+  }
 }
 
 /*---- User read function ------------------------------------------*/
@@ -367,59 +422,156 @@ unsigned char user_func(unsigned char *data_in, unsigned char *data_out)
    return 2;
 }
 
-/*---- User loop function ------------------------------------------*/
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+/*
+ Main user loop should include:
+
+ - V/I Reg reading/Monitoring on Time base
+   - Read all the V/I Reg (Internal ADCs)
+   - Check V/I against nominal values
+
+ - uCTemperature reading/monitoring
+   - Read internal uC Temperature
+  - Check against Max uC value
+  - Action: Shutdown card
+
+ - Temperature reading/monitoring time based sync on Timer1 and MSCB req
+   - Read all 12 SST temperature
+   - Check against nominal values
+
+ - Bias Switches based on reg[7..0]
+   Take action on Bias switches
+
+ - Bias DAC setting based on Index
+
+ - I Bias reading
+   - Read all 8 Bias current + Global bias current
+  > Shutdown offending Vreg, report in status
+
+ - I Bias monitoring
+   - Check for sum consistency and agains nominal value
+   - Switch off offending channel, report in status
+
+ - Q Pump switch based on CTL[0]/CSR[0] register
+
+*/
+//-----------------------------------------------------------------------------
 void user_loop(void)
 {
-  unsigned char channel;
-  float volt, *uiMonitoring;
-
-#ifdef _ADC_INTERNAL_
-//
-// Internal ADCs monitoring Voltages and Currents
+  unsigned char xdata channel, chipAdd, chipChan;
+  float xdata volt, temperature, *uiMonitoring;
 //-----------------------------------------------------------------------------
-  uiMonitoring = &(user_data.BiasVGbl);
-  for (channel=0 ; channel<INTERNAL_N_CHN ; channel++) {
-    volt = read_voltage(channel);
-	 DISABLE_INTERRUPTS;		
-	 uiMonitoring [internal_adc_map[channel]] = volt;		
-    ENABLE_INTERRUPTS;
+//
+// Internal ADCs monitoring Voltages and Currents based on time
+//
+// Time to do V/I Reg reading
+   if ((uptime() - UIcurrentTime) > 1) {
+     uiMonitoring = &(user_data.VBias);
+     for (channel=0 ; channel<INTERNAL_N_CHN ; channel++) {
+       volt = read_voltage(channel);
+       DISABLE_INTERRUPTS;
+       uiMonitoring [internal_adc_map[channel]] = volt;
+       ENABLE_INTERRUPTS;
+     }
+     UIcurrentTime = uptime();
+   }
+ //
+ // Time to do V/I Reg monitoring
+
+//-----------------------------------------------------------------------------
+//
+// uC Temperature reading/monitoring based on time (1 sec)
+   if ((uptime() - TcurrentTime) > 1) {
+     // Read uC temperature
+     volt = read_voltage(TCHANNEL);
+     /* convert to deg. C */
+     temperature = 1000 * (volt - 0.776) / 2.86;   // Needs calibration
+     /* strip to 0.1 digits */
+     temperature = ((int) (temperature * 10 + 0.5)) / 10.0;
+     DISABLE_INTERRUPTS;
+     user_data.uCTemp = (float) temperature;
+     ENABLE_INTERRUPTS;
+     TcurrentTime = uptime();
+   }
+
+//-----------------------------------------------------------------------------
+//
+// Temperature reading/monitoring based on time
+#ifdef _ADT7486A_
+  // Read SST devices
+#endif
+
+//-----------------------------------------------------------------------------
+//
+// Bias Switches action on CTL register
+#ifdef _PCA9539_
+  if( user_data.control1 & CONTROL_CHANNEL ) {
+    //-PAA- Toggle switches for test
+    PCA9539_Cmd(Bias_ALL_LOW);
+    delay_us(100);
+    PCA9539_Cmd(Bias_ALL_HIGH);
+//    PCA9539_Cmd(BackPlane_Read,&user_data.rBPlane,PCA9539_READ);
+   }
+#endif
+
+//-----------------------------------------------------------------------------
+// Bias DAC settings based on register
+#ifdef _LTC1665_
+  if (biasChange) {
+   chipChan = (biasIndex / 8) + 1;
+   chipAdd  = (biasIndex % 8) + 1;
+   LTC1665_Cmd(chipAdd,user_data.rBias[biasIndex] ,chipChan);
+   biasChange = 0;
   }
 #endif
 
-/*
-	if(user_data.control1 & CONTROL_QPUMP)
-	{
-		pca_operation(Q_PUMP_ON);
-	}
-	else
-	{
-		pca_operation(Q_PUMP_OFF);
-	}
-   	
-*/
-	//Added to turn on and off all the channels	
-	if( user_data.control1 & CONTROL_CHANNEL )
-	{
-    	// chNum = 0; 
-
-		#ifdef _PCA9539_
-        //-PAA- Toggle switches for test
-   		PCA9539_Cmd(Bias_ALL_LOW);	
-   		PCA9539_Cmd(Bias_ALL_HIGH);	
-		#endif
-	}
+//-----------------------------------------------------------------------------
+//
+// Charge Pump Voltage based on register
+#ifdef _LTC1669_
+  if(user_data.control1 & CONTROL_D_CHPUMP) {
+    LTC1669_Cmd1(ADDR_LTC1669, user_data.rQpump, LTC1669_WRITE);
+  }
+#endif
 
 
-//Update the Charge Pump Threshold voltage
-	if(user_data.control1 & CONTROL_D_CHPUMP)
-	{
-		#ifdef _LTC1669_	
-		LTC1669_Cmd(ADDR_LTC1669, (user_data.QpumpDac >> 4), (user_data.QpumpDac << 4), LTC1669_WRITE);
-		#endif 
-	}
-	
- delay_ms(10);
+//-----------------------------------------------------------------------------
+// The 16 bit ASUM DAC
+#ifdef _LTC2600_
+  // Update Bias Dac voltages as requested by bit5 of control register
+  if(user_data.control1 & CONTROL_ASUM_DAC)
+  {
+    LTC2600_Cmd(LTC2600_LOAD_H, user_data.rAsum);
+  }
+#endif
 
-}
+#ifdef _ADT7486A_
+   SFRPAGE  = CPT1_PAGE;
+   CPT1MD   = 0x02; //Comparator1 Mode Selection
+
+	for (channel=0;channel < ADT7486A_NUM; channel++) {
+	 ADT7486A_Cmd(ADT7486A_addrArray[channel]  , GetIntTemp
+	 , &user_data.Temp[channel*2]);
+	 ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt2Temp
+	 , &user_data.Temp[channel*2+1]);
+	 
+	 }
+// 	ADT7486A_Cmd(ADT7486A_ADDR_ARRAY1, GetIntTemp, &user_data.Temp[0]);
+   	ADT7486A_Cmd(ADT7486A_ADDR_ARRAY1, GetIntTemp, &user_data.uCTemp);
+   
+  
+#endif
+
+//-----------------------------------------------------------------------------
+//
+// General loop delay
+  delay_ms(10);
+
+
+//
+// General loop delay
+} // End of User loop
 
 

@@ -479,13 +479,8 @@ sbit RS485_ENABLE = P0 ^ 3; //MSCB communication enable port
 
 
 //The pins that are used for Threshold voltages for comparator 0 and comparator 1
-// #define SST1_REF P2 ^ 1
-// #define SST2_REF P1 ^ 0
-// #define MSCB_SST1 P2 ^ 0 //SST1 line
-
-// #define SST_ClientResponse (char) ((CPT0CN & 0x40) >> 6)
-// #define SST1_ClientResponse P0 ^ 6 //Comparator 0 output
-// #define SST2_ClientResponse P0 ^ 7 //Comparator 1 output
+#define MSCB_SST1 P1 ^ 0 //SST1 line  SST_IO (Write/Push-Pull)
+#define SST_ClientResponse (char) ((CPT1CN & 0x40) >> 6) //Comparator1 overflow bit
 
 #define LED_ON 0 //defines LED "ON" as forcing the specified pin to low
 
@@ -497,6 +492,8 @@ sbit RS485_ENABLE = P0 ^ 3; //MSCB communication enable port
 #define MSCB_SPI_SCK  P2 ^ 3
 #define MSCB_SPI_MISO P2 ^ 1
 #define MSCB_SPI_MOSI P2 ^ 4
+
+// SST
 
 sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
 

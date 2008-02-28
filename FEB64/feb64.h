@@ -12,15 +12,15 @@
 \********************************************************************/
 //  need to have FEB64 defined
 
-#ifndef  _FEB64_H
+#ifndef _FEB64_H
 #define  _FEB64_H
 
-// Mapping of the channels for the FEB64 card
-unsigned char code internal_adc_map[8] = {0,1,4,2,6,7,3,5};
-
-// Device Address maping
+// Device Address mapping
 #define ADDR_LTC1669   0x20
 
+// Global ON / OFF definition
+#define ON  1
+#define OFF 0
 
 // charge pump state for PCA control
 #define Q_PUMP_INIT          1           
@@ -28,20 +28,28 @@ unsigned char code internal_adc_map[8] = {0,1,4,2,6,7,3,5};
 #define Q_PUMP_ON            3           
 
 
+// Mapping of the channels for the FEB64 card
+unsigned char code internal_adc_map[8] = {0,1,4,2,6,7,3,5};
+
+// Vreg Enable port assignment
+sbit EN_pD5V = P3 ^ 4;
+sbit EN_pA5V = P3 ^ 3;
+sbit EN_nA5V = P3 ^ 2;
+
 // =======================================================================
 //      [State machine transition]
 //  
 // -------------------- Control Register Map -----------------------------
 // Bit: Name        Default Description     
 // [LSB]
-//  0 : CONTROL_QPUMP   0   Internal Q-Pump     0 : disable, 1 : enable
-//  1 : CONTROL_EXT_IN  0   Ext/In bias switch  0 : INTRNL,  1 : EXTRNL   
-//  2 : CONTROL_IB_CTL  0   Int-bias cntrl mode 0 : disable, 1 : enable
-//  3 : (not assigned)  X
-//  4 : CONTROL_TSENSOR 1   T measurement       0 : disable, 1 : enable
-//  5 : CONTROL_ISENSOR 1   I measurement       0 : disable, 1 : enable
-//  6 : (not assigned)  X
-//  7 : CONTROL_CHANNEL (0) (force CPU idle)    			 1 : enable
+//  0 : CONTROL_QPUMP      0   Internal Q-Pump    		 0 : disable, 1 : enable
+//  1 : CONTROL_TEMP_MEAS  1   Ext/In temp measurment  0 : disable, 1 : enable   
+//  2 : CONTROL_ADC_MEAS   1   Int-bias control bit 	 0 : disable, 1 : enable
+//  3 : CONTROL_BIAS_EN    1	 Switch Enable bit		 0 : disable, 1 : enable
+//  4 : CONTROL_BIAS_DAC   1   APD_DAQ Enable bit      0 : disable, 1 : enable
+//  5 : CONTROL_ASUM_DAC    1   ASUM DAQ Enable bit     0 : disable, 1 : enable
+//  6 : CONTROL_D_CHPUMP   1   Qpump DAQ 					 0 : disable, 1 : enable 
+//  7 : CONTROL_CHANNEL    0   Master Switch Control	 0	: disable, 1 : enable
 // [MSB]
 // -----------------------------------------------------------------------
 //
@@ -85,16 +93,16 @@ unsigned char code internal_adc_map[8] = {0,1,4,2,6,7,3,5};
 /* CSR control bits */
 #define CONTROL_QPUMP     (1<<0) //The control bit for charge pump
 #define CONTROL_TEMP_MEAS (1<<1) //If the bit is set, the temp measurements is enabled
-#define CONTROL_ADC_MEAS  (1<<2) 
+#define CONTROL_ADC_MEAS  (1<<2) //Setting the bit, enable the internal readbacks.
 #define CONTROL_BIAS_EN   (1<<3) //The switch enable bit, when it is set, user can control eash switch individually
-								 //through "D_BiasEn" 
+								 			//through "D_BiasEn" 
 #define CONTROL_BIAS_DAC  (1<<4) //The DAC enable bit
-#define CONTROL_ASUM_TH   (1<<5)
+#define CONTROL_ASUM_DAC  (1<<5) //The ASUM DAQ enable bit
 #define CONTROL_D_CHPUMP  (1<<6) //The charge pump threashold enable bit
 #define CONTROL_CHANNEL   (1<<7) //Added by Bahman Sotoodian to turn on all the channels
-								 //When charge pump is on and this bit is set, all the switches would be on
-								 //If the bit is not set, the switches functionality would be determined based on 
-								 //"CONTROL_BIAS_EN"	
+								 			//When charge pump is on and this bit is set, all the switches would be on
+								 			//If the bit is not set, the switches functionality would be determined based on 
+								 			//"CONTROL_BIAS_EN"	
 
 /* CSR status bits */
 #define STATUS_QPUMP      (1<<0)
@@ -110,44 +118,47 @@ unsigned char code internal_adc_map[8] = {0,1,4,2,6,7,3,5};
 
 struct user_data_type {
 	unsigned char control1;       // CSR control1 bits
-	unsigned char control2;		  // CSR control2 bits
+	unsigned char control2;		   // CSR control2 bits
 	unsigned char status;         // CSR status bits
-	unsigned char BiasEN;	      // Bias Enable Switch control bits	
-	unsigned int AsumDac;
-	unsigned char QpumpDac;
+	unsigned char swBiasEN;	      // Bias Enable Switch control bits	
 
-	float BiasVGbl;
-	float BiasIGbl;
+	unsigned int  rBPlane;
+	unsigned int  rAsum;
+	unsigned int  rQpump;
+
+	float VBias;
+	float IBias;
 	float pAVMon;
 	float pAIMon;
 	float pDVMon;
 	float pDIMon;
 	float nAVMon;
 	float nAIMon;
-
-/*
-	unsigned char BiasDac [64];
-	
+	float uCTemp;
+	unsigned char rBias [64];
+	float Temp[8]; // ADT7486A external temperature [degree celsius]
+};
+ 
+struct user_data_type xdata user_data;
    	
-	unsigned long BiasVADC;
-	unsigned long BiasIADC;
-	unsigned long pAVADC;
-	unsigned long pAIADC;
-	unsigned long pDVADC;
-	unsigned long pDIADC;
-	unsigned long nAVADC;
-	unsigned long nAIADC;	
+/*	unsigned long rVBias;
+	unsigned long rIBias;
+	unsigned long rpAV;
+	unsigned long rpAI;
+	unsigned long rpDV;
+	unsigned long rpDI;
+	unsigned long rnAV;
+	unsigned long rnAI;	
 	
 	float Temp[8]; // ADT7486A external temperature [degree celsius]
 
-	float BiasVgrp[8];
-	float BiasIgrp[8];
+	float VBMon[8];
+	float IBMon[8];
 
-	unsigned long BiasVadc[8];
-	unsigned long BiasIadc[8];
-*/
-	
-}; 
+	unsigned long rVBMon[8];
+	unsigned long rIBMon[8];
+
+*/	
 
 /********************************************************************\
 
@@ -160,8 +171,5 @@ void user_loop(void);
 void user_write(unsigned char index) reentrant;
 unsigned char user_read(unsigned char index);
 unsigned char user_func(unsigned char *data_in, unsigned char *data_out);
-void pca_operation(unsigned char mode);
-void set_current_limit(float value);
-void Hardware_Update(void);
 
 #endif
