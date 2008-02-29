@@ -15,6 +15,7 @@
 /*---- PCA initilalization -----------------------------------------*/
 void pca_operation(unsigned char mode)
 {
+//	signed char i;
 	if (mode == 1) {
         // PCA setup for Frequency Output Mode on CEX0
         // Set P0.4 as CEX0, requires RX/TX+SDA/SCK to be enable in the XBAR0
