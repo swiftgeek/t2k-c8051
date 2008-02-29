@@ -10,121 +10,110 @@
   $Id$
 
 \********************************************************************/
-//  need to have FEB64 defined
-
 #ifndef _FEB64_H
 #define  _FEB64_H
 
 // Device Address mapping
 #define ADDR_LTC1669   0x20
+#define NCHANNEL_BIAS    64
+#define NCHANNEL_ASUM     8
+#define NCHANNEL_SST      8
+
+#define IDXCTL       0
+#define IDXEER       1
+#define IDXQVOLT     4
+#define IDXBSWITCH   5
+#define IDXASUM      6
+#define IDXBIAS     31
+#define IDXSST      23 
+
+#define FIRST_BIAS   IDXBIAS
+#define LAST_BIAS    FIRST_BIAS + NCHANNEL_BIAS
+
+#define FIRST_ASUM   IDXASUM
+#define LAST_ASUM    FIRST_ASUM + NCHANNEL_ASUM
 
 // Global ON / OFF definition
-#define ON  1
-#define OFF 0
+#define ON     1
+#define OFF    0
+#define DONE   1
+#define FAILED 0
 
 // charge pump state for PCA control
 #define Q_PUMP_INIT          1           
 #define Q_PUMP_OFF           2           
 #define Q_PUMP_ON            3           
 
-
 // Mapping of the channels for the FEB64 card
 unsigned char code internal_adc_map[8] = {0,1,4,2,6,7,3,5};
+
+// Shutdwon mask
+#define SHUTDOWN_MASK   0x3F
 
 // Vreg Enable port assignment
 sbit EN_pD5V = P3 ^ 4;
 sbit EN_pA5V = P3 ^ 3;
 sbit EN_nA5V = P3 ^ 2;
 
-// =======================================================================
-//      [State machine transition]
-//  
-// -------------------- Control Register Map -----------------------------
-// Bit: Name        Default Description     
-// [LSB]
-//  0 : CONTROL_QPUMP      0   Internal Q-Pump    		 0 : disable, 1 : enable
-//  1 : CONTROL_TEMP_MEAS  1   Ext/In temp measurment  0 : disable, 1 : enable   
-//  2 : CONTROL_ADC_MEAS   1   Int-bias control bit 	 0 : disable, 1 : enable
-//  3 : CONTROL_BIAS_EN    1	 Switch Enable bit		 0 : disable, 1 : enable
-//  4 : CONTROL_BIAS_DAC   1   APD_DAQ Enable bit      0 : disable, 1 : enable
-//  5 : CONTROL_ASUM_DAC    1   ASUM DAQ Enable bit     0 : disable, 1 : enable
-//  6 : CONTROL_D_CHPUMP   1   Qpump DAQ 					 0 : disable, 1 : enable 
-//  7 : CONTROL_CHANNEL    0   Master Switch Control	 0	: disable, 1 : enable
-// [MSB]
-// -----------------------------------------------------------------------
-//
-// -------------------- Status Register Map ------------------------------
-// Bit: Name                Description     
-// [LSB]
-//  0 : STATUS_QPUMP        Q-Pump status       0 : stopped, 1 : running
-//  1 : STATUS_INT_BIAS     INT bias            0 : disable, 1 : enable
-//  2 : STATUS_EXT_BIAS     EXT bias            0 : disable, 1 : enable
-//  3 : STATUS_IB_CTL       INT bias control    0 : disable, 1 : enable
-//  4 : (not assigned))
-//  5 : STATUS_ILIMIT       Current Limit       0 :          1 : observed
-//  6 : STATUS_RAMP_UP      HV Rumping up       0 : idle,    1 : processing
-//  7 : STATUS_RAMP_DOWN    HV Rumping down     0 : idle,    1 : processing
-// [MSB]
-// -----------------------------------------------------------------------
-//
-// [Abbreviations]
-//  QP  := CONTROL_QPUMP or STATUS_QPUMP (depending on the contents)
-//  E/I := CONTROL_EXT_IN
-//  ICN := CONTROL_IB_CTL or STATUS_IB_CTL 
-//  INT := STATUS_INT_BIAS
-//  EXT := STATUS_EXT_BIAS
-// -----------------------------------------------------------------------
-//
-//           STATE TABLE
-//
-//           |----------------------------------------------------|
-//           |      CONTROL        |       STATUS                 |
-//           |---------------------|------------------------------|
-//           |   ICN    E/I    QP  |    ICN    EXT    INT    QP   |
-//           |---------------------|------------------------------|
-//  STATE-1  |   X      0      0   |    0      0      0      0    |
-//  STATE-2  |   0      0      1   |    0      0      1      1    |
-//  STATE-3  |   X      1      X   |    0      1      0      0    |     
-//  STATE-4  |   1      0      1   |    1      1      1      1    |     
-//           |----------------------------------------------------|
-//   
-// =======================================================================
+// CTL register
+char bdata rCTL;
+sbit CPup     = rCTL ^ 1;
+sbit CqPump   = rCTL ^ 2;
+sbit CeeS     = rCTL ^ 4;
+sbit CeeR     = rCTL ^ 5;
+sbit CmSd     = rCTL ^ 7;
 
-/* CSR control bits */
-#define CONTROL_QPUMP     (1<<0) //The control bit for charge pump
-#define CONTROL_TEMP_MEAS (1<<1) //If the bit is set, the temp measurements is enabled
-#define CONTROL_ADC_MEAS  (1<<2) //Setting the bit, enable the internal readbacks.
-#define CONTROL_BIAS_EN   (1<<3) //The switch enable bit, when it is set, user can control eash switch individually
-								 			//through "D_BiasEn" 
-#define CONTROL_BIAS_DAC  (1<<4) //The DAC enable bit
-#define CONTROL_ASUM_DAC  (1<<5) //The ASUM DAQ enable bit
-#define CONTROL_D_CHPUMP  (1<<6) //The charge pump threashold enable bit
-#define CONTROL_CHANNEL   (1<<7) //Added by Bahman Sotoodian to turn on all the channels
-								 			//When charge pump is on and this bit is set, all the switches would be on
-								 			//If the bit is not set, the switches functionality would be determined based on 
-								 			//"CONTROL_BIAS_EN"	
+// CSR Register
+char bdata rCSR;
+sbit SPup     = rCSR ^ 1;
+sbit SqPump   = rCSR ^ 1;
+sbit SeeS     = rCSR ^ 4;
+sbit SeeR     = rCSR ^ 5;
+sbit SsS      = rCSR ^ 6;
+sbit SmSd     = rCSR ^ 7;
 
-/* CSR status bits */
-#define STATUS_QPUMP      (1<<0)
-#define STATUS_TEMP_MEAS  (1<<1)
-#define STATUS_ADC_MEAS   (1<<2)
-#define STATUS_BIAS_EN    (1<<3)
-#define STATUS_BIAS_DAC   (1<<4)
-#define STATUS_ASUM_TH    (1<<5)
-#define STATUS_D_CHPUMP   (1<<6)
-#define STATUS_IDLE       (1<<7)
+// EER Error Register
+unsigned long bdata ESR;
+sbit vReg1   = ESR ^ 1;
+sbit vReg2   = ESR ^ 2;
+sbit vReg3   = ESR ^ 3;
+sbit iReg1   = ESR ^ 4;
+sbit iReg2   = ESR ^ 5;
+sbit iReg3   = ESR ^ 6;
+sbit vQpump  = ESR ^ 7;
+sbit iQpump  = ESR ^ 8;
+sbit uCT     = ESR ^ 9;
+sbit ssTT    = ESR ^ 10; 
+
+struct EEPAGE {
+float lVIlimit[8];
+float uVIlimit[8];
+float lSSTlimit[8];
+float uSSTlimit[8];
+float luCTlimit;
+float uuCTlimit;
+float lVQlimit;
+float uVQlimit;
+float lIQlimit;
+float uIQlimit;
+float lVBiaslimit;
+float uVBiaslimit;
+float lIBiaslimit;
+float uIBiaslimit;
+};
+struct EEPAGE xdata eepage;
 
 /*---- Define variable parameters returned to CMD_GET_INFO command ----*/
-
 struct user_data_type {
-	unsigned char control1;       // CSR control1 bits
-	unsigned char control2;		   // CSR control2 bits
-	unsigned char status;         // CSR status bits
-	unsigned char swBiasEN;	      // Bias Enable Switch control bits	
+	unsigned char control;       
+	unsigned char status;		 
+	unsigned long error;         
+	unsigned char eepage;	     
+	unsigned int  rQpump;
+	unsigned char swBiasEN;	     
+	unsigned int  rAsum[8];
 
 	unsigned int  rBPlane;
-	unsigned int  rAsum;
-	unsigned int  rQpump;
 
 	float VBias;
 	float IBias;
@@ -135,10 +124,9 @@ struct user_data_type {
 	float nAVMon;
 	float nAIMon;
 	float uCTemp;
+	float Temp[8];               
 	unsigned char rBias [64];
-	float Temp[8]; // ADT7486A external temperature [degree celsius]
 };
- 
 struct user_data_type xdata user_data;
    	
 /*	unsigned long rVBias;
@@ -157,15 +145,11 @@ struct user_data_type xdata user_data;
 
 	unsigned long rVBMon[8];
 	unsigned long rIBMon[8];
-
 */	
 
 /********************************************************************\
-
   Application specific init and inout/output routines
-
 \********************************************************************/
-
 void user_init(unsigned char init);
 void user_loop(void);
 void user_write(unsigned char index) reentrant;
