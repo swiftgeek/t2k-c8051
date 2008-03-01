@@ -18,7 +18,7 @@
  Program Size: data=139.6 xdata=274 code=13497
  
  CODE: 16KB(0x4000), paging in 512B(0x200) 
- CODE(?PR?UPGRADE?MSCBMAIN (0x3A00))  leave some gap (0x200)
+ CODE(?PR?UPGRADE?MSCBMAIN (0xF600)) 
  
  
  $Id$
@@ -31,16 +31,6 @@
  
  #include "pca_internal.h"
  #include "adc_internal.h"
- 
- // Local operation bits
- unsigned int bdata bChange;
- sbit brQpump   = bChange ^ 1;
- sbit bSwitch   = bChange ^ 2;
- sbit bAsum     = bChange ^ 3;
- sbit bBias     = bChange ^ 5;
- sbit bdoitNOW  = bChange ^ 6;
- 
- unsigned char xdata BiasIndex, QpumpIndex, AsumIndex;
  
  #ifdef _PCA9539_
  #include "PCA9539_io.h"
@@ -61,6 +51,7 @@
  #ifdef  _ADT7486A_
  #include "ADT7486A_tsensor.h"
  #endif
+
  //
  // Global declarations
  //-----------------------------------------------------------------------------
@@ -69,19 +60,20 @@
  // declare globally the number of sub-addresses to framework
  unsigned char idata _n_sub_addr = 1;
  unsigned long xdata currentTime=0, sstTime=0;
- 
- //
+ unsigned char xdata channel, chipAdd, chipChan;
+ unsigned char xdata BiasIndex, AsumIndex;
+ unsigned char bdata bChange;
+ sbit bdoitNOW = bChange ^ 0;
+
  // User Data structure declaration
  //-----------------------------------------------------------------------------
- //MSCB_INFO_VAR code xStruct[] = {
- 
  MSCB_INFO_VAR code vars[] = {
-   1, UNIT_BYTE,            0, 0,           0, "Control1",   &user_data.control,      // 0
-   1, UNIT_BYTE,            0, 0,           0, "Status",     &user_data.status,       // 1
-   4, UNIT_BYTE,            0, 0,           0, "Error",      &user_data.error,        // 2
+   4, UNIT_BYTE,            0, 0,           0, "Error",      &user_data.error,        // 0
+   1, UNIT_BYTE,            0, 0,           0, "Control",    &user_data.control,      // 1
+   1, UNIT_BYTE,            0, 0,           0, "Status",     &user_data.status,       // 2
    1, UNIT_BYTE,            0, 0,           0, "EEPage",     &user_data.eepage,       // 3
-   2, UNIT_BYTE,            0, 0,           0, "rQpump",     &user_data.rQpump,       // 4
-   1, UNIT_BYTE,            0, 0,           0, "swBiasEN",   &user_data.swBiasEN,     // 5
+   1, UNIT_BYTE,            0, 0,           0, "swBias",     &user_data.swBias,       // 4
+   2, UNIT_BYTE,            0, 0,           0, "rQpump",     &user_data.rQpump,       // 5
   
    2, UNIT_BYTE,            0, 0,           0, "rAsum0",     &user_data.rAsum[0],     // 6
    2, UNIT_BYTE,            0, 0,           0, "rAsum1",     &user_data.rAsum[1],     // 7
@@ -93,13 +85,13 @@
    2, UNIT_BYTE,            0, 0,           0, "rAsum7",     &user_data.rAsum[7],     // 13
   
    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBias",      &user_data.VBias,        // 14
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBias",      &user_data.IBias,        // 15
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pAVMon",     &user_data.pAVMon,       // 16
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "pAIMon",     &user_data.pAIMon,       // 17
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pDVMon",     &user_data.pDVMon,       // 18
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "pDIMon",     &user_data.pDIMon,       // 19
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "nAVMon",     &user_data.nAVMon,       // 20
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "nAIMon",     &user_data.nAIMon,       // 21
+   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBias",      &user_data.IBias,        // 15
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pDVMon",     &user_data.pDVMon,       // 16
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pAVMon",     &user_data.pAVMon,       // 17
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "nAVMon",     &user_data.nAVMon,       // 18
+   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "nAIMon",     &user_data.nAIMon,       // 19
+   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "pAIMon",     &user_data.pAIMon,       // 20
+   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "pDIMon",     &user_data.pDIMon,       // 21
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "uCTemp",     &user_data.uCTemp,       // 22
  
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp0",      &user_data.Temp[0],      // 23
@@ -171,10 +163,10 @@
    1,UNIT_BYTE,             0, 0,           0, "rBias57",    &user_data.rBias[57],    // 88
    1,UNIT_BYTE,             0, 0,           0, "rBias58",    &user_data.rBias[58],    // 89
    1,UNIT_BYTE,             0, 0,           0, "rBias59",    &user_data.rBias[59],    // 90
-   1,UNIT_BYTE,             0, 0,           0, "rBias60",    &user_data.rBias[60],    //100
-   1,UNIT_BYTE,             0, 0,           0, "rBias61",    &user_data.rBias[61],    //101
-   1,UNIT_BYTE,             0, 0,           0, "rBias62",    &user_data.rBias[62],    //102
-   1,UNIT_BYTE,             0, 0,           0, "rBias63",    &user_data.rBias[63],    //103
+   1,UNIT_BYTE,             0, 0,           0, "rBias60",    &user_data.rBias[60],    // 91
+   1,UNIT_BYTE,             0, 0,           0, "rBias61",    &user_data.rBias[61],    // 92
+   1,UNIT_BYTE,             0, 0,           0, "rBias62",    &user_data.rBias[62],    // 93
+   1,UNIT_BYTE,             0, 0,           0, "rBias63",    &user_data.rBias[63],    // 94
  
    /*
    4, UNIT_BYTE,      0, 0,     0,  "rVBias",   &user_data.rVBias,   // 78
@@ -243,7 +235,6 @@
    char xdata i, add;
  
  // Inititialize local variables
-   bChange = 0x0000;   // CTL and operation bits
  
    /* Format the SVN and store this code SVN revision into the system */
    for (i=0;i<4;i++) {
@@ -268,7 +259,7 @@
    {
      user_data.control    = 0x00;    //Turn off the charge pump
      user_data.status     = 0x80;    // Shutdown state
-     user_data.swBiasEN   = 0x00;    //Turn off all the switches
+     user_data.swBias     = 0x00;    //Turn off all the switches
      user_data.rQpump     = 0x00;    //Set to the lowest scale
      for(i=0;i<8;i++)
        user_data.rAsum[i] = 0x80;    //BS not sure to what value initialize it
@@ -296,15 +287,8 @@
  //-----------------------------------------------------------------------------
    SFRPAGE  = CONFIG_PAGE;
    P3MDOUT |= 0x1C; //Setting the Regulators control pins to push pull (3 Vreg)
- 
-   // V/I internal ADCs
    adc_internal_init();
- 
-   //-PAA To be check for sequence...  Turn on Vregs
-   EN_pD5V  = ON;
-   EN_pA5V  = ON;
-   EN_nA5V  = ON;
- 
+  
  //
  // SST Temperatures
  //-----------------------------------------------------------------------------
@@ -364,26 +348,79 @@
  // EEPROM memory Initialization/Retrieval
  //-----------------------------------------------------------------------------
  
+ //
+ // Final steps 
+ //-----------------------------------------------------------------------------
+   rESR = 0x00000000;
+   rEER = 0xC2;     // Page 3, Active page 2
+	rCTL = 0;
+	rCSR = 0x00;    //
+	user_data.control    = 0x80;    // Manual Shutdown
+	user_data.error      = rESR;    // Default Error register
+	user_data.eepage     = rEER;    // Default EE page
+	user_data.status     = rCSR;    // Shutdown state
+	user_data.swBias     = 0x00;    //Turn off all the switches
+	user_data.rQpump     = 0x00;    //Set to the lowest scale
+	for(i=0;i<8;i++)
+	  user_data.rAsum[i] = i;       //BS not sure to what value initialize it
+	for(i=0;i<64;i++) 
+	user_data.rBias[i] = i;         //Set the DAC to lowest value
+
+   EN_pD5V  = ON;
+   EN_pA5V  = OFF;
+   EN_nA5V  = OFF;
+
  }
- /*---- User write function -----------------------------------------*/
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+/*---- User write function -----------------------------------------*/
  #pragma NOAREGS
- 
- void user_write(unsigned char index) reentrant
- {
-   // In case of you changing common control bit (ex. EXT/IN switch bit)
-   // the change should be distributed to other channels.
-   if (index == IDXCTL)  rCTL = user_data.control;
-   if (index == IDXEER)  rCTL = user_data.control;
-   if (index == IDXQVOLT)   brQpump = 1;
-   if (index == IDXBSWITCH) bSwitch = 1;
+
+void user_write(unsigned char index) reentrant
+{
+// In case of you changing common control bit (ex. EXT/IN switch bit)
+// the change should be distributed to other channels.
+	rCSR = user_data.status;
+   if (index == IDXCTL)
+	  rCTL = user_data.control;
+//
+// -- Index Bias Dac
+   if (index == IDXBSWITCH) {
+#ifdef _PCA9539_
+     if (!SsS) {
+       PCA9539_Cmd(ADDR_PCA9539, ConfigPort0, user_data.swBias, 0, PCA9539_WRITE);
+     } // !Shutdown
+#endif
+   }
+//
+// -- ASUM Threshold DACs
    if ((index >= FIRST_ASUM) && (index < LAST_ASUM)) {
-     bAsum = 1;
-     AsumIndex = (index - FIRST_BIAS);
+     AsumIndex = (index - FIRST_ASUM);
+#ifdef _LTC2600_
+   // Update Bias Dac voltages as requested by bit5 of control register
+     LTC2600_Cmd(LTC2600_LOAD_H, user_data.rAsum[AsumIndex]);
+#endif
    }
+//
+// -- Index Bias Dac
    if ((index >= FIRST_BIAS) && (index < LAST_BIAS)) {
-     bBias = 1;
      BiasIndex = (index - FIRST_BIAS);
+     chipChan = (BiasIndex / 8) + 1;
+     chipAdd  = (BiasIndex % 8) + 1;
+#ifdef _LTC1665_
+     LTC1665_Cmd(chipAdd,user_data.rBias[BiasIndex] ,chipChan);
+#endif
+  }
+//
+// --- Index Qpump DAC
+ #ifdef _LTC1669_
+   if(SqPump) {
+     LTC1669_Cmd1(ADDR_LTC1669, user_data.rQpump, LTC1669_WRITE);
    }
+ #endif
  }
  
  /*---- User read function ------------------------------------------*/
@@ -406,11 +443,12 @@
  //-----------------------------------------------------------------------------
  //-----------------------------------------------------------------------------
  /*
- Main user loop should include:
+ Main loop should include:
  
  - V/I Reg reading/Monitoring on Time base
  - Read all the V/I Reg (Internal ADCs)
  - Check V/I against nominal values
+ - Action: Shutdown card
  
  - uCTemperature reading/monitoring
  - Read internal uC Temperature
@@ -420,12 +458,7 @@
  - Temperature reading/monitoring time based sync on Timer1 and MSCB req
  - Read all 12 SST temperature
  - Check against nominal values
- 
- - Bias Switches based on reg[7..0]
- Take action on Bias switches
- 
- - Bias DAC setting based on Index
- 
+  
  - I Bias reading
  - Read all 8 Bias current + Global bias current
  > Shutdown offending Vreg, report in status
@@ -433,255 +466,236 @@
  - I Bias monitoring
  - Check for sum consistency and agains nominal value
  - Switch off offending channel, report in status
- 
- - Q Pump switch based on CTL[0]/CSR[0] register
- 
  */
- //-----------------------------------------------------------------------------
- void user_loop(void)
- {
-   unsigned char xdata channel, chipAdd, chipChan;
-   float xdata volt, temperature, *uiMonitoring;
-   unsigned long xdata mask;
- 
- //-----------------------------------------------------------------------------
- // Power Up based on CTL bit
-   if (CPup) {
-     rCSR = user_data.status;
-     if (!SsS) { // Not shutdown
-     // Power up Card
-     // Vreg ON
-       EN_pD5V = ON;
-       EN_pA5V = ON;
-       EN_nA5V = ON;
-       // Force Check on Voltage 
-       bdoitNOW = ON;
-       // Wait for Check before setting SPup
-     } // !Shutdown
- 
-     // Reset Action        
-     CPup = 0;  // rCTL not updated yet
-     // Publish state after V/U check
- 
-   } // Power Up 
- 
-   if ( bdoitNOW || (uptime() - currentTime) > 1) {
-     //-----------------------------------------------------------------------------
-     //
-     // Internal ADCs monitoring Voltages and Currents based on time
-     //
-     // Time to do V/I Reg reading
-     uiMonitoring = &(user_data.VBias);
-     rCSR = user_data.status;
-     ESR = user_data.error;
-     for (channel=0, mask=0 ; channel<INTERNAL_N_CHN ; channel++, mask++) {
-       volt = read_voltage(channel);
-       DISABLE_INTERRUPTS;
-       uiMonitoring [internal_adc_map[channel]] = volt;
-       ENABLE_INTERRUPTS;
-       mask = (1<<channel);  // Should be 4 bytes for ESR 
-       if ((volt >= eepage.lVIlimit[channel]) && (volt <= eepage.uVIlimit[channel])) {
-         ESR &= !mask; // in range
-       }
-       else {
-         ESR |= mask; // out of range
-       }      
-     }
- 
-     // Set Shutdown if occured
-     if (ESR & SHUTDOWN_MASK) {
-       SsS = ON;  // System Shutdown
-       SPup = OFF;  // 
-     } else {
-       // If coming from PowerUp OR NOT! 
-       SPup = ON; 
-       SsS = OFF; // Remove System Shutdown
-       bdoitNOW = OFF;  // Reset flag coming from PowerUp sequence
-     }
-     
-     //-----------------------------------------------------------------------------
-     //
-     // uC Temperature reading/monitoring based on time
-     // Read uC temperature
-     volt = read_voltage(TCHANNEL);
-     /* convert to deg. C */
-     temperature = 1000 * (volt - 0.776) / 2.86;   // Needs calibration
-     /* strip to 0.1 digits */
-     temperature = ((int) (temperature * 10 + 0.5)) / 10.0;
-     DISABLE_INTERRUPTS;
-     user_data.uCTemp = (float) temperature;
-     ENABLE_INTERRUPTS;
-     ESR = user_data.error;
-     if ((volt >= eepage.luCTlimit) && (volt <= eepage.uuCTlimit)) {
-         uCT = OFF; // in range
-       }
-       else {
-         uCT = ON; // out of range
-       }      
-     // Set Shutdown if occured
-     if (ESR & SHUTDOWN_MASK) {
-       SsS = ON;  // System Shutdown
-       SPup = OFF;  // 
-     } else {
-       SPup = ON; 
-       SsS = OFF; // Remove System Shutdown
-     }
-     // Publish Error state
-     DISABLE_INTERRUPTS;
-     user_data.control = rCTL;
-     user_data.error   = ESR;
-     user_data.status  = rCSR;
-     ENABLE_INTERRUPTS;
- 
-     // update time for next loop
-     currentTime = uptime();
-   }
- 
- //-----------------------------------------------------------------------------
- // Toggle Manual Shutdwon based on Index
-     if (CmSd) {
-     rCSR = user_data.status;
-     if (!SsS) {
-       if (CmSd) { 
-         SmSd = OFF;   // Clear Manual Shutdown
-       }
-       else {
-         SmSd = ON;   // Set Manual Shutdown
-       }      
-     } // !Shutdown
- 
-     // Reset Action        
-     CmSd = 0;  // rCTL not yet published
-     // Publish Qpump state
-     DISABLE_INTERRUPTS;
-     user_data.control = rCTL;
-     user_data.status  = rCSR;
-     ENABLE_INTERRUPTS;
-   } // Manual Shutdown 
- 
- //-----------------------------------------------------------------------------
- //
- // Bias Switches action on CTL register
- #ifdef _PCA9539_
-   if (bSwitch) {
-     rCSR = user_data.status;
-     if (!SsS) {
-       PCA9539_Cmd(ADDR_PCA9539, ConfigPort0, user_data.swBiasEN, 0, PCA9539_WRITE);
-     } // !Shutdown
-   } // Bias Switch enable
- #endif
- 
- //-----------------------------------------------------------------------------
- // Toggle Qpump ON/OFF based on Index
-     if (CqPump) {
-     rCSR = user_data.status;
-     if (!SsS) {
-       if (SqPump) pca_operation(Q_PUMP_OFF);  // Toggle state
-       else        pca_operation(Q_PUMP_ON);   // Toggle state
-  //-PAA- TO BE WRITTEN     Check QVolt 
-       if (1) { 
-         SqPump = ON;
-       }
-       else {
-         SqPump = OFF;
-       }      
-     } // !Shutdown
- 
-     // Reset Action        
-     CqPump = 0;
-     // Publish Qpump state
-     DISABLE_INTERRUPTS;
-     user_data.control = rCTL;
-     user_data.status  = rCSR;
-     ENABLE_INTERRUPTS;
-   } // Control Pump
- 
- //-----------------------------------------------------------------------------
- // Bias DAC settings based on register
- #ifdef _LTC1665_
-   if (bBias) {
-     chipChan = (BiasIndex / 8) + 1;
-     chipAdd  = (BiasIndex % 8) + 1;
-     LTC1665_Cmd(chipAdd,user_data.rBias[BiasIndex] ,chipChan);
-     bBias = 0;
-   }
- #endif
- 
- //-----------------------------------------------------------------------------
- //
- // Charge Pump Voltage based on register
- #ifdef _LTC1669_
-   if(brQpump) {
-     LTC1669_Cmd1(ADDR_LTC1669, user_data.rQpump, LTC1669_WRITE);
-   }  
- #endif
- 
- //-----------------------------------------------------------------------------
- // The 16 bit ASUM DAC
- #ifdef _LTC2600_
-   // Update Bias Dac voltages as requested by bit5 of control register
-   if(bAsum) {
-     LTC2600_Cmd(LTC2600_LOAD_H, user_data.rAsum);
-   }
- #endif
- 
- //-----------------------------------------------------------------------------
- // Temperature reading/monitoring based on time
- #ifdef _ADT7486A_
-   if (uptime() - sstTime > 10) {
-     for (channel=0;channel < ADT7486A_NUM; channel++) {
-      ADT7486A_Cmd(ADT7486A_addrArray[channel]  , GetIntTemp
-      , &user_data.Temp[channel*2]);
-      ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt2Temp
-      , &user_data.Temp[channel*2+1]);
-     }
-     sstTime = uptime();
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void user_loop(void) {
+  float xdata volt, temperature, *uiMonitoring;
+  unsigned long xdata mask;
+
+  //-----------------------------------------------------------------------------
+  // Power Up based on CTL bit
+  if (CPup) {
+    rCSR = user_data.status;
+    if (!SsS  || SsS || SmSd) { // Shutdown or NOT
+		 // Publish Registers
+		 SsS = OFF;
+		 DISABLE_INTERRUPTS;
+		 user_data.status  = rCSR;
+		 ENABLE_INTERRUPTS;
+		   // Power up Card
+      // Vreg ON
+      EN_pD5V = ON;
+      EN_pA5V = ON;
+      EN_nA5V = ON;
+      delay_ms(10);
+	   // Force Check on Voltage 
+      bdoitNOW = ON;
+      // Wait for Check before setting SPup
+    } // !Shutdown
+
+    // Reset Action        
+    CPup = 0;  // rCTL not updated yet
+    // Publish state after V/U check
+
+  } // Power Up 
+
+  if ( bdoitNOW || (uptime() - currentTime) > 1) {
+    //-----------------------------------------------------------------------------
+    //
+    // Internal ADCs monitoring Voltages and Currents based on time
+    //
+    // Time to do V/I Reg reading
+    uiMonitoring = &(user_data.VBias);
+    rCSR = user_data.status;
+    rESR = user_data.error;
+    for (channel=0, mask=0 ; channel<INTERNAL_N_CHN ; channel++, mask++) {
+      volt = read_voltage(channel);
+      volt = volt * coeff[channel] + offset[channel];
+      DISABLE_INTERRUPTS;
+      uiMonitoring [channel] = volt;
+      ENABLE_INTERRUPTS;
+      mask = (1<<channel);  // Should be 4 bytes for ESR 
+ 		if ((channel > 1) && !SqPump) {  // Skip vQ, I
+		   if ((volt >= eepage.lVIlimit[channel])
+		     && (volt <= eepage.uVIlimit[channel])) {
+		       rESR &= ~mask; // in range
+		   }
+		   else {
+		     rESR |= mask; // out of range
+		   }      
+		}
     }
- #endif
- 
- //-----------------------------------------------------------------------------
- // EEPROM Save procedure based on CTL bit
-   if (CeeS) {
-     rCSR = user_data.status;
- //    channel = eeprom_write((user_data.eepage & 0xC0) >> 6);
-     if (channel) {
-       SeeS = DONE;
-     } else {
-       SeeS = FAILED;
-     }
- 
-     // Reset Action        
-     CeeS = 0;  // rCTL not yet published
-     // Publish Qpump state
-     DISABLE_INTERRUPTS;
-     user_data.control = rCTL;
-     user_data.status  = rCSR;
-     ENABLE_INTERRUPTS;
- }
- 
- //-----------------------------------------------------------------------------
- // EEPROM Restore procedure based on CTL bit
-   if (CeeR) {
-     rCSR = user_data.status;
- //    channel = eeprom_read((user_data.eepage & 0xC0) >> 6);
-     if (channel)
-       SeeR = DONE;
-     else
-       SeeR = FAILED;
-     // Reset Action
-     CeeS = 0;  // rCTL not yet published
-     // Publish Qpump state
-     DISABLE_INTERRUPTS;
-     user_data.status  = rCSR;
-     ENABLE_INTERRUPTS;
-   }
- 
-   //-----------------------------------------------------------------------------
-   //
-   // General loop delay
-   delay_ms(10);
- 
- 
-   //
-   // General loop delay
- } // End of User loop
+    if (bdoitNOW) {
+	   if (rESR & SHUTDOWN_MASK) {
+        pca_operation(Q_PUMP_OFF);
+        SqPump   = OFF;
+        SsS = ON;
+        SPup = OFF;  
+      } else {
+        SsS = OFF; // Remove System Shutdown
+		  SmSd = OFF;
+		  SPup = ON;
+      }
+	 }
+
+    bdoitNOW = OFF;   // Reset flag coming from PowerUp sequence
+
+    // Publish Registers
+    DISABLE_INTERRUPTS;
+    user_data.control = rCTL;
+    user_data.error   = rESR;
+    user_data.status  = rCSR;
+    ENABLE_INTERRUPTS;
+
+    //-----------------------------------------------------------------------------
+    //
+    // uC Temperature reading/monitoring based on time
+    rCSR = user_data.status;
+    rESR = user_data.error;
+    // Read uC temperature
+    volt = read_voltage(TCHANNEL);
+    /* convert to deg. C */
+    temperature = 1000 * (volt - 0.776) / 2.86;   // Needs calibration
+    /* strip to 0.1 digits */
+    temperature = ((int) (temperature * 10 + 0.5)) / 10.0;
+    DISABLE_INTERRUPTS;
+    user_data.uCTemp = (float) temperature;
+    ENABLE_INTERRUPTS;
+    if ((volt >= eepage.luCTlimit) && (volt <= eepage.uuCTlimit)) {
+      uCT = OFF; // in range
+    } else {
+      uCT = ON; // out of range
+    }      
+    // Set Shutdown if Error in System Register 
+    if ((rESR & SHUTDOWN_MASK) && !SmSd) {
+      pca_operation(Q_PUMP_OFF);  // Toggle state
+      SqPump   = OFF;
+      SsS = ON;
+      SPup = OFF;  
+    } else {
+      SsS = OFF; // Remove System Shutdown
+    }
+    // Publish Error state
+    // Publish Registers state
+    DISABLE_INTERRUPTS;
+    user_data.control = rCTL;
+    user_data.error   = rESR;
+    user_data.status  = rCSR;
+    ENABLE_INTERRUPTS;
+
+    // update time for next loop
+    currentTime = uptime();
+  }
+
+  //-----------------------------------------------------------------------------
+  // Set Manual Shutdown based on Index
+  if (CmSd) { 
+    rCSR = user_data.status;
+    if (!SsS) {
+      SmSd = ON;  // Set Manual Shutdown
+      pca_operation(Q_PUMP_OFF);  
+      EN_pD5V  = ON;  // For debugging
+      EN_pA5V  = OFF;
+      EN_nA5V  = OFF;
+      SqPump   = OFF;
+      SPup     = OFF;
+    } // Manula Shutdown
+    // Reset Action        
+    CmSd = 0;  // rCTL not yet published
+
+    // Publish Registers state
+    DISABLE_INTERRUPTS;
+    user_data.control = rCTL;
+    user_data.status  = rCSR;
+    ENABLE_INTERRUPTS;
+  } // !Shutdown
+
+  //-----------------------------------------------------------------------------
+  // Toggle Qpump ON/OFF based on Index
+  if (CqPump) {
+    rCSR = user_data.status;
+    if (!SsS) {
+      if (SqPump) {
+        pca_operation(Q_PUMP_OFF);  // Toggle state
+        SqPump   = OFF;
+      }
+      else {
+        pca_operation(Q_PUMP_ON);   // Toggle state
+        SqPump   = ON;
+      }
+    } // !Shutdown
+
+    // Reset Action        
+    CqPump = 0;
+
+    // Publish Registers state
+    DISABLE_INTERRUPTS;
+    user_data.control = rCTL;
+    user_data.status  = rCSR;
+    ENABLE_INTERRUPTS;
+  } // Control Pump
+
+
+  //-----------------------------------------------------------------------------
+  // Temperature reading/monitoring based on time
+#ifdef _ADT7486A_
+  if (uptime() - sstTime > 10) {
+    for (channel=0;channel < ADT7486A_NUM; channel++) {
+      ADT7486A_Cmd(ADT7486A_addrArray[channel]  , GetIntTemp
+        , &user_data.Temp[channel*2]);
+      ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt2Temp
+        , &user_data.Temp[channel*2+1]);
+    }
+    sstTime = uptime();
+  }
+#endif
+
+  //-----------------------------------------------------------------------------
+  // EEPROM Save procedure based on CTL bit
+  if (CeeS) {
+    rCSR = user_data.status;
+    //    channel = eeprom_write((user_data.eepage & 0xC0) >> 6);
+    if (channel) {
+      SeeS = DONE;
+    } else {
+      SeeS = FAILED;
+    }
+
+    // Reset Action        
+    CeeS = 0;  // rCTL not yet published
+    // Publish Qpump state
+    // Publish Registers state
+    DISABLE_INTERRUPTS;
+    user_data.control = rCTL;
+    user_data.status  = rCSR;
+    ENABLE_INTERRUPTS;
+  }
+
+  //-----------------------------------------------------------------------------
+  // EEPROM Restore procedure based on CTL bit
+  if (CeeR) {
+    rCSR = user_data.status;
+    //    channel = eeprom_read((user_data.eepage & 0xC0) >> 6);
+    if (channel)
+      SeeR = DONE;
+    else
+      SeeR = FAILED;
+    // Reset Action
+    CeeS = 0;  // rCTL not yet published
+    // Publish Qpump state
+    // Publish Registers state
+    DISABLE_INTERRUPTS;
+    user_data.control = rCTL;
+    user_data.status  = rCSR;
+    ENABLE_INTERRUPTS;
+  }
+
+  //-----------------------------------------------------------------------------
+  //
+  // General loop delay
+  delay_ms(10);
+
+  //
+  // General loop delay
+} // End of User loop
