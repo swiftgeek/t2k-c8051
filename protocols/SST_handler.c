@@ -205,6 +205,10 @@ unsigned char SST_DrvClientResponse(void)
 
   delay_us(T_BIT / 2); //delay for half of T_BIT time
 
+
+#define CPU_C8051F120
+   SFRPAGE  = CPT1_PAGE;
+#endif
   if(SST_ClientResponse == 1)
   //if the comparator output is high, then return 1
   {
