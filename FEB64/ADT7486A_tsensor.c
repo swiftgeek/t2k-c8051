@@ -70,7 +70,7 @@ void ADT7486A_Cmd(unsigned char addr, unsigned char writeLength, unsigned char r
 {
 	float xdata tempDataBuffer = 0x00;
 	unsigned char xdata writeFCS_Org = 0x00; //originator's side write FCS	
-  signed char xdata k = 0;
+   signed char xdata k = 0;
 	float xdata dataBuffer = 0.0;
 	
 	//Calculate originator's side write FCS
@@ -92,7 +92,7 @@ void ADT7486A_Cmd(unsigned char addr, unsigned char writeLength, unsigned char r
 		SST_DrvLow();
 		SST_WriteByte(writeLength); //WriteLength
 		SST_WriteByte(readLength); //ReadLength
-		if(writeLength != 0x00)
+		if(writeLength != 0x00)    // When we do not have the Ping command
 		{
 			SST_WriteByte(command); //Optional : Commands
 		}
@@ -181,15 +181,23 @@ float ADT7486A_Read(unsigned char writeFCS_Originator, unsigned char cmdFlag)
 	unsigned char xdata readFCS_Client = 0x00; //used for both writeFCS and readFCS
 	float xdata convertedTemp = 0.0;
 
-	writeFCS_Client = SST_ReadByte(); //get Write FFCS from Client
+	writeFCS_Client = SST_ReadByte(); // Get Write FFCS from Client when we have finished 
+												 // the write operation
 
-//BS	
+	
 	//writeFCS check
-//	if(writeFCS_Originator != writeFCS_Client)
-//	{
-//		return ((float) -300.0); //if the FCS's don't match up, then return -300
-//	}
+	if(writeFCS_Originator != writeFCS_Client)
+	{
+		return ((float) -300.0); //if the FCS's don't match up, then return -300
+	}
 
+	// Client is requesting a message abort
+	if(writeFCS_Originator == ~ writeFCS_Client)
+	{
+		return ((float) -400.0); 
+	}
+	
+	
 	if(cmdFlag == 0x00) //If it's not the Ping Command or SetOffSet command
 	{
 		//Take the data in to a variable called datareceived

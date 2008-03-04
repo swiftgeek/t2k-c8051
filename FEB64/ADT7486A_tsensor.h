@@ -19,7 +19,7 @@
 
 // Command Map (ADT7486A) - including WL and RL
 // Format is as follows:
-// #define writeLeCommandName ngth, readLength, command, data(if applicable, defined by user), channel number
+// #define writeLeCommandName writeLenngth, readLength, command, data(if applicable, defined by user), channel number
                              //dummy bytes are written for those
                              //not applicable to fit functin prototype
 #define Ping          0x00, 0x00, 0x00, 0x00, 0x00
@@ -36,7 +36,7 @@
 #define DONT_READ_DATA  0xff
 #define READ_DATA     	0x00
 #define TEMP_LIMIT    	30
-#define AVG_COUNT   	   12 			   //the time communication takes is, 3.5ms times this number
+#define AVG_COUNT   	    2 			   //the time communication takes is, 3.5ms times this number
 #define ADT7486A_CONVERSION_TIME 0  //in ms, it has buffers, don't really need to wait
 											   /* ADT7486A temperature array addresses 
 											   --> 2 sensors per chip, so each address is repeated twice
