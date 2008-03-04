@@ -32,6 +32,10 @@
  #include "pca_internal.h"
  #include "adc_internal.h"
  
+ #ifdef  _ADT7486A_
+ #include "ADT7486A_tsensor.h"
+ #endif
+
  #ifdef _PCA9539_
  #include "PCA9539_io.h"
  #endif
@@ -48,22 +52,25 @@
  #include "LTC2600_dac.h"
  #endif
  
- #ifdef  _ADT7486A_
- #include "ADT7486A_tsensor.h"
- #endif
-
  //
  // Global declarations
  //-----------------------------------------------------------------------------
  char code  node_name[] = "FEB64";
  char idata svn_rev_code[] = "$Rev$";
- // declare globally the number of sub-addresses to framework
+ //
+ // Declare globally the number of sub-addresses to framework
  unsigned char idata _n_sub_addr = 1;
+ //
+ // local variables 
  unsigned long xdata currentTime=0, sstTime=0;
  unsigned char xdata channel, chipAdd, chipChan;
  unsigned char xdata BiasIndex, AsumIndex;
+ 
+ //BS for testing the ADT7486A address
+ unsigned char Tempaddress;
+ // bit register
  unsigned char bdata bChange;
- sbit bdoitNOW = bChange ^ 0;
+ sbit bdoitNOW     = bChange ^ 0;
 
  // User Data structure declaration
  //-----------------------------------------------------------------------------
@@ -218,11 +225,11 @@
    0
  };
  MSCB_INFO_VAR *variables = vars;   // Structure mapping
- //MSCB_INFO_VAR *xdataStruct = xStruct;
  // Get sysinfo if necessary
- extern SYS_INFO sys_info;
+ extern SYS_INFO sys_info;          // For address setting
  
- unsigned char ADT7486A_addrArray[] = {ADT7486A_ADDR_ARRAY0,ADT7486A_ADDR_ARRAY1,ADT7486A_ADDR_ARRAY2,ADT7486A_ADDR_ARRAY3};
+
+ unsigned char ADT7486A_addrArray[] = {ADT7486A_ADDR_ARRAY1,ADT7486A_ADDR_ARRAY0,ADT7486A_ADDR_ARRAY3,ADT7486A_ADDR_ARRAY2};
  
  
  /********************************************************************\
@@ -347,27 +354,28 @@
  //
  // EEPROM memory Initialization/Retrieval
  //-----------------------------------------------------------------------------
- 
+ //
+ //
  //
  // Final steps 
  //-----------------------------------------------------------------------------
    rESR = 0x00000000;
-   rEER = 0xC2;     // Page 3, Active page 2
-	rCTL = 0;
-	rCSR = 0x00;    //
-	user_data.control    = 0x80;    // Manual Shutdown
+   rEER = 0xC2;                    // Page 3, Active page 2
+	rCTL = 0;                       // Reset control
+	rCSR = 0x00;                    // Initial CSR
 	user_data.error      = rESR;    // Default Error register
 	user_data.eepage     = rEER;    // Default EE page
 	user_data.status     = rCSR;    // Shutdown state
-	user_data.swBias     = 0x00;    //Turn off all the switches
-	user_data.rQpump     = 0x00;    //Set to the lowest scale
+	user_data.swBias     = 0x00;    // Turn off all the switches
+	user_data.rQpump     = 0x00;    // Set to the lowest scale
+	user_data.control    = 0x80;    // Manual Shutdown
 	for(i=0;i<8;i++)
-	  user_data.rAsum[i] = i;       //BS not sure to what value initialize it
+	  user_data.rAsum[i] = i;       // BS not sure to what value initialize it
 	for(i=0;i<64;i++) 
-	user_data.rBias[i] = i;         //Set the DAC to lowest value
+	user_data.rBias[i] = i;         // Set the DAC to lowest value
 
-   EN_pD5V  = ON;
-   EN_pA5V  = OFF;
+   EN_pD5V  = ON;                  // Needed for debug
+   EN_pA5V  = OFF; 
    EN_nA5V  = OFF;
 
  }
@@ -381,6 +389,7 @@
 
 void user_write(unsigned char index) reentrant
 {
+
 // In case of you changing common control bit (ex. EXT/IN switch bit)
 // the change should be distributed to other channels.
 	rCSR = user_data.status;
@@ -640,12 +649,13 @@ void user_loop(void) {
   //-----------------------------------------------------------------------------
   // Temperature reading/monitoring based on time
 #ifdef _ADT7486A_
-  if (uptime() - sstTime > 10) {
+  if (uptime() - sstTime > 1) {
     for (channel=0;channel < ADT7486A_NUM; channel++) {
-      ADT7486A_Cmd(ADT7486A_addrArray[channel]  , GetIntTemp
+      Tempaddress = ADT7486A_addrArray[channel];
+		ADT7486A_Cmd(ADT7486A_addrArray[channel]  , GetIntTemp
         , &user_data.Temp[channel*2]);
-      ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt2Temp
-        , &user_data.Temp[channel*2+1]);
+//      ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt2Temp
+//        , &user_data.Temp[channel*2+1]);
     }
     sstTime = uptime();
   }

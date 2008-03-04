@@ -47,7 +47,7 @@
 // Fix conversion coeef for V/I internal ADC
 //                      Vb      Vbi   +6Vd      +6Va     -6Va  -6Ia   +6Ia  +6Id 
 //float code   coeff[8] = {1.  ,1.   ,1.   ,1.   ,1.   ,1.  ,1.  ,1.};
-float code   coeff[8] = {1.     ,50.   ,4.025   ,4.025   ,-4.025   ,100.  ,50.  ,100.};
+float code   coeff[8] = {40.   ,50.   ,4.025   ,4.025   ,-4.025   ,100.  ,50.  ,100.};
 float code  offset[8] = {0.     ,0.   ,0.   ,0.   ,0.    ,-4.5    ,0.   ,0.  };
 
 // Shutdwon mask
