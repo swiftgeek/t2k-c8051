@@ -15,6 +15,13 @@
 
 // Device Address mapping
 #define ADDR_LTC1669   0x20
+
+//ADT7486A temperature addresses. 2 sensors per chip, so each address is repeated twice
+#define ADT7486A_ADDR0 0x49   
+#define ADT7486A_ADDR1 0x48	
+#define ADT7486A_ADDR2 0x4B
+#define ADT7486A_ADDR3 0x4A
+
 #define NCHANNEL_BIAS    64
 #define NCHANNEL_ASUM     8
 #define NCHANNEL_SST      8
@@ -38,6 +45,9 @@
 #define OFF    0
 #define DONE   1
 #define FAILED 0
+
+//BS Temperature testing
+#define TEMP_ThRESHOLD  27
 
 // charge pump state for PCA control
 #define Q_PUMP_INIT          1           
@@ -90,6 +100,7 @@ sbit ssTT     = rESR ^ 9;
 
 // EER EEPROM register
 unsigned char rEER;
+
 struct EEPAGE {
 float lVIlimit[8]; // vQ iQ +6Vd +6Va -6Va -6Ia +6Ia +6Id 
 float uVIlimit[8];
@@ -106,6 +117,7 @@ float uVBiaslimit;
 float lIBiaslimit;
 float uIBiaslimit;
 };
+
 //   vQ   iQ  +6Vd  +6Va  -6Va  -6Ia  +6Ia  +6Id 
 // uC Temperature
 // SST Temperature
@@ -138,6 +150,8 @@ struct user_data_type {
 	float uCTemp;
 	float Temp[8];               
 	unsigned char rBias [64];
+	unsigned char NTemFail;
+	float FailTemp;
 };
 struct user_data_type xdata user_data;
    	

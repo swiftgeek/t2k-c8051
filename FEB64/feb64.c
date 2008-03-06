@@ -57,11 +57,16 @@
  //-----------------------------------------------------------------------------
  char code  node_name[] = "FEB64";
  char idata svn_rev_code[] = "$Rev$";
+ 
  //
  // Declare globally the number of sub-addresses to framework
  unsigned char idata _n_sub_addr = 1;
- //
- // local variables 
+
+//	Global Variable Declarations
+// Global variable which shows number of times temperature fails
+ unsigned char xdata FCS_Mismatch;
+
+// local variables 
  unsigned long xdata currentTime=0, sstTime=0;
  unsigned char xdata channel, chipAdd, chipChan;
  unsigned char xdata BiasIndex, AsumIndex;
@@ -174,8 +179,12 @@
    1,UNIT_BYTE,             0, 0,           0, "rBias61",    &user_data.rBias[61],    // 92
    1,UNIT_BYTE,             0, 0,           0, "rBias62",    &user_data.rBias[62],    // 93
    1,UNIT_BYTE,             0, 0,           0, "rBias63",    &user_data.rBias[63],    // 94
- 
-   /*
+
+ //BS
+   1, UNIT_BYTE,            0, 0,           0, "NTemFail",    &user_data.NTemFail,      
+	4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "FailTemp",     &user_data.FailTemp,       
+
+	/*
    4, UNIT_BYTE,      0, 0,     0,  "rVBias",   &user_data.rVBias,   // 78
    4, UNIT_BYTE,      0, 0,     0,  "rIBias",  &user_data.rIBias,    // 79
    4, UNIT_BYTE,      0, 0,     0,  "rpAV",    &user_data.rpAV,    // 80
@@ -229,7 +238,8 @@
  extern SYS_INFO sys_info;          // For address setting
  
 
- unsigned char ADT7486A_addrArray[] = {ADT7486A_ADDR_ARRAY1,ADT7486A_ADDR_ARRAY0,ADT7486A_ADDR_ARRAY3,ADT7486A_ADDR_ARRAY2};
+ unsigned char ADT7486A_addrArray[] = {ADT7486A_ADDR1,ADT7486A_ADDR0 
+ ,ADT7486A_ADDR3,ADT7486A_ADDR2};
  
  
  /********************************************************************\
@@ -378,6 +388,10 @@
    EN_pA5V  = OFF; 
    EN_nA5V  = OFF;
 
+	//BS
+	user_data.NTemFail = 0x00;
+	user_data.FailTemp = 0.0;
+
  }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -479,8 +493,9 @@ void user_write(unsigned char index) reentrant
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void user_loop(void) {
-  float xdata volt, temperature, *uiMonitoring;
+  float xdata volt, temperature, *pfData;
   unsigned long xdata mask;
+  
 
   //-----------------------------------------------------------------------------
   // Power Up based on CTL bit
@@ -515,14 +530,14 @@ void user_loop(void) {
     // Internal ADCs monitoring Voltages and Currents based on time
     //
     // Time to do V/I Reg reading
-    uiMonitoring = &(user_data.VBias);
+    pfData = &(user_data.VBias);
     rCSR = user_data.status;
     rESR = user_data.error;
     for (channel=0, mask=0 ; channel<INTERNAL_N_CHN ; channel++, mask++) {
       volt = read_voltage(channel);
       volt = volt * coeff[channel] + offset[channel];
       DISABLE_INTERRUPTS;
-      uiMonitoring [channel] = volt;
+      pfData[channel] = volt;
       ENABLE_INTERRUPTS;
       mask = (1<<channel);  // Should be 4 bytes for ESR 
  		if ((channel > 1) && !SqPump) {  // Skip vQ, I
@@ -651,9 +666,35 @@ void user_loop(void) {
 #ifdef _ADT7486A_
   if (uptime() - sstTime > 1) {
     for (channel=0;channel < ADT7486A_NUM; channel++) {
-      Tempaddress = ADT7486A_addrArray[channel];
-		ADT7486A_Cmd(ADT7486A_addrArray[channel]  , GetIntTemp
-        , &user_data.Temp[channel*2]);
+
+//BS 		To setting the offset associated with the temperature reading.
+//			in that case, we probably can get rid of the conversion factors			
+//			ADT7486A_Cmd(ADT7486A_addrArray[channel], SetExt1Offset, &temperature)
+//			ADT7486A_Cmd(ADT7486A_addrArray[channel], SetExt2Offset, &temperature)
+
+		if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetIntTemp, &temperature))
+		{
+			 ssTT = 0;
+			 DISABLE_INTERRUPTS;
+			 user_data.Temp[channel*2] = temperature;			 			
+			 user_data.error   = rESR;
+			 ENABLE_INTERRUPTS;
+		}
+		else
+		{
+			DISABLE_INTERRUPTS;
+			ssTT = 1;
+			user_data.error   = rESR;
+			ENABLE_INTERRUPTS;
+		}
+		if( temperature < TEMP_ThRESHOLD )
+	 	{
+			DISABLE_INTERRUPTS;
+			user_data.NTemFail++;
+			user_data.FailTemp = temperature;
+			ENABLE_INTERRUPTS;
+		}
+
 //      ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt2Temp
 //        , &user_data.Temp[channel*2+1]);
     }
