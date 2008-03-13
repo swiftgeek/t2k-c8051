@@ -1,252 +1,200 @@
 /**********************************************************************************\
-  Name:         ADT7486A_tsensor.c
-  Created by:   Brian Lee						     May/11/2007
-  Modified By:  Bahman Sotoodian					  March/03/2008
+Name: 				ADT7486A_tsensor.c
+Created by: 	Brian Lee 							 May/11/2007
+Modified By:	Bahman Sotoodian					 March/03/2008
 
-  Contents:     Temperature sensor array (ADT7486A) handler
+Contents: 		Temperature sensor array (ADT7486A) handler
 
-  Version:		Rev 1.2
-
-  $Id$
+$Id$
 \**********************************************************************************/
 
 // --------------------------------------------------------
-//  Include files
+//	Include files
 // --------------------------------------------------------
 #include "../mscbemb.h"
 #include "../Protocols/SST_handler.h"
 #include "ADT7486A_tsensor.h"
 
-void ADT7486A_Init(void)
-/**********************************************************************************\
-  Routine: ADT7486A_Init
-  Purpose: ADT7486A temperature sensor array initialization
-  Input:void
-  Function value:void
-\**********************************************************************************/
-{	
+//
+//----------------------------------------------------------------------------------
+/**
+Initialize the SST communication protocol
+*/
+void ADT7486A_Init(void) {	
 	SST_Init();
 }
 
-signed char ADT7486A_Cmd(unsigned char addr, unsigned char writeLength, unsigned char readLength, 
-				unsigned char command, unsigned char datMSB, unsigned char datLSB, float *varToBeSent)
-/**********************************************************************************\
+//
+//----------------------------------------------------------------------------------
+/** 
+Sends commands to the device. Not all the functions are currently implemented
+Ths is the cmd list...
+* <center> test purpose.
+*  \image html temp.jpg
+* </center> 
 
-  Routine: ADT7486A_Cmd 
-
-  Purpose: To send commands to the clients
-
-  Input:
-   unsigned char addr			Address of the client which Originator wants to talk to	
-	unsigned char writeLength	Length of the data Originator wants to send	
-	unsigned char readLength	Length of the data Originator wants to receive
-	unsigned char command		Command (see ADT7486A_tsensor.h file or ADT7486A manual)
-	unsigned char datMSB	 	   Most Significant byte of the temperature offset value
-								      (for SetExt1OffSet() and SetExt2OffSet() commands)
-	unsigned char datLSB		   Least Significant byte of the temperature offset value
-								      (for SetExt1OffSet() and SetExt2OffSet() commands)
-
-  Function value:					Signed char. It returns 0 when we have a valid temperature reading
-    
-
-\**********************************************************************************/
-{
-	//Declare the local variables 
-	unsigned char xdata TempCounter = 0;	  //To keep track of number of times, we have gone through the loop
-	float xdata tempDataBuffer = 0x00;		  //Temporary store the valid and invalid temperature readings	
-	unsigned char xdata writeFCS_Org = 0x00; //Originator's side write FCS	
-   signed char xdata k = 0;					  //"k" represents number of times that we want to read a valid temperature 	
-	float xdata dataBuffer = 0.0;				  //We store the valid temperature readings in dataBuffer
-	extern unsigned char xdata FCS_Mismatch; //Global variable which indicate number of times that we have FCS mismatch 
-	signed char Read_Status = 0;				  //The Read_Status will reflect the status of read operation
+@attention	Conversion time 12,38,38ms round-robin for all 3 channels of the device.
+						Internal averaging, doesn't require one at this level. If anyway desided 
+			>100ms< needs to be added if polling on single channel!
+@param addr 				Address of the client which Originator wants to talk to
+@param command				Command (see ADT7486A_tsensor.h file or ADT7486A manual)
+@param writeLength			Length of the data Originator wants to send 
+@param readLength 		Length of the data Originator wants to receive
+@param datMSB 			Most Significant byte of the temperature offset value
+			   (for SetExt1OffSet() and SetExt2OffSet() commands)
+@param datLSB 			Least Significant byte of the temperature offset value
+@param *fdata 					Temperature 
+@return SUCCESS, status from ADT7486A_Read()
+*/	
+signed char ADT7486A_Cmd(unsigned char addr, unsigned char command
+											 , unsigned char writeLength, unsigned char readLength 
+											 , unsigned char datMSB, unsigned char datLSB
+											 , float *fdata) {
+	signed char k, status, ntry;							
+	unsigned char xdata writeFCS_Org; 			 // Originator's side write FCS 
+	float xdata tempsum = 0.0f; 			 // Read sum for average	
 
 	//Calculate originator's side write FCS
-	writeFCS_Org = FCS_Step(command, FCS_Step(readLength, FCS_Step(writeLength, FCS_Step(addr, 0x00))));	
-	
-	//If the command is setOffSet commands, then there are 2 more bytes of data to be added on
-	if(writeLength == SET_OFFSET_WL)
-	{
-		writeFCS_Org = FCS_Step(datMSB, FCS_Step(datLSB, writeFCS_Org));
+	writeFCS_Org = FCS_Step(command
+		, FCS_Step(readLength
+		, FCS_Step(writeLength
+		, FCS_Step(addr
+		, 0x00)))); 
+
+	// setOffSet commands, add the 2 bytes of data
+	if(writeLength == SET_OFFSET_WL) {
+		writeFCS_Org = FCS_Step(writeFCS_Org
+			, FCS_Step(datMSB
+			, FCS_Step(datLSB
+			, 0x00)));
 	}
-	
-   //Run averaging starting
-	//If we do not obtain appropriate temperature reading after N_TEMP_TRIALS attempts
-	//We have to terminate the loop.
-	while((k != AVG_COUNT) && (TempCounter <N_TEMP_TRIALS))
-	{
-		TempCounter++;
-		
+
+	k 	 = AVG_COUNT;
+	ntry = N_TEMP_TRIALS; 
+ 
+	//Run averaging and max tries
+	while(k && ntry) {
+
 		//Start the message
-		SST_DrvLow();						//Sending two zero (the address timing negotiation bits)
+		SST_DrvLow(); 						 // Sending two zero (the address timing negotiation bits)
 		SST_DrvLow();
-		SST_WriteByte(addr); 			//Target address
-		SST_DrvLow();						//Send the message timing negotiation bit
-		SST_WriteByte(writeLength);   //WriteLength
-		SST_WriteByte(readLength);    //ReadLength
-		if(writeLength != PING_WL)    //When we do not have the Ping command
-		{
-			SST_WriteByte(command); 	//Optional : sending the commands
+		SST_WriteByte(addr);		 // Target address
+		SST_DrvLow(); 			 // Send the message timing negotiation bit
+		SST_WriteByte(writeLength);  // WriteLength
+		SST_WriteByte(readLength);	 // ReadLength
+		if(writeLength == PING_WL) {
+			// PING
+			return ADT7486A_Read(writeFCS_Org, DONT_READ_DATA, fdata);
 		}
-		else 									//When we have the Ping command
-		{			
-			return ADT7486A_Read(writeFCS_Org, DONT_READ_DATA,& tempDataBuffer);
-			
+
+		// Send CMD
+		SST_WriteByte(command); 	//Optional : sending the commands
+
+		// RESET
+		if(command == RESET_CMD) {
+			return ADT7486A_Read(writeFCS_Org, DONT_READ_DATA, fdata);
 		}
-		if(writeLength == SET_OFFSET_WL) //If we have the SetOffset command
-		{
-			//Send the data in little endian format, LSB before MSB
+		// SET
+		if(writeLength == SET_OFFSET_WL) {
+			//Send the data in little endian format
 			SST_WriteByte(datLSB);
 			SST_WriteByte(datMSB);
-			return ADT7486A_Read(writeFCS_Org, DONT_READ_DATA, & tempDataBuffer);
-			
+			return ADT7486A_Read(writeFCS_Org, DONT_READ_DATA, fdata);			
 		}
-		
-		//If the received ReadLength and WriteLength matched with the Get commands, we do the readings
-		if((writeLength == GET_CMD_WL) && (readLength == GET_CMD_RL)) 
-		{
-			if(k != AVG_COUNT)
-			{
-				//Get the temperature and the status of read operation
-				Read_Status= ADT7486A_Read(writeFCS_Org, READ_DATA, &tempDataBuffer);
-				if (!Read_Status) 	//Read_Status would return 0, when we have a valid temperature
-				{				
-					dataBuffer += tempDataBuffer;
-					k++;
+		// GET 
+		if((writeLength == GET_CMD_WL) && (readLength == GET_CMD_RL)) {
+			if(k) {
+				status = ADT7486A_Read(writeFCS_Org, READ_DATA, fdata);
+				if (status == SUCCESS) {
+					tempsum += *fdata;
+					k--;
 				}
-				else
-				{
-					FCS_Mismatch++;			//Number of times that we have mismatch
-            }
-			}
-			if(k == AVG_COUNT)
-			{		
-					*varToBeSent = dataBuffer/k;				
-			}		
-		}
-		else if(command == RESET_CMD)	   //if reset command
-		{
-			return ADT7486A_Read(writeFCS_Org, DONT_READ_DATA, &tempDataBuffer);
+			} 
+		if (k == 0) { 	
+				*fdata = tempsum / AVG_COUNT;
+		return SUCCESS;
+			} 	
 		}
 
 		//Clear for the next msg and delay for conversion to finish
+		if (AVG_COUNT > 1) {
 		SST_Clear();
-      delay_us(ADT7486A_CONVERSION_TIME);
+			delay_ms(ADT7486A_CONVERSION_TIME);
 	}
-	
-	//If we do not have any valid temperature, we would return the Read_Status
-	if (TempCounter == N_TEMP_TRIALS)
-		{
-	      return Read_Status;
-      }
+	ntry--;
+	} // out of while (ntry done with error) 
 
-	//Reset averaging buffer variable
-	dataBuffer = 0.0;
-	
-	//Reset the counting variable used for averaging and break the loop
-	k = 0;
-	
-	return 0;
+	return status;	
 }
 
-signed char ADT7486A_Read(unsigned char writeFCS_Originator, unsigned char cmdFlag,float *TempReceived)
-/**********************************************************************************\
-
-  Routine: ADT7486A_Read
-
-  Purpose:  Read only needs to be working for reading 2 bytes of info
-		   	Which are Internal Temp, External Temp1,External Temp2, GetExt1Offset and GetExt2Offset
-		   	Others should be verified on oscilloscope since mscb returns a data at maximum
-		   	4bytes, (allTemp and GetDIB commands take 6 bytes and 16 bytes, which is impossible anyway)
-
-  Input:
-   unsigned char writeFCS_Originator	Originator's writeFCS 
-	unsigned char cmdFlag				   Flag used to distinguish if the command is a Ping/Reset
-													or not.
-	float *TempReceived 					   The variable that we want to store the avraged temperatures reading
-
-  Function value:
-    signed char								The ReadStatus which would indicate whether the temperature 
-											   	is valid or not
-
-\**********************************************************************************/
-{	
+//
+//----------------------------------------------------------------------------------
+/** 
+Reads 2 bytes of info which are Internal Temp, External Temp1,External Temp2,
+GetExt1Offset and GetExt2Offset.
+@param writeFCS_Originator	Originator's writeFCS 
+@param cmdFlag				Flag used to distinguish if the command is a Ping/Reset
+											or not.
+@param	*temperature 									Single temperature read
+@return SUCCESS, INVALID_TEMP, FCS_WERROR, CLIENT_ABORT, OUT_OF_RANGE 								 							
+*/
+signed char ADT7486A_Read(unsigned char writeFCS_Originator
+												, unsigned char cmdFlag
+						, float *temperature) {	
 	//Declare local variables
-	unsigned char xdata LSB_Received = 0x00; 		//Max 2bytes of info from 5 different possible commands
-	unsigned char xdata MSB_Received = 0x00; 		
-	unsigned char xdata writeFCS_Client = 0x00;	//The client write FCS
-	unsigned char xdata readFCS_Client = 0x00;   //The client read FCS	
-	float xdata convertedTemp = 0.0;
+	unsigned char LSB_Received; 	
+	unsigned char MSB_Received; 		
+	signed	short xdata itemperature;
+	unsigned char writeFCS_Client = 0x00;	 // client write FCS
+	unsigned char readFCS_Client	= 0x00;  // client read FCS	(rm var once debugged)
 
-	writeFCS_Client = SST_ReadByte(); // Get Write FCS from Client when we have finished 
-												 // the write operation
+	// Get the client FCS to compare against the originator
+	writeFCS_Client = SST_ReadByte();
 
-	
-	//WriteFCS check
+	//WriteFCS check (needs to match to continue)
 	if(writeFCS_Originator != writeFCS_Client)
-	{
-		return FCS_WERROR;  //If the FCS Writes don't match up, then return FCS_wError
-	}
+		return FCS_WERROR;
 
 	// Client is requesting a message abort
-	if(writeFCS_Originator == ~ writeFCS_Client)
-	{
-		return ClIENT_ABORT; 
-	}
-	
-	//If it's not the Ping Command SetOffset or Reset command
+	if(writeFCS_Originator == ~writeFCS_Client)
+		return CLIENT_ABORT; 
+
+	// No data to read	
+	if (cmdFlag == DONT_READ_DATA) 
+		return PING_OFFSET_RESET_CMD;
+
+	// Data to read
 	if(cmdFlag == READ_DATA) 
 	{
-		//Take the data in to a variable called datareceived
-		LSB_Received 	= SST_ReadByte();   //get LSB
-		MSB_Received 	= SST_ReadByte();   //get MSB
-		readFCS_Client = SST_ReadByte();   //get Read FCS from Client
+		// Read data
+		LSB_Received 	= SST_ReadByte(); 	//get LSB
+		MSB_Received 	= SST_ReadByte(); 	//get MSB
+		readFCS_Client	= SST_ReadByte(); 	//get FCS
 
-      //************************************************************************************
-		//Data is thoroughly received, now analyze the received data
-		//ReadFCS check
-		//************************************************************************************	
-	
+		// Client FC check
 		if(FCS_Step(MSB_Received, FCS_Step(LSB_Received, 0x00)) != readFCS_Client) 
-		{
-			return FCS_RERROR; //If the read FCS's don't match up, then return FCS_rError
-		}		
-	
-		//************************************************************************************
-		//Temperature Conversion:
-		//Convert the Temperature according to the structure of bits defined by
-		//ADT7486A manual
-		//Convert 2bytes of temperature from 
-		//GetExt1OffSet/GetExt2OffSet/GetIntTemp()/GetExt1Temp()/GetExt2Temp() commands
-		//Mask out the first bit (sign bit)
-		//and if the sign bit is 1, then do two's complement
-		//************************************************************************************
-		
-		if((MSB_Received & 0x80) == 0x80) 
-		{
+			return FCS_RERROR;		 // No match 
+
+		// Temperature Conversion +/- 512 degC on 16bits
+		// if negative, then do two's complement
+		if((MSB_Received & 0x80) == 0x80) {
 			MSB_Received = ~MSB_Received;
 			LSB_Received = ~LSB_Received + 0x01;
 		}
-		
-		//Calculate the converted Temperature
-		convertedTemp = ((float) ((MSB_Received << 8) *0.015625)) 
-		              + ((float) (LSB_Received *0.015625));
-    	convertedTemp *= CONVERSION_FACTOR1;
-    	
-		convertedTemp -= CONVERSION_FACTOR2;
-    	
-		//To check whether the temperature is in range or not
-		if (convertedTemp > 100. || convertedTemp < -10.) 
-			return OUT_OF_RANGE; 	
-	   else if (convertedTemp == -CONVERSION_FACTOR2) 
-			return INVALID_TEMP;
-		}
 
-	else //If it is the Ping,SetOffset or Reset command
-		{
-			return PING_OFFSET_RESET_CMD;
-		}
-	//Return the converted temperature value
-	*TempReceived = convertedTemp; 	
-	//Indicate a valid temperature
-	return 0;
+		// In 1/64th degree Celsius
+		itemperature	= (MSB_Received << 8) + LSB_Received; 	
+		*temperature	= ((float) itemperature) / 64;
+//		*temperature *= CONVERSION_FACTOR1; 	// -PAA- Should be ONE
+		*temperature -= CONVERSION_FACTOR2;
+
+		// Check whether temperature is in range
+		if ((*temperature > 100.) || (*temperature < -10.)) 
+			return OUT_OF_RANGE; 	
+		else if (*temperature == -CONVERSION_FACTOR2) 
+			return INVALID_TEMP;
+	}
+
+	// Valid temperature
+	return SUCCESS;
 }
