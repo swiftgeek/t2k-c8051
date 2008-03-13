@@ -1,142 +1,150 @@
 /**********************************************************************************\
-  Name:         SMBus_handler.c
-  Created by:   Brian Lee                
-  Modified by:  Bahman Sotoodian				Feb/11/2008
-
-  Contents:     SMBus protocol for T2K-FGD experiment
-          (using C8051F133's internal SMBus features)
-
-  Version:    Rev 
-
-  
+  Name:			SMBus_handler.c
+  Author:   	Bryerton Shaw 	
+  Created: 		March 11, 2008
+  Description:	SMBus protocol using interrupts, created for FEB64 board
 
   $Id$
 \**********************************************************************************/
+
 // --------------------------------------------------------
 //  Include files
 // --------------------------------------------------------
 
-#include "../mscbemb.h"
+#if defined(T2KASUM)
+#include "../asum/mscbemb.h"
+#endif
+
+#if defined(FEB64)
+#include "../feb64/mscbemb.h"
+#endif
 
 #ifdef _SMB_PROTOCOL_
-#include "SMBus_handler.h"
+
+#include "SMBus_int_handler.h"
 
 // --------------------------------------------------------
 //  SMBus_Initialization :
 //      Bus Initialization sequence
 // --------------------------------------------------------
-void  SMBus_Init(void)
-{
-  // timer 1 is usually initialized by mscbmain.c
-  // If you make no change in that file, you do not need to
-  // activate the following two lines.
-  // TMOD = (TMOD & 0x0F) | 0x20;     // 8 bit auto-reloaded mode
-  // TR1 = 0;                         // Activate timer 1
-
-  // SMBus Clock Setup
-  // SMBus enable, 
-  // Sysclk as clock source
-#if defined(T2KASUM)
-      SMB0CF  = 0x55;     // SMBus configuration
-      SMB0CF |= 0x80;     // Enable SMBus after all setting done.
-#endif
-
-#if defined(FEB64)
-	 SFRPAGE  = CONFIG_PAGE;
-    P0MDOUT |= 0x0C;
-	 SFRPAGE = SMB0_PAGE;
-	 SMB0CN  = 0x06;     // Free timeout detection 
-	 SMB0CR  = 0xDF;	   // Setting the SCL to 1MHz and Setting Bus Free Timeout period 18.5 us	  
-    SMB0CN |= 0x40;     // Enable SMBus after all setting done.
-#endif
-	 
+void SMBus_Clear(void) {
+	
 }
 
-// --------------------------------------------------------
-//  SMBus_Write_CD :
-//      Write a single command and data word to the SMBus as a Master
-//
-//          Arguments 			:
-//          slave_address   : 7-bit slave address
-//          command         : command word
-//          value           : data word
-//
-//          Return   		 :
-//          0               : success
-//          non-zero        : error
-// --------------------------------------------------------
-//
-//
-//------------------------------------------------------------------------
-bit SMBus_Start(void)
-{
-  bit ok;
+void SMBus_Init(void) {
+	// Timer3 Registers
+	SFRPAGE = TMR3CN;
+	TMR3CN = 0x00;	// Turn Clock off
+	TMR3CF = 0x00;	// SYSCLK / 12
 
-  SFRPAGE = SMB0_PAGE;	
-  SI = 0;
-  STA = 1;    // make Start bit
-  ok = SMBus_SerialInterruptCheck(); // wait for SMBus interruption.. 
-  STA = 0;    // clear Start bit
-  return ok;
+	RCAP3L = 0x00; /* TIMER 3 CAPTURE/RELOAD LOW BYTE */
+	RCAP3H = 0x00; /* TIMER 3 CAPTURE/RELOAD HIGH BYTE */
+
+	TMR3L = 0x00;
+	TMR3H = 0x00;
+
+	TMR3CN = 0x02; // Enable Timer3
+   
+	SFRPAGE = SMB0_PAGE;
+	SMB0CN = 0x41;
+	EIE1 |= 0x02;	// Enable SMBus interrupts
+	EIE2 |= 0x01;	// Enable Timer3 interrupts
+	EA = 1;			// Enable Global interrupts
 }
 
-//
-//------------------------------------------------------------------------
-bit SMBus_WriteByte(unsigned char Byte, unsigned char RW_flag)
-{
-  SFRPAGE = SMB0_PAGE;	
-  if(RW_flag == ADD_WRITE) {
-  // Address in Write mode
-	 SMB0DAT = (Byte << 1) & 0xFE;
-  } else if(RW_flag == ADD_READ) {
-	// Address in read mode
-    SMB0DAT = (Byte << 1) | 0x01;
-  } else  {
-  // Command or data
-    SMB0DAT = Byte; 
-  }
+void SMBus_ISR(void) interrupt 7 {
+	bit FAIL = 0;
+	static char i;
+	static bit SEND_START = 0;
 
-  SI = 0;
-  return SMBus_SerialInterruptCheck(); // wait for SMBus interruption.. 	 
-  
+	switch(SMB0STA) {
+	case SMB_MTSTA:
+		SMB0DAT = (SMB_TARGET & 0xFE) | SMB_RW;
+		i = 0;						// reset data byte counter
+		STA = 0;						// clear START bit
+		break;
+
+	case SMB_MTDB:
+		if(AA) {
+			if(SEND_START) {
+				STA = 1;
+				SEND_START = 0;
+				break;
+			}
+
+			if(SMB_SENDWORDADDR) {
+				SMB_SENDWORDADDR = 0;
+				SMB0DAT = SMB_WORD_ADDR;
+			
+				if(SMB_RANDOMREAD) {
+					SEND_START = 1;
+					SMB_RW = SMB_READ;
+				}
+
+				break;
+			}
+
+			if(SMB_RW == SMB_WRITE) {
+				if(i < SMB_DATA_LEN) {
+					SMB0DAT = SMB_DATA_OUT[i];
+					i++;
+				} else {
+					STO = 1;
+					SMB_BUSY = 0;
+				}
+			}
+		} else {
+			if(SMB_ACKPOLL) {
+				STA = 1;
+			} else {
+				FAIL = 1;
+			}
+		}
+		break;
+
+	case SMB_MRDB:
+		if(i < SMB_DATA_LEN) {
+			*(pSMB_DATA_IN+i) = SMB0DAT;
+			i++;
+			AA = 1;
+		}
+
+		if(i == SMB_DATA_LEN) {
+			SMB_BUSY = 0;
+			AA = 0;
+			STO = 1;
+		}
+
+		break;
+
+	default:
+		FAIL = 1;
+		break;
+
+	} // switch()
+
+	if(FAIL) {
+		SMB0CN &= ~0x40;	// Disable SMBus
+		SMB0CN |= 0x40;	// Re-enable SMBus
+		STA = 0;
+		STO = 0;
+		AA = 0;
+
+		SMB_BUSY = 0;
+		FAIL = 0;
+	}
+
+	SI = 0;
 }
 
-//
-//------------------------------------------------------------------------
-unsigned char SMBus_ReadByte(void)
-{
-  SFRPAGE = SMB0_PAGE;
-  SI      = 0;  // clear interrupt flag
-  SMBus_SerialInterruptCheck(); // wait for SMBus interruption..
-  return SMB0DAT; // return the Received Byte
-}
+void Timer3_ISR(void) interrupt 14 {
+	SFRPAGE = SMB0_PAGE;
+	SMB0CN &= ~0x40;	// Disable SMBus
+	SMB0CN |= 0x40;	// Re-enable SMBus
 
-//
-//------------------------------------------------------------------------
-void SMBus_Stop(void)
-{
-  SFRPAGE = SMB0_PAGE;
-  STO = 1;    // make Stop bit
-  SI = 0;     // clear interrupt flag
-}
+	SFRPAGE = TMR3_PAGE;
+	TMR3CN &= ~0x80;	// Clear Timer3 interrupt-pending flag
+	SMB_BUSY = 0;		// Free SMBus
+}	
 
-//
-//------------------------------------------------------------------------
-bit SMBus_SerialInterruptCheck(void)
-{
-  unsigned char startTime = 0;
-
-  startTime = time();
-
-  SFRPAGE = SMB0_PAGE;	
-  while (SI == 0) {
-    //if SI doesn't turn on for longer than the defined SIwaitTime
-    if((time() - startTime) > SMBUS_SI_WAITTIME) {
-      //return 1 as an indication for communication failure
-      return 1; 
-    }
-  }
-  return 0; //success
-}
-
-#endif
+#endif // _SMB_PROTOCOL_
