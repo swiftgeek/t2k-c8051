@@ -98,6 +98,9 @@
 #ifdef	feb64
 #define FEB64
 #endif
+#ifdef	ext_eeprom
+#define  EXT_EEPROM
+#endif
 #ifdef titan_rf      // GPIB
 #define TITAN_RF
 #endif
@@ -494,6 +497,26 @@ sbit RS485_ENABLE = P0 ^ 3; //MSCB communication enable port
 #define MSCB_SPI_MOSI P2 ^ 4
 
 // SST
+
+sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
+
+/*--------------------------------*/
+#elif defined(EXT_EEPROM)
+#include <c8051F120.h>
+#define CPU_C8051F120
+
+#define LED_0 P2 ^ 7 
+#if defined(LED_1) 
+#undef LED_1
+#endif
+ 
+#define LED_ON 0 //defines LED "ON" as forcing the specified pin to low
+
+// SPI
+#define MSCB_SPI_SCK  P2 ^ 3
+#define MSCB_SPI_MISO P2 ^ 1
+#define MSCB_SPI_MOSI P2 ^ 4
+
 
 sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
 
