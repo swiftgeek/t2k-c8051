@@ -668,7 +668,7 @@ void user_loop(void) {
   // Temperature reading/monitoring based on time
 #ifdef _ADT7486A_
   if (uptime() - sstTime > 1) {
-    for (channel=0;channel < ADT7486A_NUM; channel++) {
+    for (channel=0;channel < NCHANNEL_ADT7486A; channel++) {
 
 //BS 		To setting the offset associated with the temperature reading.
 //			in that case, we probably can get rid of the conversion factors			

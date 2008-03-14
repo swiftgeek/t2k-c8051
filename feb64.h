@@ -25,7 +25,7 @@
 #define NCHANNEL_BIAS    64
 #define NCHANNEL_ASUM     8
 #define NCHANNEL_SST      8
-
+#define NCHANNEL_ADT7486A 4
 #define IDXCTL       1
 #define IDXEER       0
 #define IDXQVOLT     5
