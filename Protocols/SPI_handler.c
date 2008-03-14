@@ -1,26 +1,39 @@
 /**********************************************************************************\
   Name:         SPI_handler.c
   Created by:   Brian Lee                
+  Modified by:  Bahman Sotoodian	
 
-
-  Contents:     SPI protocol for FEB64 board
+  Contents:     SPI protocol for FEB64 
 
 
   $Id$
 \**********************************************************************************/
 
 #ifdef _SPI_PROTOCOL_
-
+//
+//------------------------------------------------------------------------
+/** 
+Using the SPI protocol for the 64 channel FrontEnd board
+*/
 #include "../mscbemb.h"
 #include "SPI_handler.h"
 
-/* SPI Protocl Related Pins */
+//
+//------------------------------------------------------------------------
+/** 
+Setting the related pins of SPI protocol
+*/
 sbit SPI_SCK   = MSCB_SPI_SCK;     // SPI Protocol Serial Clock
 sbit SPI_MISO  = MSCB_SPI_MISO;    // SPI Protocol Master In Slave Out
 sbit SPI_MOSI  = MSCB_SPI_MOSI;    // SPI Protocol Master Out Slave In
 
 //
 //------------------------------------------------------------------------
+/** 
+Initializing the SPI communication by pulling the SPI Master Output
+Slave Input (MOSI) pin to 1.
+*/
+
 void SPI_Init(void)
 {
   SFRPAGE  = SPI0_PAGE ;
@@ -29,6 +42,12 @@ void SPI_Init(void)
 
 //
 //------------------------------------------------------------------------
+/**
+Generating the SPI communication clock."SFRPAGE = SPI0_PAGE" makes sure that
+we are in the right page to properly communicate with the SPI protocol.
+
+@attention	The SPI clock is currently running at 50us. 
+*/
 void SPI_ClockOnce(void)
 {
   SFRPAGE = SPI0_PAGE ;
@@ -40,6 +59,13 @@ void SPI_ClockOnce(void)
 
 //
 //------------------------------------------------------------------------
+/**
+Performing SPI write operation.One byte of data transmits in a bit wise fashion
+
+@param dataToSend		One byte of information which has to be sent via SPI protocol.
+@return 				   The function does not return any value.
+*/
+
 void SPI_WriteByte(unsigned char dataToSend)
 {
   signed char i;
@@ -51,8 +77,16 @@ void SPI_WriteByte(unsigned char dataToSend)
   }
 }
 
+
 //
 //------------------------------------------------------------------------
+/**
+Performing SPI write operation.Two bytes of data transmits in a bit wise fashion
+
+@param dataToSend		Two byte of information which has to be sent via SPI protocol.
+@return 				   The function does not return any value.
+*/
+
 void SPI_WriteUInt(unsigned int dataToBeSend)
 {
 	signed char i;
@@ -66,15 +100,39 @@ void SPI_WriteUInt(unsigned int dataToBeSend)
 
 //
 //------------------------------------------------------------------------
-unsigned char SPI_ReadByte(void)
+/**
+Performing SPI read operation on the falling edge of clock.One byte of data is received in a bit wise fashion
+
+@param						The function does not have any argument
+@return dataReceived 	The function returns one byte of information which has been 
+								received via SPI protocol
+*/
+unsigned char SPI_ReadByteFalling(void)
 {
   signed char i = 0;
   unsigned char din = 0;
   unsigned char dataReceived = 0;
 
+  SFRPAGE = SPI0_PAGE ;
   for(i = 7; i >= 0; i--)
   {
-    SPI_ClockOnce();
+    din = SPI_MISO;
+    dataReceived |= (din << i);
+	 SPI_ClockOnce();
+
+  }
+  return dataReceived;
+}
+unsigned char SPI_ReadByteRising(void)
+{
+  signed char i = 0;
+  unsigned char din = 0;
+  unsigned char dataReceived = 0;
+
+  SFRPAGE = SPI0_PAGE ;
+  for(i = 7; i >= 0; i--)
+  {
+	 SPI_ClockOnce();
     din = SPI_MISO;
     dataReceived |= (din << i);
   }
