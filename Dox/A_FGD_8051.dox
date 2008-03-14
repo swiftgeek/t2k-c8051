@@ -4,19 +4,29 @@ Online documentation for the all the slow control firmware based
 on the 8051 micro-controller Silabs series 133, 310 run under the MSCB OS
 
 The SVN structure should be as follow:
-- <base>
- - Devices
- - Protocols
- - Dox
- - Images
- - Html
+- <b>C8051/</b> Projects<br>
+  - @ref FEB64 : Frontend Board 64 channels
+  - @ref CMB : Crate Master Board
+  - @ref LPB : Light Pulser Board
+  - @ref GSCIO : General Slow Control IO
+  - @ref LOADER : Initial micro-Controlled (uC) firmware
+- <b>Devices/</b> <br>
+   All FEB64, CMB, LPB device drivers
+- <b>Protocols/</b> <br>
+   SPI, SMB, SST buses
+- <b>Dox/</b> <br>
+   This plain documentation
+- <b>Images/</b> <br>
+   Those necessary images
+- <b>html/</b> <br>
+   This fency documentation
  
-@section Document Content
+@section feb64-content Content
 \arg @ref FEB64     Front End Board 64 channels MPPC readout.
 \arg @ref CMB       Crate Master Board controlling 4 FEB64.
 \arg @ref LPB       Light Pulser Board.
 \arg @ref TTB       TPC Temperature board.
-\arg @ref GSCIO     General MSCB use mostly for Temperature/Humidity readout    .
+\arg @ref GSCIO     General MSCB use mostly for Temperature/Humidity readout.
   <br>
 */
 

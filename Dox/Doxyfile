@@ -90,11 +90,11 @@ FILE_PATTERNS          = *.c \
                          *.c++ \
                          *.h \
                          *.dox
-RECURSIVE              = NO
+RECURSIVE              = YES
 EXCLUDE                = 
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = 
-EXAMPLE_PATH           = 
+EXAMPLE_PATH           = ../Doc
 EXAMPLE_PATTERNS       = *
 EXAMPLE_RECURSIVE      = NO
 IMAGE_PATH             = ../Images
