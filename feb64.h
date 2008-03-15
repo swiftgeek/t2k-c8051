@@ -15,6 +15,7 @@
 
 // Device Address mapping
 #define ADDR_LTC1669   0x20
+#define ADDR_PCA9539   0x74
 
 //ADT7486A temperature addresses. 2 sensors per chip, so each address is repeated twice
 #define ADT7486A_ADDR0 0x49   
@@ -40,6 +41,15 @@
 #define FIRST_ASUM   IDXASUM
 #define LAST_ASUM    FIRST_ASUM + NCHANNEL_ASUM
 
+// PCA9539 Macro Definitions
+#define BIAS_OUTPUT_ENABLE      ADDR_PCA9539, PCA9539_CONFIG0, PCA9539_ALL_OUTPUT, 1
+#define BIAS_ALL_HIGH           ADDR_PCA9539, PCA9539_OUTPUT0, 0xFF,   1
+#define BIAS_ALL_LOW            ADDR_PCA9539, PCA9539_OUTPUT0, 0x00,   1
+#define BIAS_READ			        ADDR_PCA9539, PCA9539_INPUT0
+
+#define BACKPLANE_INPUT_ENABLE  ADDR_PCA9539, PCA9539_CONFIG1, PCA9539_ALL_INPUT,  1
+#define BACKPLANE_READ			  ADDR_PCA9539, PCA9539_INPUT1	 
+
 // Global ON / OFF definition
 #define ON     1
 #define OFF    0
@@ -60,7 +70,7 @@
 float code   coeff[8] = {40.   ,50.   ,4.025   ,4.025   ,-4.025   ,100.  ,50.  ,100.};
 float code  offset[8] = {0.     ,0.   ,0.   ,0.   ,0.    ,-4.5    ,0.   ,0.  };
 
-// Shutdwon mask
+// Shutdown mask
 #define SHUTDOWN_MASK   0xFC
 
 // Vreg Enable port assignment
@@ -97,6 +107,10 @@ sbit iReg2    = rESR ^ 6;
 sbit iReg3    = rESR ^ 7;
 sbit uCT      = rESR ^ 8;
 sbit ssTT     = rESR ^ 9; 
+
+// SMBus Port Aliases
+sbit SDA		  = MSCB_I2C_SDA;
+sbit SCL		  = MSCB_I2C_SCL;
 
 // EER EEPROM register
 unsigned char rEER;
