@@ -8,6 +8,8 @@ Contents: 		Temperature sensor array (ADT7486A) handler
 $Id$
 \**********************************************************************************/
 
+#ifdef _ADT7486A_
+
 // --------------------------------------------------------
 //	Include files
 // --------------------------------------------------------
@@ -198,3 +200,5 @@ signed char ADT7486A_Read(unsigned char writeFCS_Originator
 	// Valid temperature
 	return SUCCESS;
 }
+
+#endif // _ADT7486A_
