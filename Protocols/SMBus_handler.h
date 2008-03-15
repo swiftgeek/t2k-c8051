@@ -7,11 +7,11 @@
   $Id$
 \**********************************************************************************/
 
+#ifdef _SMB_PROTOCOL_
+
 #ifndef  _SMBUS_HANDLER_H
 #define  _SMBUS_HANDLER_H
 
-// SMBus Defines
-#define SMB_FREQUENCY	1000000	// in Hz, allowed range is 10kHz to 100kHz
 
 #define SMB_WRITE	0x00
 #define SMB_READ	0x01
@@ -22,30 +22,33 @@
 #define SMB_MTDB		0xC0	
 #define SMB_MRDB		0x80
  
+#define SMB_STATE_START 				0x08
+#define SMB_STATE_REP_START 			0x10
+
+#define SMB_STATE_MT_SLAVE_ACK		0x18
+#define SMB_STATE_MT_SLAVE_NACK		0x20
+#define SMB_STATE_MT_DATA_ACK			0x28
+#define SMB_STATE_MT_DATA_NACK		0x30
+
+#define SMB_STATE_MR_SLAVE_ACK		0x40
+#define SMB_STATE_MR_SLAVE_NACK		0x48
+#define SMB_STATE_MR_DATA_ACK			0x50
+#define SMB_STATE_MR_DATA_NACK		0x58
+
+
 // SMBus Global Variables
-unsigned char *pSMB_DATA_IN;
-unsigned char *pSMB_DATA_OUT;
-unsigned char SMB_DATA_LEN;
-unsigned char SMB_TARGET;
+extern unsigned char xdata SMB_DATA_OUT[SMB_MAX_BUFF_SIZE];
+extern unsigned char xdata SMB_DATA_OUT_LEN;
 
-bit SMB_BUSY;
-bit SMB_RW;
-bit SMB_SENDWORDADDR;
-bit SMB_RANDOMREAD;
-bit SMB_ACKPOLL;
+extern unsigned char xdata *pSMB_DATA_IN;
+extern unsigned char xdata SMB_DATA_IN_LEN;
 
-// Alias SDA and SCL to defined SMBus ports (see mscbemb.h)
-sbit SDA = MSCB_I2C_SDA;
-sbit SCL = MSCB_I2C_SCL;
+extern unsigned char xdata SMB_TARGET;
 
-/***
- * Function:	SMBus_Clear
- * Purpose:		Attempt to clear SDA if a slave is holding SDA high due to 
- *					improper SMBus reset or error.
- *
- * Notes:		Call on startup (before SMBus_Init)
- */
-void SMBus_Clear(void);
+extern bit SMB_BUSY;
+extern bit SMB_RW;
+extern bit SMB_ACKPOLL;
+
 
 /***
  * Function:	SMBus_Init
@@ -55,6 +58,6 @@ void SMBus_Clear(void);
  */
 void SMBus_Init(void);
 
-
-
 #endif // _SMBUS_HANDLER_H
+
+#endif // _SMB_PROTOCOL_
