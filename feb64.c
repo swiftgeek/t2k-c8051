@@ -357,7 +357,13 @@
  // SMB Bias Voltage switches
  //-----------------------------------------------------------------------------
  #ifdef _PCA9539_
-   PCA9539_Init(); //PCA General I/O (Bais Enables and Backplane Addr) initialization
+   PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
+	
+	PCA9539_Write(BIAS_OUTPUT_ENABLE);
+	PCA9539_Write(BACKPLANE_INPUT_ENABLE);
+
+//	dataToSend = PCA9539_ALL_INPUT;
+//	PCA9539_Cmd(ADDR_PCA9539, PCA9539_CONFIG1, &dataToSend, 1, PCA9539_WRITE); 	// Put all pins 1 to Input modes
  #endif
  
  //
@@ -417,7 +423,7 @@ void user_write(unsigned char index) reentrant
    if (index == IDXBSWITCH) {
 #ifdef _PCA9539_
      if (!SsS) {
-       PCA9539_Cmd(ADDR_PCA9539, ConfigPort0, user_data.swBias, 0, PCA9539_WRITE);
+       PCA9539_Write(ADDR_PCA9539, PCA9539_CONFIG0, user_data.swBias, 1);
      } // !Shutdown
 #endif
    }
@@ -444,7 +450,7 @@ void user_write(unsigned char index) reentrant
 // --- Index Qpump DAC
  #ifdef _LTC1669_
    if(SqPump) {
-     LTC1669_Cmd1(ADDR_LTC1669, user_data.rQpump, LTC1669_WRITE);
+     LTC1669_SetDAC(ADDR_LTC1669, LTC1669_INT_BG_REF, user_data.rQpump);
    }
  #endif
  }
@@ -498,7 +504,6 @@ void user_write(unsigned char index) reentrant
 void user_loop(void) {
   float xdata volt, temperature, *pfData;
   unsigned long xdata mask;
-  
 
   //-----------------------------------------------------------------------------
   // Power Up based on CTL bit
@@ -750,6 +755,7 @@ void user_loop(void) {
   // General loop delay
   delay_ms(10);
 
+	
   //
   // General loop delay
 } // End of User loop
