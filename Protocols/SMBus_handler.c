@@ -11,110 +11,137 @@
 //  Include files
 // --------------------------------------------------------
 
-#if defined(T2KASUM)
-#include "../asum/mscbemb.h"
-#endif
-
-#if defined(FEB64)
-#include "../feb64/mscbemb.h"
-#endif
-
 #ifdef _SMB_PROTOCOL_
 
-#include "SMBus_int_handler.h"
+#include "../mscbemb.h"
+#include "SMBus_handler.h"
 
-// --------------------------------------------------------
-//  SMBus_Initialization :
-//      Bus Initialization sequence
-// --------------------------------------------------------
-void SMBus_Clear(void) {
-	
-}
+
+// SMBus Global Variables
+unsigned char xdata SMB_DATA_OUT[SMB_MAX_BUFF_SIZE];
+unsigned char xdata SMB_DATA_OUT_LEN;
+
+unsigned char xdata *pSMB_DATA_IN;
+unsigned char xdata SMB_DATA_IN_LEN;
+
+unsigned char xdata SMB_TARGET;
+
+bit SMB_BUSY;
+bit SMB_RW;
+bit SMB_ACKPOLL;
 
 void SMBus_Init(void) {
-	// Timer3 Registers
-	SFRPAGE = TMR3CN;
-	TMR3CN = 0x00;	// Turn Clock off
-	TMR3CF = 0x00;	// SYSCLK / 12
+	static init = 0;
 
-	RCAP3L = 0x00; /* TIMER 3 CAPTURE/RELOAD LOW BYTE */
-	RCAP3H = 0x00; /* TIMER 3 CAPTURE/RELOAD HIGH BYTE */
+	if(!init) {
+		init = 1;
+		// Timer3 Registers
+		SFRPAGE = TMR3CN;
+		TMR3CN = 0x00;	// Turn Clock off
+		TMR3CF = 0x00;	// SYSCLK / 12
 
-	TMR3L = 0x00;
-	TMR3H = 0x00;
+		RCAP3L = 0x00; /* TIMER 3 CAPTURE/RELOAD LOW BYTE */
+		RCAP3H = 0x00; /* TIMER 3 CAPTURE/RELOAD HIGH BYTE */
 
-	TMR3CN = 0x02; // Enable Timer3
+		TMR3L = 0x00;
+		TMR3H = 0x00;
+
+		TMR3CN = 0x02; // Enable Timer3
    
-	SFRPAGE = SMB0_PAGE;
-	SMB0CN = 0x41;
-	EIE1 |= 0x02;	// Enable SMBus interrupts
-	EIE2 |= 0x01;	// Enable Timer3 interrupts
-	EA = 1;			// Enable Global interrupts
+		SFRPAGE = SMB0_PAGE;
+		SMB0CN = 0x43;
+		EIE1 |= 0x02;	// Enable SMBus interrupts
+		EIE2 |= 0x01;	// Enable Timer3 interrupts
+		EA = 1;			// Enable Global interrupts
+	}
 }
 
 void SMBus_ISR(void) interrupt 7 {
 	bit FAIL = 0;
-	static char i;
-	static bit SEND_START = 0;
+	static char data_in;
+	static char data_out;
 
 	switch(SMB0STA) {
-	case SMB_MTSTA:
-		SMB0DAT = (SMB_TARGET & 0xFE) | SMB_RW;
-		i = 0;						// reset data byte counter
+	case SMB_STATE_START:
+		data_in = 0;
+		data_out = 0;
+	case SMB_STATE_REP_START:
+		SMB0DAT = (SMB_TARGET << 1) | SMB_RW;
 		STA = 0;						// clear START bit
 		break;
 
-	case SMB_MTDB:
-		if(AA) {
-			if(SEND_START) {
-				STA = 1;
-				SEND_START = 0;
-				break;
-			}
-
-			if(SMB_SENDWORDADDR) {
-				SMB_SENDWORDADDR = 0;
-				SMB0DAT = SMB_WORD_ADDR;
-			
-				if(SMB_RANDOMREAD) {
-					SEND_START = 1;
-					SMB_RW = SMB_READ;
-				}
-
-				break;
-			}
-
-			if(SMB_RW == SMB_WRITE) {
-				if(i < SMB_DATA_LEN) {
-					SMB0DAT = SMB_DATA_OUT[i];
-					i++;
-				} else {
-					STO = 1;
-					SMB_BUSY = 0;
-				}
-			}
+	case SMB_STATE_MT_SLAVE_ACK:
+		if(data_out < SMB_DATA_OUT_LEN) {
+			SMB0DAT = SMB_DATA_OUT[data_out++];
 		} else {
-			if(SMB_ACKPOLL) {
-				STA = 1;
-			} else {
-				FAIL = 1;
-			}
+			FAIL = 1;
 		}
 		break;
 
-	case SMB_MRDB:
-		if(i < SMB_DATA_LEN) {
-			*(pSMB_DATA_IN+i) = SMB0DAT;
-			i++;
-			AA = 1;
-		}
-
-		if(i == SMB_DATA_LEN) {
-			SMB_BUSY = 0;
-			AA = 0;
+	case SMB_STATE_MT_SLAVE_NACK:
+		if(SMB_ACKPOLL) {
 			STO = 1;
+			STA = 1;
+		} else {
+			FAIL = 1;
+		}
+		break;
+
+	case SMB_STATE_MT_DATA_ACK:
+		if(data_out < SMB_DATA_OUT_LEN) {
+			SMB0DAT = SMB_DATA_OUT[data_out++];
+		} else if (data_in < SMB_DATA_IN_LEN) {
+			SMB_RW = SMB_READ;
+			STO = 0;
+			STA = 1;
+		} else {
+			STO = 1;
+			SMB_BUSY = 0;
+		}
+		break;
+
+	case SMB_STATE_MT_DATA_NACK:
+		// This is the place to add DATA retry
+		STO = 1;
+		break;
+
+	case SMB_STATE_MR_SLAVE_ACK:
+		if(SMB_DATA_IN_LEN == 1) {
+			// only expecting one byte, so NACK reply to it to end transfer
+			AA = 0;
+		} 
+		break;
+
+	case SMB_STATE_MR_SLAVE_NACK:
+		if(SMB_ACKPOLL) {
+			STO = 1;
+			STA = 1;
+		} else {
+			FAIL = 1;
+		}
+		break;
+
+	case SMB_STATE_MR_DATA_ACK:
+		if(data_in == (SMB_DATA_IN_LEN - 1)) {
+			// Last Byte, send NACK
+			AA = 0;
 		}
 
+		if(data_in < SMB_DATA_IN_LEN) {
+			*(pSMB_DATA_IN+data_in) = SMB0DAT;
+			data_in++;
+		} else {
+			FAIL = 1;
+		}
+		break;
+
+	case SMB_STATE_MR_DATA_NACK:
+		// Save last byte received
+		*(pSMB_DATA_IN+data_in) = SMB0DAT;
+		data_in++;
+		// Stop Communication
+		STO = 1;
+		SMB_BUSY = 0;
 		break;
 
 	default:
