@@ -2,7 +2,7 @@
 
   Name:         PCA9539_io.h
   Created by:   Bahman Sotoodian 								Feb/11/2008
-
+  Modified by:  Bryerton Shaw										Mar/15/2008
 
   Contents:     PCA9539 I/O register user interface
 
@@ -11,30 +11,36 @@
 \********************************************************************/
 //  need to have FEB64 defined
 
+#ifdef _PCA9539_
+
 #ifndef  _PCA9539_IO_H
 #define  _PCA9539_IO_H
 
+// Command Bytes
+#define PCA9539_INPUT0			  0x00
+#define PCA9539_INPUT1			  0x01
+#define PCA9539_OUTPUT0			  0x02
+#define PCA9539_OUTPUT1			  0x03
+#define PCA9539_POLINV0			  0x04
+#define PCA9539_POLINV1			  0x05
+#define PCA9539_CONFIG0			  0x06
+#define PCA9539_CONFIG1			  0x07
 
-#define PCA9539_READ            1
-#define PCA9539_WRITE           0
-#define ADDR_PCA9539            0x74
-#define InputPort0				  0x00
-#define InputPort1				  0x01
-#define OutputPort0				  0x02
-#define OutputPort1				  0x03
-#define ConfigPort0				  0x06
-#define ConfigPort1				  0x07	
-#define Input						  0xFF
-#define Output						  0x00
-#define Bias_OUTPUT_ENABLE      ADDR_PCA9539, ConfigPort0, Output, 0, PCA9539_WRITE
-#define BackPlane_INPUT_ENABLE  ADDR_PCA9539, ConfigPort1, Input,  0, PCA9539_WRITE
-#define Bias_ALL_HIGH           ADDR_PCA9539, OutputPort0, 0xFF,   0, PCA9539_WRITE
-#define Bias_ALL_LOW            ADDR_PCA9539, OutputPort0, 0x00,   0, PCA9539_WRITE
-#define Bias_Read			        ADDR_PCA9539, InputPort0 , 0x00  	 
-#define BackPlane_Read			  ADDR_PCA9539, InputPort1 , 0x00  	 
+// Bit Meanings
+#define PCA9539_READ				  1
+#define PCA9539_WRITE			  0
 
-//void User_PCA9539(void);
+#define PCA9539_INVERT			  1
+#define PCA9539_NO_INVERT		  0
+#define PCA9539_INPUT			  1
+#define PCA9539_OUTPUT			  0
+#define PCA9539_ALL_INPUT		  0xFF
+#define PCA9539_ALL_OUTPUT		  0x00
+
 void PCA9539_Init(void);
-void PCA9539_Cmd(unsigned char addr, unsigned char cmd, unsigned char datByte,unsigned char *varToBeWritten, bit flag);
+void PCA9539_Write(unsigned char addr, unsigned char selectPort, unsigned int dataBytes, unsigned char dataLen);
+void PCA9539_Read(unsigned char addr, unsigned char selectPort, unsigned char* dataBytes, unsigned char dataLen);
 
-#endif
+#endif // _PCA9539_IO_H
+
+#endif // _PCA9539_
