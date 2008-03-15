@@ -17,40 +17,62 @@
 #include "../Protocols/SMBus_handler.h"
 #include "LTC1669_dac.h"
 
-void LTC1669_Init(void)
-{
+void LTC1669_Init(void) {
 	SMBus_Init(); // SMBus initialization (should be called after pca_operation)
 }
 
-void LTC1669_Cmd1(unsigned char addr, unsigned int input, bit flag)
-{
-	unsigned char xdata readValue = 0;
+void LTC1669_Cmd(unsigned char addr, unsigned char cmd) {
 	watchdog_refresh(0);
-	if(flag == LTC1669_READ) //reading
-	{
-		//The SMBus_WriteByte function would write in the SMBus Data Register and would 
-		//specify the next operation. If Read has been passed to it, the slave would be ready for 
-		//the read operation and if the Write has been passed in the master would be ready for write operation
-		
-		SMBus_Start(); //make start bit
-		SMBus_WriteByte(addr, READ_CYCLE); //send address with a Read flag on 	    
-//		if (!AA) return; // No slave ACK. Address is wrong or slave is missing.	    
-		readValue = SMBus_ReadByte();  // set data word
-		//store to mscb user_data here
-	    SMBus_Stop();
-	}
-	else //writing
-	{		
-		SMBus_Start();
-		SMBus_WriteByte(addr, WRITE_CYCLE);
-//		if(!AA) return;
-		SMBus_WriteByte(Command, CMD_CYCLE);
-//		if(!AA) return;
-		SMBus_WriteByte(input, WRITE_CYCLE);
-//		if(!AA) return;
-		SMBus_WriteByte((input>>8), WRITE_CYCLE);
-//		if(!AA) return;
-		SMBus_Stop();
-	}
+
+	// Wait for the SMBus to clear
+	while(SMB_BUSY);
+	SMB_BUSY = 1;
+
+	// Have Command Bytes to send, so set to write to start
+	SMB_RW = SMB_WRITE;
+
+	// Set Slave Address
+	SMB_TARGET = addr;
+
+	// Setup Command Byte(s) and Transmission Length
+	SMB_DATA_OUT_LEN = 1;
+	SMB_DATA_OUT[0] = cmd;
+
+	// Setup Receive Buffer (Empty)
+	SMB_DATA_IN_LEN = 0;
+	pSMB_DATA_IN = 0;	
+
+	// Start Communication 
+	SFRPAGE = SMB0_PAGE;
+	STA = 1;		
 }
+
+void LTC1669_SetDAC(unsigned char addr, unsigned char cmd, unsigned int dataWord) {
+	watchdog_refresh(0);
+
+	// Wait for the SMBus to clear
+	while(SMB_BUSY);
+	SMB_BUSY = 1;
+
+	// Have Command Bytes to send, so set to write to start
+	SMB_RW = SMB_WRITE;
+
+	// Set Slave Address
+	SMB_TARGET = addr;
+
+	// Setup Command Byte(s) and Transmission Length
+	SMB_DATA_OUT_LEN = 3;
+	SMB_DATA_OUT[0] = cmd;
+	SMB_DATA_OUT[1] = (dataWord & 0x00FF);			// LSB
+	SMB_DATA_OUT[2] = (dataWord & 0xFF00) >> 8;	// MSB
+
+	// Setup Receive Buffer (Empty)
+	SMB_DATA_IN_LEN = 0;
+	pSMB_DATA_IN = 0;	
+
+	// Start Communication 
+	SFRPAGE = SMB0_PAGE;
+	STA = 1;	
+}
+
 #endif
