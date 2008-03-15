@@ -11,16 +11,19 @@
 \********************************************************************/
 //  need to have T2KASUM defined
 
+#ifdef _LTC1669_
+
 #ifndef  _LTC1669_DAC_H
 #define  _LTC1669_DAC_H
 
-#define LTC1669_READ      1
-#define LTC1669_WRITE     0
-
-#define Command 0x04	//Selecting the Internal bandgap as reference so setting 
-					      //the full-scale output voltage to 2.5 V
+#define LTC1669_UPDATE_ON_SYNC	0x01
+#define LTC1669_POWER_DOWN			0x02
+#define LTC1669_INT_BG_REF			0x04
 
 void LTC1669_Init(void);
-void LTC1669_Cmd(unsigned char addr, unsigned char datMSB, unsigned char datLSB, bit flag);
-void LTC1669_Cmd1(unsigned char addr, unsigned int input, bit flag);
-#endif
+void LTC1669_Cmd(unsigned char addr, unsigned char cmd);
+void LTC1669_SetDAC(unsigned char addr, unsigned char cmd, unsigned int dataWord);
+
+#endif // _LTC1669_DAC_H
+
+#endif // _LTC_1669_
