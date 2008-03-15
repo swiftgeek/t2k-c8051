@@ -8,6 +8,8 @@
 
   
 \****************************************************************************/
+#ifdef _LTC2600_
+
 #ifndef  _LTC2600_DAC_H
 #define  _LTC2600_DAC_H
 
@@ -37,4 +39,6 @@ sbit SUM_CSn = SUM_DAC_CSn;
 void LTC2600_Init(void);
 void LTC2600_Cmd(unsigned char cmd, unsigned char addr, unsigned int DataBeSent);
 
-#endif
+#endif // _LTC2600_DAC_H
+
+#endif // _LTC2600_
