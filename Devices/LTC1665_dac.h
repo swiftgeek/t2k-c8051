@@ -8,6 +8,8 @@
 
   
 \****************************************************************************/
+#ifdef  _LTC1665_
+
 #ifndef  _LTC1665_DAC_H
 #define  _LTC1665_DAC_H
 
@@ -55,8 +57,10 @@ sbit SPI_SCK   = MSCB_SPI_SCK;     // SPI Protocol Serial Clock
 #define LTC1665_LOAD_ALL	 0xF 
 #define LTC1665_SLEEP		 0xE 
 
-
 void LTC1665_Init(void);
 void LTC1665_Cmd(unsigned char addr,unsigned char DataBeSent, unsigned char channel);
-#endif
+
+#endif // _LTC_1665_DAC_H
+
+#endif // _LTC1665_
 
