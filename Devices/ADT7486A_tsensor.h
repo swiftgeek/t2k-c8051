@@ -9,6 +9,8 @@
   $Id$
 \**********************************************************************************/
 
+#ifdef _ADT7486A_
+
 #ifndef  _ADT7486A_TSENSOR_H
 #define  _ADT7486A_TSENSOR_H
 
@@ -72,4 +74,6 @@ signed char ADT7486A_Read(unsigned char writeFCS_Originator
                         , unsigned char cmdflag
                         , float *temperature);
 
-#endif
+#endif // _ADT7486A_TSENSOR_H
+
+#endif // _ADT7486A_
