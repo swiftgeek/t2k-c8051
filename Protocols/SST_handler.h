@@ -10,6 +10,8 @@
   $Id$
 \**********************************************************************************/
 
+#ifdef _SST_PROTOCOL_
+
 #ifndef  _SST_HANDLER_H
 #define  _SST_HANDLER_H
 
@@ -34,5 +36,6 @@ void SST_DrvHigh(void);
 void SST_DrvLow(void);
 unsigned char SST_DrvClientResponse(void);
 
-#endif
+#endif // _SST_HANDLER_H
 
+#endif // _SST_PROTOCOL_
