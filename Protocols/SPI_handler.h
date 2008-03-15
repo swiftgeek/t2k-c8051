@@ -9,6 +9,8 @@
   $Id$
 \**********************************************************************************/
 
+#ifdef _SPI_PROTOCOL_
+
 #ifndef  _SPI_HANDLER_H
 #define  _SPI_HANDLER_H
 
@@ -27,6 +29,6 @@ unsigned char SPI_ReadByteFalling(void);			//Reading one byte of data on falling
 														      // edge of clock
 unsigned char SPI_ReadByteRising(void);		   //Reading one byte of data on rising 
 														      // edge of clock													
+#endif // _SPI_HANDLER_H
 
-
-#endif
+#endif // _SPI_PROTOCOL_
