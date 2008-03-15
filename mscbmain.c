@@ -130,10 +130,19 @@ void setup(void)
 #if defined(CPU_C8051F120)
 
    SFRPAGE   = CONFIG_PAGE;
-  
+
+#ifdef FEB64
+	#ifdef _SMB_PROTOCOL_
+		// Clear SMBus
+	#endif
+   XBR0 = 0x05;                 // Enable XBar, SMBus, UART0
+   XBR1 = 0x00;
+   XBR2 = 0x40;
+#else
    XBR0 = 0x04;                 // Enable XBar, UART0 & UART1
    XBR1 = 0x00;
    XBR2 = 0x44;
+#endif
 
 #ifdef TREVAL_12X
    XBR1 = 0x00;                 // Sysclk (0x80) Disable
