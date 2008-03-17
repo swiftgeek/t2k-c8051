@@ -64,7 +64,7 @@ void LTC1669_SetDAC(unsigned char addr, unsigned char cmd, unsigned int dataWord
 	SMB_DATA_OUT_LEN = 3;
 	SMB_DATA_OUT[0] = cmd;
 	SMB_DATA_OUT[1] = (dataWord & 0x00FF);			// LSB
-	SMB_DATA_OUT[2] = (dataWord & 0xFF00) >> 8;	// MSB
+	SMB_DATA_OUT[2] = (dataWord >> 8);				// MSB
 
 	// Setup Receive Buffer (Empty)
 	SMB_DATA_IN_LEN = 0;
