@@ -38,7 +38,8 @@
 #define PCA9539_ALL_OUTPUT		  0x00
 
 void PCA9539_Init(void);
-void PCA9539_Write(unsigned char addr, unsigned char selectPort, unsigned int dataBytes, unsigned char dataLen);
+void PCA9539_WriteByte(unsigned char addr, unsigned char selectPort, unsigned char dataByte);
+void PCA9539_WriteWord(unsigned char addr, unsigned char selectPort, unsigned int dataWord);
 void PCA9539_Read(unsigned char addr, unsigned char selectPort, unsigned char* dataBytes, unsigned char dataLen);
 
 #endif // _PCA9539_IO_H
