@@ -54,6 +54,10 @@
  #ifdef _LTC2600_
  #include "Devices/LTC2600_dac.h"
  #endif
+
+ #ifdef _LTC2497_
+ #include "Devices/LTC2497_adc.h"
+ #endif
  
  //
  // Global declarations
@@ -353,17 +357,18 @@
    LTC1669_Init(); //I2C DAC initialization (D_CH_PUMP)
  #endif
  
+ #ifdef _LTC2497_
+   LTC2497_Init();
+ #endif
+
  //
  // SMB Bias Voltage switches
  //-----------------------------------------------------------------------------
  #ifdef _PCA9539_
    PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
 	
-	PCA9539_Write(BIAS_OUTPUT_ENABLE);
-	PCA9539_Write(BACKPLANE_INPUT_ENABLE);
-
-//	dataToSend = PCA9539_ALL_INPUT;
-//	PCA9539_Cmd(ADDR_PCA9539, PCA9539_CONFIG1, &dataToSend, 1, PCA9539_WRITE); 	// Put all pins 1 to Input modes
+	PCA9539_WriteByte(BIAS_OUTPUT_ENABLE);
+	PCA9539_WriteByte(BACKPLANE_INPUT_ENABLE);
  #endif
  
  //
@@ -423,7 +428,7 @@ void user_write(unsigned char index) reentrant
    if (index == IDXBSWITCH) {
 #ifdef _PCA9539_
      if (!SsS) {
-       PCA9539_Write(ADDR_PCA9539, PCA9539_CONFIG0, user_data.swBias, 1);
+       PCA9539_WriteByte(ADDR_PCA9539, PCA9539_CONFIG0, user_data.swBias);
      } // !Shutdown
 #endif
    }
@@ -504,6 +509,15 @@ void user_write(unsigned char index) reentrant
 void user_loop(void) {
   float xdata volt, temperature, *pfData;
   unsigned long xdata mask;
+
+  static unsigned char temp = 0xFF;
+
+  PCA9539_WriteByte(BIAS_WRITE, temp);
+
+	temp = 0xAA;
+
+  PCA9539_Read(BIAS_READ, &temp, 1);
+	temp ^= 0xFF;
 
   //-----------------------------------------------------------------------------
   // Power Up based on CTL bit
