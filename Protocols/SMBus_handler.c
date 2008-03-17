@@ -21,7 +21,7 @@
 unsigned char xdata SMB_DATA_OUT[SMB_MAX_BUFF_SIZE];
 unsigned char xdata SMB_DATA_OUT_LEN;
 
-unsigned char xdata *pSMB_DATA_IN;
+unsigned char *pSMB_DATA_IN;
 unsigned char xdata SMB_DATA_IN_LEN;
 
 unsigned char xdata SMB_TARGET;
@@ -35,6 +35,8 @@ void SMBus_Init(void) {
 
 	if(!init) {
 		init = 1;
+		SMB_BUSY = 0;
+
 		// Timer3 Registers
 		SFRPAGE = TMR3CN;
 		TMR3CN = 0x00;	// Turn Clock off
@@ -109,7 +111,9 @@ void SMBus_ISR(void) interrupt 7 {
 		if(SMB_DATA_IN_LEN == 1) {
 			// only expecting one byte, so NACK reply to it to end transfer
 			AA = 0;
-		} 
+		} else {
+			AA = 1;
+		}
 		break;
 
 	case SMB_STATE_MR_SLAVE_NACK:
@@ -125,6 +129,8 @@ void SMBus_ISR(void) interrupt 7 {
 		if(data_in == (SMB_DATA_IN_LEN - 1)) {
 			// Last Byte, send NACK
 			AA = 0;
+		} else {
+			AA = 1;
 		}
 
 		if(data_in < SMB_DATA_IN_LEN) {
