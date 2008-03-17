@@ -29,10 +29,8 @@ void PCA9539_Init(void) {
 
 //
 //------------------------------------------------------------------------
-void PCA9539_Write(unsigned char addr, unsigned char selectPort, unsigned int dataBytes, unsigned char dataLen) {
+void PCA9539_WriteByte(unsigned char addr, unsigned char selectPort, unsigned char dataByte) {
 	watchdog_refresh(0);
-
-	if(dataLen > 2) dataLen = 2;	// Safety Check
 
 	// Wait for the SMBus to clear
 	while(SMB_BUSY);
@@ -45,16 +43,44 @@ void PCA9539_Write(unsigned char addr, unsigned char selectPort, unsigned int da
 	SMB_TARGET = addr;
 
 	// Setup Command Byte(s) and Transmission Length
-	SMB_DATA_OUT_LEN = dataLen+1;
+	SMB_DATA_OUT_LEN = 2;
 	SMB_DATA_OUT[0] = selectPort;
 
 	// Offset one due to Command Byte
-	if(dataLen == 1) {
-		SMB_DATA_OUT[1] = dataBytes & 0x00FF;	// Take LSB
-	} else {
-		SMB_DATA_OUT[1] = (dataBytes & 0xFF00) >> 8;	// Take MSB
-		SMB_DATA_OUT[2] = (dataBytes & 0x00FF);		// Take LSB
-	}
+	SMB_DATA_OUT[1] = dataByte;
+
+	// Setup Receive Buffer (Empty)
+	SMB_DATA_IN_LEN = 0;
+	pSMB_DATA_IN = 0;	
+
+	// Start Communication 
+	SFRPAGE = SMB0_PAGE;
+	STA = 1;
+}
+
+
+//
+//------------------------------------------------------------------------
+void PCA9539_WriteWord(unsigned char addr, unsigned char selectPort, unsigned int dataWord) {
+	watchdog_refresh(0);
+
+	// Wait for the SMBus to clear
+	while(SMB_BUSY);
+	SMB_BUSY = 1;
+
+	// Have Command Bytes to send, so set to write to start
+	SMB_RW = SMB_WRITE;
+
+	// Set Slave Address
+	SMB_TARGET = addr;
+
+	// Setup Command Byte(s) and Transmission Length
+	SMB_DATA_OUT_LEN = 3;
+	SMB_DATA_OUT[0] = selectPort;
+
+	// Offset one due to Command Byte
+	SMB_DATA_OUT[1] = (dataWord >> 8);
+	SMB_DATA_OUT[2] = (dataWord & 0x00FF);
 
 	// Setup Receive Buffer (Empty)
 	SMB_DATA_IN_LEN = 0;
@@ -67,7 +93,7 @@ void PCA9539_Write(unsigned char addr, unsigned char selectPort, unsigned int da
 
 //
 //------------------------------------------------------------------------
-void PCA9539_Read(unsigned char addr, unsigned char selectPort, unsigned char* dataBytes, unsigned char dataLen) {
+void PCA9539_Read(unsigned char addr, unsigned char selectPort, unsigned char *pDataBytes, unsigned char dataLen) {
 	watchdog_refresh(0);
 
 	// Wait for the SMBus to clear
@@ -86,7 +112,7 @@ void PCA9539_Read(unsigned char addr, unsigned char selectPort, unsigned char* d
 
 	// Setup Receive Buffer
 	SMB_DATA_IN_LEN = dataLen;
-	pSMB_DATA_IN = dataBytes;	
+	pSMB_DATA_IN = pDataBytes;	
 
 	// Start Communication and Block until completed
 	SFRPAGE = SMB0_PAGE;
