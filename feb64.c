@@ -510,15 +510,6 @@ void user_loop(void) {
   float xdata volt, temperature, *pfData;
   unsigned long xdata mask;
 
-  static unsigned char temp = 0xFF;
-
-  PCA9539_WriteByte(BIAS_WRITE, temp);
-
-	temp = 0xAA;
-
-  PCA9539_Read(BIAS_READ, &temp, 1);
-	temp ^= 0xFF;
-
   //-----------------------------------------------------------------------------
   // Power Up based on CTL bit
   if (CPup) {
