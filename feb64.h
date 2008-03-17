@@ -16,6 +16,7 @@
 // Device Address mapping
 #define ADDR_LTC1669   0x20
 #define ADDR_PCA9539   0x74
+#define ADDR_LTC2497	  0x45	// may be 0010100 (0x14)
 
 //ADT7486A temperature addresses. 2 sensors per chip, so each address is repeated twice
 #define ADT7486A_ADDR0 0x49   
