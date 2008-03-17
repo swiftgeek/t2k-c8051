@@ -16,7 +16,7 @@
 #define SMB_WRITE	0x00
 #define SMB_READ	0x01
 
-#define SMB_MAX_BUFF_SIZE	0x08
+#define SMB_MAX_BUFF_SIZE 8
 
 #define SMB_MTSTA		0xE0
 #define SMB_MTDB		0xC0	
@@ -40,7 +40,7 @@
 extern unsigned char xdata SMB_DATA_OUT[SMB_MAX_BUFF_SIZE];
 extern unsigned char xdata SMB_DATA_OUT_LEN;
 
-extern unsigned char xdata *pSMB_DATA_IN;
+extern unsigned char *pSMB_DATA_IN;
 extern unsigned char xdata SMB_DATA_IN_LEN;
 
 extern unsigned char xdata SMB_TARGET;
