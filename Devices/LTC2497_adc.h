@@ -14,11 +14,20 @@
 //  Need to have FEB64 defined
 #ifdef _LTC2497_
 
+#define LTC2497_CMD_IGNORE 	0x00 	// Don't care/leave alone
+#define LTC2497_CMD_SELECT		0xA0	// Select an Input Channel command
+#define LTC2497_CMD_SGL			0x10	// Single Ended (non-differential)
+
 //
 //------------------------------------------------------------------------
 void LTC2497_Init(void);
 
+//
 //------------------------------------------------------------------------
-void LTC2497_Read(unsigned char addr, unsigned char cmdByte, unsigned char* dataBytes, unsigned char dataLen);
+void LTC2497_StartConversion(unsigned char addr, unsigned char channel);
+
+//
+//------------------------------------------------------------------------
+void LTC2497_ReadConversion(unsigned char addr, unsigned char channel, signed long *pResult);
 
 #endif
