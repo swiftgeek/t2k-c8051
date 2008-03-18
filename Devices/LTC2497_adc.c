@@ -30,12 +30,20 @@ void LTC2497_Init(void) {
 
 //
 //------------------------------------------------------------------------
-void LTC2497_Read(unsigned char addr, unsigned char cmdByte, unsigned char* dataBytes, unsigned char dataLen) {
+void LTC2497_StartConversion(unsigned char addr, unsigned char channel) {
+	unsigned char cmd;
+	
 	watchdog_refresh(0);
+
+	cmd = (channel >> 1) | LTC2497_CMD_SGL | LTC2497_CMD_SELECT;
+	if(channel & 0x01) {
+		cmd |= 0x08;
+	} 
 
 	// Wait for the SMBus to clear
 	while(SMB_BUSY);
 	SMB_BUSY = 1;
+	SMB_ACKPOLL = 1;
 
 	// Have Command Bytes to send, so set to write to start
 	SMB_RW = SMB_WRITE;
@@ -45,16 +53,73 @@ void LTC2497_Read(unsigned char addr, unsigned char cmdByte, unsigned char* data
 
 	// Setup Command Byte(s)
 	SMB_DATA_OUT_LEN = 1;
-	SMB_DATA_OUT[0] = selectPort;
+	SMB_DATA_OUT[0] = cmd;
 
 	// Setup Receive Buffer
-	SMB_DATA_IN_LEN = dataLen;
-	pSMB_DATA_IN = dataBytes;	
+	SMB_DATA_IN_LEN = 0;
+	pSMB_DATA_IN = 0;	
 
 	// Start Communication and Block until completed
 	SFRPAGE = SMB0_PAGE;
 	STA = 1;
-	while(SMB_BUSY);
 }
+
+//
+//------------------------------------------------------------------------
+unsigned char LTC2497_ReadConversion(unsigned char addr, unsigned char channel, signed long *pResult) {
+	unsigned char cmd;
+	unsigned char outOfRange = FALSE;
+	signed long value;
+
+	watchdog_refresh(0);
+
+	cmd = (channel >> 1) | LTC2497_CMD_SGL | LTC2497_CMD_SELECT;
+	if(channel & 0x01) {
+		cmd |= 0x08;
+	} 	
+
+	// Wait for the SMBus to clear
+	while(SMB_BUSY);
+	SMB_BUSY = 1;
+
+	SMB_RW = WRITE;
+	SMB_ACKPOLL = 1; // keep trying until success!
+
+	// Set Slave Address
+	SMB_TARGET = addr;
+
+	// Setup Command Byte(s)
+	SMB_DATA_OUT_LEN = 1;
+	SMB_DATA_OUT[0] = cmd;
+
+	// Setup Receive Buffer
+	SMB_DATA_IN_LEN = 3;
+	pSMB_DATA_IN = &value;	
+
+	// Start Communication and Block until completed
+	SFRPAGE = SMB0_PAGE;
+	STA = 1;
+
+	while(SMB_BUSY);
+
+	if(((value & 0xC0000000) == 0xC0000000) || ((value & 0xC0000000) == 0x00000000)) {
+		// Over-range
+		outOfRange = TRUE;
+	}
+
+	if(value & 0x80000000) {
+		// extend sign
+		value = value >> 14;
+		value |= 0xFFFF0000;
+	} else {
+		value = value >> 14;
+		value &= 0x0000FFFF;
+	}
+
+	*pResult = value;
+
+	return outOfRange;
+}
+
 
 #endif
