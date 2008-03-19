@@ -31,14 +31,14 @@ bit SMB_RW;
 bit SMB_ACKPOLL;
 
 void SMBus_Init(void) {
-	static init = 0;
+	static char init = 0;
 
 	if(!init) {
 		init = 1;
 		SMB_BUSY = 0;
 
 		// Timer3 Registers
-		SFRPAGE = TMR3CN;
+		SFRPAGE = TMR3_PAGE;
 		TMR3CN = 0x00;	// Turn Clock off
 		TMR3CF = 0x00;	// SYSCLK / 12
 
@@ -48,7 +48,7 @@ void SMBus_Init(void) {
 		TMR3L = 0x00;
 		TMR3H = 0x00;
 
-		TMR3CN = 0x02; // Enable Timer3
+		TMR3CN = 0x04; // Enable Timer3
    
 		SFRPAGE = SMB0_PAGE;
 		SMB0CN = 0x43;
