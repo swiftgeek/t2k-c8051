@@ -8,7 +8,7 @@
 
   Contents:     PCA9539 I/O register user interface
   				This chip is used to enable different switches for
-				the Charge Pump and aslo set the Backplane address
+				the Charge Pump and also set the Backplane address
 
   $Id$
 
@@ -16,6 +16,10 @@
 //  Need to have FEB64 defined
 
 #ifdef _PCA9539_
+
+#ifndef _SMB_PROTOCOL_
+#define _SMB_PROTOCOL_
+#endif
 
 #include "../mscbemb.h"
 #include "../Protocols/SMBus_handler.h"
@@ -59,6 +63,8 @@ void PCA9539_WriteByte(unsigned char addr, unsigned char selectPort, unsigned ch
 }
 
 
+#if 0
+
 //
 //------------------------------------------------------------------------
 void PCA9539_WriteWord(unsigned char addr, unsigned char selectPort, unsigned int dataWord) {
@@ -90,6 +96,8 @@ void PCA9539_WriteWord(unsigned char addr, unsigned char selectPort, unsigned in
 	SFRPAGE = SMB0_PAGE;
 	STA = 1;
 }
+
+#endif 
 
 //
 //------------------------------------------------------------------------

@@ -10,6 +10,10 @@
 
 #ifdef  _LTC1665_
 
+#ifndef _SPI_PROTOCOL_
+#define _SPI_PROTOCOL_
+#endif
+
 #include "../mscbemb.h"
 #include "../Protocols/SPI_handler.h"
 #include "LTC1665_dac.h"

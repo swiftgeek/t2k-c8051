@@ -13,6 +13,10 @@
 
 #ifdef _LTC1669_
 
+#ifndef _SMB_PROTOCOL_
+#define _SMB_PROTOCOL_
+#endif
+
 #include "../mscbemb.h"
 #include "../Protocols/SMBus_handler.h"
 #include "LTC1669_dac.h"
@@ -20,6 +24,8 @@
 void LTC1669_Init(void) {
 	SMBus_Init(); // SMBus initialization (should be called after pca_operation)
 }
+
+#if 0 
 
 void LTC1669_Cmd(unsigned char addr, unsigned char cmd) {
 	watchdog_refresh(0);
@@ -46,6 +52,8 @@ void LTC1669_Cmd(unsigned char addr, unsigned char cmd) {
 	SFRPAGE = SMB0_PAGE;
 	STA = 1;		
 }
+
+#endif
 
 void LTC1669_SetDAC(unsigned char addr, unsigned char cmd, unsigned int dataWord) {
 	watchdog_refresh(0);

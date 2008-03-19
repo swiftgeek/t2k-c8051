@@ -6,12 +6,16 @@
 
   Contents:     LTC1665/2600 DAC user interface
 
-  $Id:$
+  $Id$
 
 \********************************************************************/
 //  need to have FEB64 defined
 
 #ifdef _LTC2600_
+
+#ifndef _SPI_PROTOCOL_
+#define _SPI_PROTOCOL_
+#endif
 
 #include "../mscbemb.h"
 #include "../Protocols/SPI_handler.h"
