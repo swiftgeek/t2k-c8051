@@ -68,7 +68,7 @@ void LTC2497_StartConversion(unsigned char addr, unsigned char channel) {
 //------------------------------------------------------------------------
 unsigned char LTC2497_ReadConversion(unsigned char addr, unsigned char channel, signed long *pResult) {
 	unsigned char cmd;
-	unsigned char outOfRange = FALSE;
+	unsigned char validRange = 1;
 	signed long value;
 
 	watchdog_refresh(0);
@@ -82,7 +82,7 @@ unsigned char LTC2497_ReadConversion(unsigned char addr, unsigned char channel, 
 	while(SMB_BUSY);
 	SMB_BUSY = 1;
 
-	SMB_RW = WRITE;
+	SMB_RW = SMB_WRITE;
 	SMB_ACKPOLL = 1; // keep trying until success!
 
 	// Set Slave Address
@@ -94,7 +94,7 @@ unsigned char LTC2497_ReadConversion(unsigned char addr, unsigned char channel, 
 
 	// Setup Receive Buffer
 	SMB_DATA_IN_LEN = 3;
-	pSMB_DATA_IN = &value;	
+	pSMB_DATA_IN = (unsigned char*)&value;	
 
 	// Start Communication and Block until completed
 	SFRPAGE = SMB0_PAGE;
@@ -103,11 +103,11 @@ unsigned char LTC2497_ReadConversion(unsigned char addr, unsigned char channel, 
 	while(SMB_BUSY);
 
 	if(((value & 0xC0000000) == 0xC0000000) || ((value & 0xC0000000) == 0x00000000)) {
-		// Over-range
-		outOfRange = TRUE;
+		// Over/Under-range
+		validRange = 0;
 	}
 
-	if(value & 0x80000000) {
+	if(!(value & 0x80000000)) {
 		// extend sign
 		value = value >> 14;
 		value |= 0xFFFF0000;
@@ -118,7 +118,7 @@ unsigned char LTC2497_ReadConversion(unsigned char addr, unsigned char channel, 
 
 	*pResult = value;
 
-	return outOfRange;
+	return validRange;
 }
 
 
