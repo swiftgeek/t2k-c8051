@@ -16,7 +16,7 @@
 // Device Address mapping
 #define ADDR_LTC1669   0x20
 #define ADDR_PCA9539   0x74
-#define ADDR_LTC2497	  0x45	// may be 0010100 (0x14)
+#define ADDR_LTC2497	  0x14	
 
 //ADT7486A temperature addresses. 2 sensors per chip, so each address is repeated twice
 #define ADT7486A_ADDR0 0x49   
@@ -44,8 +44,8 @@
 
 // PCA9539 Macro Definitions
 #define BIAS_OUTPUT_ENABLE      ADDR_PCA9539, PCA9539_CONFIG0, PCA9539_ALL_OUTPUT
-#define BIAS_ALL_HIGH           ADDR_PCA9539, PCA9539_OUTPUT0, 0xFF
-#define BIAS_ALL_LOW            ADDR_PCA9539, PCA9539_OUTPUT0, 0x00
+#define BIAS_DISABLE           ADDR_PCA9539, PCA9539_OUTPUT0, 0xFF
+#define BIAS_ENABLE           ADDR_PCA9539, PCA9539_OUTPUT0, 0x00
 #define BIAS_READ			        ADDR_PCA9539, PCA9539_INPUT0
 #define BIAS_WRITE				  ADDR_PCA9539, PCA9539_OUTPUT0
 
@@ -71,6 +71,9 @@
 //float code   coeff[8] = {1.  ,1.   ,1.   ,1.   ,1.   ,1.  ,1.  ,1.};
 float code   coeff[8] = {40.   ,50.   ,4.025   ,4.025   ,-4.025   ,100.  ,50.  ,100.};
 float code  offset[8] = {0.     ,0.   ,0.   ,0.   ,0.    ,-4.5    ,0.   ,0.  };
+
+// ADC channel conversion table
+char code adc_convert[] = { 1, 3, 5, 7, 1, 3, 5, 7, 0, 2, 4, 6, 0, 2, 4, 6 };
 
 // Shutdown mask
 #define SHUTDOWN_MASK   0xFC
@@ -165,6 +168,8 @@ struct user_data_type {
 	float pDIMon;
 	float uCTemp;
 	float Temp[8];               
+	float VBMon[8];
+	float IBMon[8];
 	unsigned char rBias [64];
 	unsigned char NTemFail;
 	float FailTemp;
@@ -181,9 +186,10 @@ struct user_data_type xdata user_data;
 	unsigned long rnAI;	
 	
 	float Temp[8]; // ADT7486A external temperature [degree celsius]
+?*
+	
 
-	float VBMon[8];
-	float IBMon[8];
+/*
 
 	unsigned long rVBMon[8];
 	unsigned long rIBMon[8];

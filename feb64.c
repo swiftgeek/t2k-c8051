@@ -19,6 +19,8 @@
  
  Program Size: data=139.6 xdata=274 code=13497
  Program Size: data=150.2 xdata=711 code=15134
+ Program Size: data=160.0 xdata=523 code=14686
+
 
  CODE: 16KB(0x4000), paging in 512B(0x200) 
  CODE(?PR?UPGRADE?MSCBMAIN (0xF600)) 
@@ -69,20 +71,21 @@
  // Declare globally the number of sub-addresses to framework
  unsigned char idata _n_sub_addr = 1;
 
-//	Global Variable Declarations
-// Global variable which shows number of times temperature fails
- unsigned char xdata FCS_Mismatch;
-
 // local variables 
  unsigned long xdata currentTime=0, sstTime=0;
  unsigned char xdata channel, chipAdd, chipChan;
  unsigned char xdata BiasIndex, AsumIndex;
  
- //BS for testing the ADT7486A address
- unsigned char Tempaddress;
- // bit register
+ // Global bit register
  unsigned char bdata bChange;
+// Local flag
  sbit bdoitNOW     = bChange ^ 0;
+//Defining the user_write() flag actions
+ sbit PCA_Flag     = bChange ^ 1; 
+ sbit LTC2600_Flag = bChange ^ 2;
+ sbit LTC1665_Flag = bChange ^ 3;
+ sbit LTC1669_Flag = bChange ^ 4;
+
 
  // User Data structure declaration
  //-----------------------------------------------------------------------------
@@ -200,7 +203,7 @@
    4, UNIT_BYTE,      0, 0,     0,  "rpDI",    &user_data.rpDI,    // 83
    4, UNIT_BYTE,      0, 0,     0,  "rnAV",    &user_data.rnAV,    // 84
    4, UNIT_BYTE,      0, 0,     0,  "rnAI",    &user_data.rnAI,    // 85
- 
+ */
    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon0",   &user_data.VBMon[0], // 94
    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon1",   &user_data.VBMon[1], // 95
    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon2",   &user_data.VBMon[2], // 96
@@ -210,15 +213,15 @@
    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon6",   &user_data.VBMon[6], // 100
    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon7",   &user_data.VBMon[7], // 101
  
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBMon0",   &user_data.IBMon[0], // 102
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBMon1",   &user_data.IBMon[1], // 103
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBMon2",   &user_data.IBMon[2], // 104
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBMon3",   &user_data.IBMon[3], // 105
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBMon4",   &user_data.IBMon[4], // 106
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBMon5",   &user_data.IBMon[5], // 107
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBMon6",   &user_data.IBMon[6], // 108
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBMon7",   &user_data.IBMon[7], // 109
- 
+   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon0",   &user_data.IBMon[0], // 102
+   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon1",   &user_data.IBMon[1], // 103
+   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon2",   &user_data.IBMon[2], // 104
+   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon3",   &user_data.IBMon[3], // 105
+   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon4",   &user_data.IBMon[4], // 106
+   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon5",   &user_data.IBMon[5], // 107
+   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon6",   &user_data.IBMon[6], // 108
+   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon7",   &user_data.IBMon[7], // 109
+ /*
    4, UNIT_BYTE,      0, 0,     0,  "rVBMon0",  &user_data.rVBMon[0], // 110
    4, UNIT_BYTE,      0, 0,     0,  "rVBMon1",  &user_data.rVBMon[1], // 111
    4, UNIT_BYTE,      0, 0,     0,  "rVBMon2",  &user_data.rVBMon[2], // 112
@@ -244,10 +247,10 @@
  // Get sysinfo if necessary
  extern SYS_INFO sys_info;          // For address setting
  
-
- unsigned char ADT7486A_addrArray[] = {ADT7486A_ADDR1,ADT7486A_ADDR0 
- ,ADT7486A_ADDR3,ADT7486A_ADDR2};
- 
+ unsigned char ADT7486A_addrArray[] = {ADT7486A_ADDR1
+                                     , ADT7486A_ADDR0
+												 , ADT7486A_ADDR3
+												 , ADT7486A_ADDR2};
  
  /********************************************************************\
  Application specific init and in/output routines
@@ -273,24 +276,20 @@
  
    add = cur_sub_addr();
  
- // Initialize control
-   user_data.control = 0;
- 
  //
  // default settings, set only when uC-EEPROM is being erased and written
  //-----------------------------------------------------------------------------
    if(init)
    {
-     user_data.control    = 0x00;    //Turn off the charge pump
+     user_data.control    = 0x00;    // Turn off the charge pump
      user_data.status     = 0x80;    // Shutdown state
-     user_data.swBias     = 0x00;    //Turn off all the switches
-     user_data.rQpump     = 0x00;    //Set to the lowest scale
+     user_data.swBias     = 0x00;    // Turn off all the switches
+     user_data.rQpump     = 0x00;    // Set to the lowest scale
      for(i=0;i<8;i++)
-       user_data.rAsum[i] = 0x80;    //BS not sure to what value initialize it
+       user_data.rAsum[i] = 0x80;    // BS not sure to what value initialize it
      for(i=0;i<64;i++)
-       user_data.rBias[i] = 0xFF;   //Set the DAC to lowest value
+       user_data.rBias[i] = 0xFF;    // Set the DAC to lowest value
      sys_info.group_addr  = 400;
-     sys_info.node_addr   = 0xFF00;
    }
  
  //
@@ -359,6 +358,7 @@
  
  #ifdef _LTC2497_
    LTC2497_Init();
+	// Start Conversion on Channel 0
  #endif
 
  //
@@ -367,23 +367,26 @@
  #ifdef _PCA9539_
    PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
 	
-	PCA9539_WriteByte(BIAS_OUTPUT_ENABLE);
+ 	PCA9539_WriteByte(BIAS_OUTPUT_ENABLE);
 	PCA9539_WriteByte(BACKPLANE_INPUT_ENABLE);
- #endif
  
  //
- // Physical address retrieval
+ // Physical backplane address retrieval
  //-----------------------------------------------------------------------------
- 
+	PCA9539_Read(BACKPLANE_READ, &add, 1);
+   sys_info.node_addr   = add;   
+ #endif
+
  //
  // EEPROM memory Initialization/Retrieval
  //-----------------------------------------------------------------------------
  //
+
  //
  //
  // Final steps 
  //-----------------------------------------------------------------------------
-   rESR = 0x00000000;
+   rESR = 0x00000000;              // No error!
    rEER = 0xC2;                    // Page 3, Active page 2
 	rCTL = 0;                       // Reset control
 	rCSR = 0x00;                    // Initial CSR
@@ -428,7 +431,7 @@ void user_write(unsigned char index) reentrant
    if (index == IDXBSWITCH) {
 #ifdef _PCA9539_
      if (!SsS) {
-       PCA9539_WriteByte(ADDR_PCA9539, PCA9539_CONFIG0, user_data.swBias);
+       PCA_Flag = 1;
      } // !Shutdown
 #endif
    }
@@ -438,7 +441,7 @@ void user_write(unsigned char index) reentrant
      AsumIndex = (index - FIRST_ASUM);
 #ifdef _LTC2600_
    // Update Bias Dac voltages as requested by bit5 of control register
-     LTC2600_Cmd(LTC2600_LOAD_H, user_data.rAsum[AsumIndex]);
+     LTC2600_Flag = 1;
 #endif
    }
 //
@@ -448,14 +451,14 @@ void user_write(unsigned char index) reentrant
      chipChan = (BiasIndex / 8) + 1;
      chipAdd  = (BiasIndex % 8) + 1;
 #ifdef _LTC1665_
-     LTC1665_Cmd(chipAdd,user_data.rBias[BiasIndex] ,chipChan);
+     LTC1665_Flag = 1;
 #endif
   }
 //
 // --- Index Qpump DAC
  #ifdef _LTC1669_
    if(SqPump) {
-     LTC1669_SetDAC(ADDR_LTC1669, LTC1669_INT_BG_REF, user_data.rQpump);
+     LTC1669_Flag = 1;
    }
  #endif
  }
@@ -507,20 +510,85 @@ void user_write(unsigned char index) reentrant
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void user_loop(void) {
-  float xdata volt, temperature, *pfData;
+  float xdata volt, temperature, *pfData,adc_value;
   unsigned long xdata mask;
+  signed long result;
+  static char adcChannel = 16; // special start value
 
+//
+//-----------------------------------------------------------------------------
+#ifdef _LTC2497_
+	
+	if(adcChannel == 16) {
+		adcChannel = 0;
+		LTC2497_StartConversion(ADDR_LTC2497, adcChannel);
+	} else {
+		adcChannel++;
+		adcChannel %= 16;
+  		if(!LTC2497_ReadConversion(ADDR_LTC2497, adcChannel, &result)) {
+			result = -65536;
+		}
+
+		channel = (adcChannel + 15) % 16;
+		adc_value = ((((float)result + 65536) / 131071) * 2.5);	
+		if(channel & 0x04) {	
+			adc_value *= 62.5; // Current sense gain
+		} else {
+			adc_value *= 40; // For 70V charge pump
+		}	
+			
+		DISABLE_INTERRUPTS;
+		if(channel & 0x04) {
+			user_data.IBMon[adc_convert[channel]] = adc_value;
+		} else {
+			user_data.VBMon[adc_convert[channel]] = adc_value;
+		}		
+		ENABLE_INTERRUPTS;
+	}
+#endif
+
+	//
+	//-----------------------------------------------------------------------------
+	//Checking the flags
+	#ifdef _PCA9539_
+	if(PCA_Flag){
+	 PCA9539_WriteByte(BIAS_WRITE, user_data.swBias);
+	 PCA_Flag = 0;
+	}
+	#endif
+
+	#ifdef _LTC2600_
+	if(LTC2600_Flag) {
+	  LTC2600_Cmd(LTC2600_LOAD_H, user_data.rAsum[AsumIndex]);
+	  LTC2600_Flag=0;
+	}
+	#endif
+
+	#ifdef _LTC1665_
+   if(LTC1665_Flag) {
+	  LTC1665_Cmd(chipAdd,user_data.rBias[BiasIndex] ,chipChan);
+	  LTC1665_Flag = 0;
+	  }
+	 #endif
+	
+	#ifdef _LTC1669_	
+	if(LTC1669_Flag) {
+	  LTC1669_SetDAC(ADDR_LTC1669, LTC1669_INT_BG_REF, user_data.rQpump);
+	  LTC1669_Flag=0;
+	  }
+	#endif
+		
   //-----------------------------------------------------------------------------
   // Power Up based on CTL bit
   if (CPup) {
     rCSR = user_data.status;
     if (!SsS  || SsS || SmSd) { // Shutdown or NOT
-		 // Publish Registers
-		 SsS = OFF;
-		 DISABLE_INTERRUPTS;
-		 user_data.status  = rCSR;
-		 ENABLE_INTERRUPTS;
-		   // Power up Card
+		// Publish Registers
+		SsS = OFF;
+		DISABLE_INTERRUPTS;
+		user_data.status  = rCSR;
+		ENABLE_INTERRUPTS;
+		// Power up Card
       // Vreg ON
       EN_pD5V = ON;
       EN_pA5V = ON;
