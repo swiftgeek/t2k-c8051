@@ -9,12 +9,16 @@
   $Id$
 \**********************************************************************************/
 
-#ifdef _SPI_PROTOCOL_
 //
 //------------------------------------------------------------------------
 /** 
 Using the SPI protocol for the 64 channel FrontEnd board
 */
+
+#ifndef _SPI_PROTCOOL_
+#define _SPI_PROTOCOL_
+#endif
+
 #include "../mscbemb.h"
 #include "SPI_handler.h"
 
@@ -98,6 +102,9 @@ void SPI_WriteUInt(unsigned int dataToBeSend)
   }
 }
 
+// Disabled to remove UNCALLED SEGMENT warning
+#if 0
+
 //
 //------------------------------------------------------------------------
 /**
@@ -107,6 +114,7 @@ Performing SPI read operation on the falling edge of clock.One byte of data is r
 @return dataReceived 	The function returns one byte of information which has been 
 								received via SPI protocol
 */
+
 unsigned char SPI_ReadByteFalling(void)
 {
   signed char i = 0;
@@ -123,6 +131,7 @@ unsigned char SPI_ReadByteFalling(void)
   }
   return dataReceived;
 }
+
 unsigned char SPI_ReadByteRising(void)
 {
   signed char i = 0;

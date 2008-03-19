@@ -11,7 +11,9 @@
 //  Include files
 // --------------------------------------------------------
 
-#ifdef _SMB_PROTOCOL_
+#ifndef _SMB_PROTOCOL_
+#define _SMB_PROTOCOL_
+#endif
 
 #include "../mscbemb.h"
 #include "SMBus_handler.h"
@@ -179,5 +181,3 @@ void Timer3_ISR(void) interrupt 14 {
 	TMR3CN &= ~0x80;	// Clear Timer3 interrupt-pending flag
 	SMB_BUSY = 0;		// Free SMBus
 }	
-
-#endif // _SMB_PROTOCOL_

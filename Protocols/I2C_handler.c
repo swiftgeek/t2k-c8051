@@ -15,6 +15,11 @@
 \**********************************************************************************/
 
 //Include files
+
+#ifndef _I2C_PROTOCOL_
+#define _I2C_PROTOCOL_
+#endif
+
 #include "../asum/mscbemb.h"
 #include "I2C_handler.h"
 

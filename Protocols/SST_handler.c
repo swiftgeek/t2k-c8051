@@ -7,11 +7,13 @@
   $Id$
 \**********************************************************************************/
 
-#ifdef _SST_PROTOCOL_
-
 // --------------------------------------------------------
 //  Include files
 // --------------------------------------------------------
+#ifndef _SST_PROTOCOL_
+#define _SST_PROTOCOL_
+#endif
+
 #include "../mscbemb.h"
 #include "SST_handler.h"
 
@@ -202,5 +204,3 @@ unsigned char SST_ReadByte(void) {
   }
   return dataReceived;
 }
-
-#endif // _SST_PROTOCOL_

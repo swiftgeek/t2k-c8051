@@ -14,6 +14,8 @@
   $Id$
 \**********************************************************************************/
 
+#ifdef _I2C_PROTOCOL_
+
 #ifndef _I2C_HANDLER_H
 #define _I2C_HANDLER_H
 
@@ -40,4 +42,6 @@ unsigned char I2C_WriteByte(unsigned char datByte, unsigned char flag);
 unsigned char I2C_ReadByte(bit flag);
 void I2C_ClockOnce(void);
 
-#endif
+#endif // _I2C_HANDLER_H
+
+#endif // _I2C_PROTOCOL_
