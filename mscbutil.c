@@ -1171,7 +1171,7 @@ void delay_us(unsigned int us)
             _nop_();
 #elif defined(CPU_C8051F120)
          for (j=22 ; j>0 ; j--)
-            _nop_();
+             _nop_();
 #elif defined(CPU_C8051F310)
          _nop_();
          for (j=3 ; j>0 ; j--)
