@@ -251,7 +251,11 @@
                                      , ADT7486A_ADDR0
 												 , ADT7486A_ADDR3
 												 , ADT7486A_ADDR2};
- 
+ unsigned char xdata LTC2600_LOAD[] = {LTC2600_LOAD_A,LTC2600_LOAD_B,
+ 													LTC2600_LOAD_C,LTC2600_LOAD_D,
+													LTC2600_LOAD_E,LTC2600_LOAD_F,
+													LTC2600_LOAD_G,LTC2600_LOAD_H};
+														
  /********************************************************************\
  Application specific init and in/output routines
  \********************************************************************/
@@ -285,11 +289,14 @@
      user_data.status     = 0x80;    // Shutdown state
      user_data.swBias     = 0x00;    // Turn off all the switches
      user_data.rQpump     = 0x00;    // Set to the lowest scale
-     for(i=0;i<8;i++)
+     for(i=0;i<8;i++){
        user_data.rAsum[i] = 0x80;    // BS not sure to what value initialize it
-     for(i=0;i<64;i++)
+     	 user_data.Temp[i]  = 0x0;
+		}
+	  for(i=0;i<64;i++)
        user_data.rBias[i] = 0xFF;    // Set the DAC to lowest value
-     sys_info.group_addr  = 400;
+    
+	  sys_info.group_addr  = 400;
    }
  
  //
@@ -320,7 +327,7 @@
    P1MDOUT |= 0x01; // Setting the SST_DRV (SST) to push pull
    SFRPAGE  = CPT1_PAGE;
    CPT1CN  |= 0x80; // Enable the Comparator 1
-   CPT1MD   = 0x02; //Comparator1 Mode Selection
+   CPT1MD   = 0x03; //Comparator1 Mode Selection
    //Use default, adequate TYP (CP1 Response Time, no edge triggered interrupt)
  
    ADT7486A_Init();
@@ -552,14 +559,16 @@ void user_loop(void) {
 	//Checking the flags
 	#ifdef _PCA9539_
 	if(PCA_Flag){
-	 PCA9539_WriteByte(BIAS_WRITE, user_data.swBias);
+	 PCA9539_WriteByte(BIAS_WRITE, ~user_data.swBias);
+
 	 PCA_Flag = 0;
+
 	}
 	#endif
 
 	#ifdef _LTC2600_
 	if(LTC2600_Flag) {
-	  LTC2600_Cmd(LTC2600_LOAD_H, user_data.rAsum[AsumIndex]);
+	  LTC2600_Cmd(WriteTo_Update,LTC2600_LOAD[AsumIndex], user_data.rAsum[AsumIndex]);
 	  LTC2600_Flag=0;
 	}
 	#endif
