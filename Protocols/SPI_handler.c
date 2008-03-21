@@ -15,7 +15,7 @@
 Using the SPI protocol for the 64 channel FrontEnd board
 */
 
-#ifndef _SPI_PROTCOOL_
+#ifndef _SPI_PROTOCOL_
 #define _SPI_PROTOCOL_
 #endif
 
@@ -60,6 +60,7 @@ void SPI_ClockOnce(void)
   delay_us(SPI_DELAY);
   SPI_SCK = 0;
 }
+
 
 //
 //------------------------------------------------------------------------
@@ -132,6 +133,8 @@ unsigned char SPI_ReadByteFalling(void)
   return dataReceived;
 }
 
+#endif
+ 
 unsigned char SPI_ReadByteRising(void)
 {
   signed char i = 0;
@@ -141,11 +144,14 @@ unsigned char SPI_ReadByteRising(void)
   SFRPAGE = SPI0_PAGE ;
   for(i = 7; i >= 0; i--)
   {
-	 SPI_ClockOnce();
-    din = SPI_MISO;
-    dataReceived |= (din << i);
+	delay_us(SPI_DELAY);
+   din = SPI_MISO;
+   dataReceived |= (din << i);
+  	SPI_SCK = 1;
+  	delay_us(SPI_DELAY);
+  	SPI_SCK = 0;
+ 
   }
   return dataReceived;
 }
 
-#endif
