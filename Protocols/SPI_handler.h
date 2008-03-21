@@ -15,6 +15,7 @@
 #define  _SPI_HANDLER_H
 
 #define SPI_DELAY 50 //Defining the SPI protocol speed in us
+#define SPI_HALF_DELAY 25
 
 //
 //------------------------------------------------------------------------
