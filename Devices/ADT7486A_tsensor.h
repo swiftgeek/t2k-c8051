@@ -36,10 +36,10 @@
 #define SetExt2Offset 0xE1, 0x03, 0x00, 0x00, 0x00
 #define GetExt2Offset 0xE1, 0x01, 0x02, 0x00, 0x00
 #define ResetDevice   0xF6, 0x01, 0x00
-#define GetDIB_8bytes 0xF7, 0x01, 0x10, 0x00, 0x00
 
+#define GetDIB_8bytes 0xF7, 0x01, 0x10, 0x00, 0x00
 #define DONT_READ_DATA  (unsigned char) 0xff			// For Ping, SetOffset command, we do not read any data
-#define READ_DATA     	(unsigned char) 0x00			// For GetTemp, GetOffset command, we want to read the data 
+#define READ_DATA     	(unsigned char) 0x00			// For GetTemp, GetmsOffset command, we want to read the data 
 #define AVG_COUNT   	  1 			// The number of times that we want to acquire temperature
 #define ADT7486A_CONVERSION_TIME  30      // Delay in ms
 												
