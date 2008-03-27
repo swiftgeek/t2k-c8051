@@ -127,5 +127,18 @@ void PCA9539_Read(unsigned char addr, unsigned char selectPort, unsigned char *p
 	STA = 1;
 	while(SMB_BUSY);
 }
-
+void PCA9539_Conversion(unsigned char *conversion){
+	unsigned char xdata temporary=0;
+	 
+	if(*conversion & 0x01) temporary |= 0x80;
+	if(*conversion & 0x02) temporary |= 0x04;
+	if(*conversion & 0x04) temporary |= 0x10;
+	if(*conversion & 0x08) temporary |= 0x01;
+	if(*conversion & 0x10) temporary |= 0x40;
+	if(*conversion & 0x20) temporary |= 0x08;
+	if(*conversion & 0x40) temporary |= 0x20;
+	if(*conversion & 0x80) temporary |= 0x02;
+	
+	*conversion = temporary;
+}
 #endif
