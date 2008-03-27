@@ -28,13 +28,15 @@
 #define NCHANNEL_ASUM     8
 #define NCHANNEL_SST      8
 #define NCHANNEL_ADT7486A 4
-#define IDXCTL       1
-#define IDXEER       0
-#define IDXQVOLT     5
-#define IDXBSWITCH   4
-#define IDXASUM      6
-#define IDXSST      23 
-#define IDXBIAS     31
+#define IDXCTL         2
+#define IDXEER         1
+#define IDXQVOLT       6
+#define IDXBSWITCH     5
+#define IDXASUM        7
+#define IDXSST        24 
+#define IDXBIAS       32
+
+unsigned int xdata PageAddr[]={0x0,0x100,0x200,0x300,0x400,0x500};
 
 #define FIRST_BIAS   IDXBIAS
 #define LAST_BIAS    FIRST_BIAS + NCHANNEL_BIAS
@@ -66,11 +68,13 @@
 #define Q_PUMP_OFF           2           
 #define Q_PUMP_ON            3           
 
+//+6Va,+6Vd are off roughly by 5mV, -6Va is off roughly by -30mV
+
 // Fix conversion coeef for V/I internal ADC
 //                      Vb      Vbi   +6Vd      +6Va     -6Va  -6Ia   +6Ia  +6Id 
 //float code   coeff[8] = {1.  ,1.   ,1.   ,1.   ,1.   ,1.  ,1.  ,1.};
-float code   coeff[8] = {40.   ,50.   ,4.025   ,4.025   ,-4.025   ,100.  ,50.  ,100.};
-float code  offset[8] = {0.     ,0.   ,0.   ,0.   ,0.    ,-4.5    ,0.   ,0.  };
+float code   coeff[8] = {41.22   ,50.   ,4.025   ,4.025   ,8.4534   ,100.  ,50.  ,100.};
+float code  offset[8] = {0.048     ,0.   ,-0.06   ,-0.054   ,-18.622    ,-4.5    ,0.   ,0.  };
 
 // ADC channel conversion table
 char code adc_convert[] = { 1, 3, 5, 7, 1, 3, 5, 7, 0, 2, 4, 6, 0, 2, 4, 6 };
@@ -112,7 +116,7 @@ sbit iReg2    = rESR ^ 6;
 sbit iReg3    = rESR ^ 7;
 sbit uCT      = rESR ^ 8;
 sbit ssTT     = rESR ^ 9; 
-
+sbit EEPROM   = rESR ^ 10;
 // SMBus Port Aliases
 sbit SDA		  = MSCB_I2C_SDA;
 sbit SCL		  = MSCB_I2C_SCL;
@@ -148,8 +152,12 @@ struct EEPAGE xdata eepage = {
     ,20., 30.
 };
 
+//BS	For testing the EXTEEPROM
+struct EEPAGE xdata eepage2;
+
 /*---- Define variable parameters returned to CMD_GET_INFO command ----*/
 struct user_data_type {
+	unsigned int SerialN;
 	unsigned long error;         
 	unsigned char control;       
 	unsigned char status;		 
