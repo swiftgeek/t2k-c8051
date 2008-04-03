@@ -10,6 +10,10 @@ FEB64 has a "slow control" section which run completely independently and provid
 card condition status, board and internal detector temperature monitoring and
 control/monitoring of the high voltage fed to the MPPCs.
 
+ * <center> Block Diagram layout.
+ *  \image html feb64-block.jpg
+ * </center> 
+
 \section feb64location Location
 This card is located in each "crate" mounted on the surrounding structure
 of each FGD (24 crates per FGD). Each crate contains 4 FEB64 cards.
@@ -19,7 +23,7 @@ of each FGD (24 crates per FGD). Each crate contains 4 FEB64 cards.
 - @ref AFTER chip, Record signals collected by the MPPC.
 - Digitize the analog stored signal on request (Trigger) and transmit
   the digital information to the @ref CMB card.
-- Monitor the internal detector temperature (@ref InternalTemperature)
+- Monitor the internal detector temperature (@ref busboardTemperature)
   through a slow control data channel.
 - Monitor the board condition (@ref InternalUIT), possibly
   take action (shutdown) in particular case.
@@ -35,15 +39,17 @@ disconnection of the branch. Each of this arm has voltage and current
 monitoring and feeds 8 consecutive MPPC.
 
 @section feb64-sc-register High Voltage registers
-- MSCB(1) : Byte : Control^1 : Toggle the Charge Pump Votlage 
-- MSCB(1) : Byte : Status^1 : Qpump current state [on=1, off=0]
-- MSCB(5) : Byte : Qpump : Main Qpump Voltage [32V..80V]   
-- MSCB(4) : 8bits: Qswitch : HV Switch Arm [7..0]
+\code
+- MSCB(?)     : Byte  : Control^1 : Toggle the Charge Pump Votlage 
+- MSCB(?)     : Byte  : Status^1 : Qpump current state [on=1, off=0]
+- MSCB(?)     : Byte  : Qpump : Main Qpump Voltage [32V..80V]   
+- MSCB(?)     : 8bits : Qswitch : HV Switch Arm [7..0]
 - MSCB(??..??): Float : VBMon[7..0] : Voltage monitoring [V]
-- MSCB(??) : Float : VBias : Qpump Voltage monitoring [V]
-- MSCB(??) : Float : IBias : Qpump Current monitoring [uA]
-- MSCB(0) : WORD : Error^0 : Qpump Voltage error []
-- MSCB(0) : WORD : Error^1 : Qpump Current error []
+- MSCB(?) : Float : VBias : Qpump Voltage monitoring [V]
+- MSCB(?) : Float : IBias : Qpump Current monitoring [uA]
+- MSCB(?) : WORD : Error^0 : Qpump Voltage error []
+- MSCB(?) : WORD : Error^1 : Qpump Current error []
+\endcode
 */
 
 /*!\page AFTER SCA ASIC Chip
@@ -51,17 +57,18 @@ The cards contains 2 AFTER SCA chips recording 2 signal shape from the
 same input under 2 different amplification setting. 
 */
 
-/*!\page InternalTemperature FGD Internal detector temperature monitoring
+/*!\page busboardTemperature FGD Internal detector temperature monitoring
 @section Purpose
-The temperature sensors are connected to the FEB64 and readout at regular interval (1Hz).
-Provides the temperature profile within the enclosed FGD detection volume.
+Monitor periodically (1Hz) the temperature within the FGD detector at the bus board
+position.
 @section Location
-On the perimeter of the FGD each section of 8 MPPC has a temperature sensor.
+On the perimeter of the FGD each section one temperature sensor for every 8 
+consecutive MPPC.
 @section Condition
 - T > 60degC : Shutdown FEB64 card.
 @section feb64-sst MSCB Registers
-- MSCB(5) : Float : Temp[7..0] : External Temperature [C]   
-- MSCB(0) : WORD : Error^9 : External Temperature exceeded []
+- MSCB(?) : Float : Temp[7..0] : Bus board Temperature [C]   
+- MSCB(?) : WORD : Error^9 : Bus board Temperature exceeded []
 */
 
 /*!\page InternalUIT FEB64 board condition monitoring
@@ -94,3 +101,9 @@ Local (FEB64)
 - MSCB(0) : WORD : Error^8 : uCTemp error []
 */                         
 
+/*!\page feb64_limits FEB64 Limit parameters
+@section feb64purpose Purpose
+The parameter limits are hard coded and require a 
+full application upload to the card for changes.
+...
+*/

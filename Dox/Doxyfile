@@ -97,7 +97,8 @@ EXCLUDE_PATTERNS       =
 EXAMPLE_PATH           = ../Doc
 EXAMPLE_PATTERNS       = *
 EXAMPLE_RECURSIVE      = NO
-IMAGE_PATH             = ../Images
+IMAGE_PATH             = Images \
+                         ../Images
 INPUT_FILTER           = 
 FILTER_PATTERNS        = 
 FILTER_SOURCE_FILES    = NO
