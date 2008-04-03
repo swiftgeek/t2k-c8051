@@ -2,6 +2,7 @@
   Name:			SMBus_handler.c
   Author:   	Bryerton Shaw 	
   Created: 		March 11, 2008
+  Modified:	   Bahman Sotoodian
   Description:	SMBus protocol using interrupts, created for FEB64 board
 
   $Id$
@@ -15,6 +16,9 @@
 #define _SMB_PROTOCOL_
 #endif
 
+//-------------------------------------------------------------------
+//Include files
+//-------------------------------------------------------------------
 #include "../mscbemb.h"
 #include "SMBus_handler.h"
 
@@ -32,6 +36,11 @@ bit SMB_BUSY;
 bit SMB_RW;
 bit SMB_ACKPOLL;
 
+//
+//-------------------------------------------------------------------
+/**
+Initializing the SMBus
+*/
 void SMBus_Init(void) {
 	static char init = 0;
 
@@ -39,7 +48,7 @@ void SMBus_Init(void) {
 		init = 1;
 		SMB_BUSY = 0;
 
-		// Timer3 Registers
+		// Configuring the Timer3 Registers
 		SFRPAGE = TMR3_PAGE;
 		TMR3CN = 0x00;	// Turn Clock off
 		TMR3CF = 0x00;	// SYSCLK / 12
@@ -47,8 +56,8 @@ void SMBus_Init(void) {
 		RCAP3L = 0x00; /* TIMER 3 CAPTURE/RELOAD LOW BYTE */
 		RCAP3H = 0x00; /* TIMER 3 CAPTURE/RELOAD HIGH BYTE */
 
-		TMR3L = 0x00;
-		TMR3H = 0x00;
+		TMR3L = 0x00;  //Timer3 Low Bytes
+		TMR3H = 0x00;  //Timer3 High Bytes
 
 		TMR3CN = 0x04; // Enable Timer3
    
@@ -56,7 +65,7 @@ void SMBus_Init(void) {
 		SMB0CN = 0x43;
 		EIE1 |= 0x02;	// Enable SMBus interrupts
 		EIE2 |= 0x01;	// Enable Timer3 interrupts
-		EA = 1;			// Enable Global interrupts
+		EA = 1;			// Enable Global interrupts     
 	}
 }
 

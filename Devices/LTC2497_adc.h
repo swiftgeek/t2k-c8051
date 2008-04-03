@@ -28,6 +28,7 @@ void LTC2497_StartConversion(unsigned char addr, unsigned char channel);
 
 //
 //------------------------------------------------------------------------
-unsigned char  LTC2497_ReadConversion(unsigned char addr, unsigned char channel, signed long *pResult);
+unsigned char  LTC2497_ReadConversion(unsigned char addr, unsigned char channel, 
+signed long *pResult);
 
 #endif

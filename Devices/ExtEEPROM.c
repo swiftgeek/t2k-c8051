@@ -53,7 +53,8 @@ unsigned char page_size) {
 			
 	//Making sure that Write Protection pin is high to start doing W/R operation
 	RAM_WPn = 1;	
-	ExtEEPROM_WriteEnable();
+	if (ExtEEPROM_WriteEnable() ==EEP_BUSY)
+		return EEP_BUSY;
 
 	RAM_CSn = 0;
 	SPI_WriteByte(EEP_READcmd); 				//Sending the raed opcode 
@@ -86,7 +87,7 @@ Writes data to the ext_eeprom.
 @return EEP_BUSY					 Indiacting that the device is busy performing the internal write cycle
 @return EEP_SUCCESS  			 				  
 */
-unsigned char ExtEEPROM_Write_Clear(unsigned int write_addr, unsigned char *source, 
+unsigned char ExtEEPROM_Write_Clear(unsigned int write_addr, unsigned char **source, 
 unsigned char page_size, unsigned char WC_flag, unsigned char *flag)
 {
 	unsigned char i,j;
@@ -117,21 +118,22 @@ unsigned char page_size, unsigned char WC_flag, unsigned char *flag)
 			counter = (page_size % EEP_MAX_BYTE);
       }
 		//Sending the Write Enable instruction 
-		ExtEEPROM_WriteEnable();					//The device will be automatically
-															//returned to the write disable state 
-															//at the completion of write cycle
+		if (ExtEEPROM_WriteEnable() == EEP_BUSY){	 //The device will be automatically
+			*flag = i;
+			return EEP_BUSY;											 //returned to the write disable state 
+		}													    //at the completion of write cycle
 		
 	
 		RAM_CSn = 0;
 	
 		SPI_WriteByte(EEP_WRITEcmd); 					//Sending the WRITE opcode 
-		SPI_WriteUInt(write_addr);	 				//Sending the memory address which 
-															//data is going to be stored in
+		SPI_WriteUInt(write_addr);	 			   	//Sending the memory address which 
+															  //data is going to be stored in
 						
 		for (j=0; j<counter; j++) {	
 			if (WC_flag == WRITE_EEPROM){
-				SPI_WriteByte(*source);
-				source++;
+				SPI_WriteByte(**source);
+				(*source)++;
 			}
 			else
 			   SPI_WriteByte(CLEAR_EEPROM);		  //Clearing the memory									
@@ -151,7 +153,7 @@ unsigned char page_size, unsigned char WC_flag, unsigned char *flag)
 /**
 Sending the write enable instruction 
 */
-void ExtEEPROM_WriteEnable(void)
+unsigned char ExtEEPROM_WriteEnable(void)
 {				
 		//Enabling the write operation
 		RAM_CSn = 0;
@@ -160,7 +162,9 @@ void ExtEEPROM_WriteEnable(void)
 		delay_us(EEP_delay);
 		RAM_CSn = 1;
 		delay_us(EEP_delay);
-		ExtEEPROM_Wait();
+		if (ExtEEPROM_Wait() ==EEP_BUSY)
+			return EEP_BUSY;
+      return EEP_READY;
 }
 
 //
@@ -170,7 +174,7 @@ Writing to the status register
 @param status	Stuats would determine the value of WPEN,BP0,BP1 
 	            bits of status register
 */
-void ExtEEPROM_WriteStatusReg(unsigned char status) {
+unsigned char ExtEEPROM_WriteStatusReg(unsigned char status) {
 	ExtEEPROM_WriteEnable();
 	RAM_CSn = 0;
 	SPI_WriteByte(EEP_WRSRcmd);
@@ -178,7 +182,9 @@ void ExtEEPROM_WriteStatusReg(unsigned char status) {
 	delay_us(EEP_delay);
 	RAM_CSn = 1;
 	delay_us(EEP_delay);
-	ExtEEPROM_Wait();
+	if (ExtEEPROM_Wait() == EEP_BUSY)
+		return EEP_BUSY;
+   return EEP_READY;
 }
 
 //

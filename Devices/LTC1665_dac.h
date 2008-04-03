@@ -46,6 +46,7 @@ sbit SPI_SCK   = MSCB_SPI_SCK;     // SPI Protocol Serial Clock
 #define DAC7	7
 #define DAC8	8						
 
+//The LTC1665 instructions, refere to LCT1665 manual.
 #define LTC1665_LOAD_A		 0x1 
 #define LTC1665_LOAD_B		 0x2 
 #define LTC1665_LOAD_C		 0x3 

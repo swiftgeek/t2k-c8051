@@ -141,4 +141,5 @@ void PCA9539_Conversion(unsigned char *conversion){
 	
 	*conversion = temporary;
 }
+
 #endif

@@ -141,8 +141,9 @@ unsigned char SST_DrvClientResponse(void) {
   delay_us (1);
   SST = 0;
 
-  delay_us(T_BIT / 2); //delay for half of T_BIT time
+  delay_us(T_BIT / 2.0); //delay for half of T_BIT time
 
+  SFRPAGE  = CPT1_PAGE;	
   if(SST_ClientResponse == 1)
   //if the comparator output is high, then return 1
   {

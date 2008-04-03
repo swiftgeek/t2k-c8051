@@ -61,6 +61,9 @@
  #include "Devices/LTC2497_adc.h"
  #endif
  
+ #ifdef _ExtEEPROM_
+ #include "Devices/ExtEEPROM.h"
+ #endif
  //
  // Global declarations
  //-----------------------------------------------------------------------------
@@ -72,176 +75,179 @@
  unsigned char idata _n_sub_addr = 1;
 
 // local variables 
- unsigned long xdata currentTime=0, sstTime=0;
- unsigned char xdata channel, chipAdd, chipChan;
+ unsigned long xdata currentTime=0, sstTime=0,sstExtTime=0;
+ unsigned char xdata eeprom_channel,channel, chipAdd, chipChan;
  unsigned char xdata BiasIndex, AsumIndex;
  
  // Global bit register
  unsigned char bdata bChange;
 // Local flag
- sbit bdoitNOW     = bChange ^ 0;
+ sbit bdoitNOW       = bChange ^ 0;
 //Defining the user_write() flag actions
- sbit PCA_Flag     = bChange ^ 1; 
- sbit LTC2600_Flag = bChange ^ 2;
- sbit LTC1665_Flag = bChange ^ 3;
- sbit LTC1669_Flag = bChange ^ 4;
-
+ sbit PCA_Flag       = bChange ^ 1; 
+ sbit LTC2600_Flag   = bChange ^ 2;
+ sbit LTC1665_Flag   = bChange ^ 3;
+ sbit LTC1669_Flag   = bChange ^ 4;
+ sbit EEP_CTR_FLAG   = bChange ^ 5; 
 
  // User Data structure declaration
  //-----------------------------------------------------------------------------
  MSCB_INFO_VAR code vars[] = {
-   4, UNIT_BYTE,            0, 0,           0, "Error",      &user_data.error,        // 0
-   1, UNIT_BYTE,            0, 0,           0, "Control",    &user_data.control,      // 1
-   1, UNIT_BYTE,            0, 0,           0, "Status",     &user_data.status,       // 2
-   1, UNIT_BYTE,            0, 0,           0, "EEPage",     &user_data.eepage,       // 3
-   1, UNIT_BYTE,            0, 0,           0, "swBias",     &user_data.swBias,       // 4
-   2, UNIT_BYTE,            0, 0,           0, "rQpump",     &user_data.rQpump,       // 5
-  
-   2, UNIT_BYTE,            0, 0,           0, "rAsum0",     &user_data.rAsum[0],     // 6
-   2, UNIT_BYTE,            0, 0,           0, "rAsum1",     &user_data.rAsum[1],     // 7
-   2, UNIT_BYTE,            0, 0,           0, "rAsum2",     &user_data.rAsum[2],     // 8
-   2, UNIT_BYTE,            0, 0,           0, "rAsum3",     &user_data.rAsum[3],     // 9
-   2, UNIT_BYTE,            0, 0,           0, "rAsum4",     &user_data.rAsum[4],     // 10
-   2, UNIT_BYTE,            0, 0,           0, "rAsum5",     &user_data.rAsum[5],     // 11
-   2, UNIT_BYTE,            0, 0,           0, "rAsum6",     &user_data.rAsum[6],     // 12
-   2, UNIT_BYTE,            0, 0,           0, "rAsum7",     &user_data.rAsum[7],     // 13
-  
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBias",      &user_data.VBias,        // 14
-   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBias",      &user_data.IBias,        // 15
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pDVMon",     &user_data.pDVMon,       // 16
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pAVMon",     &user_data.pAVMon,       // 17
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "nAVMon",     &user_data.nAVMon,       // 18
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "nAIMon",     &user_data.nAIMon,       // 19
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "pAIMon",     &user_data.pAIMon,       // 20
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "pDIMon",     &user_data.pDIMon,       // 21
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "uCTemp",     &user_data.uCTemp,       // 22
- 
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp0",      &user_data.Temp[0],      // 23
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp1",      &user_data.Temp[1],      // 24
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp2",      &user_data.Temp[2],      // 25
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp3",      &user_data.Temp[3],      // 26
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp4",      &user_data.Temp[4],      // 27
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp5",      &user_data.Temp[5],      // 28
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp6",      &user_data.Temp[6],      // 29
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp7",      &user_data.Temp[7],      // 30
- 
-   1,UNIT_BYTE,             0, 0,           0, "rBias00",    &user_data.rBias[0],     // 31
-   1,UNIT_BYTE,             0, 0,           0, "rBias01",    &user_data.rBias[1],     // 32
-   1,UNIT_BYTE,             0, 0,           0, "rBias02",    &user_data.rBias[2],     // 33
-   1,UNIT_BYTE,             0, 0,           0, "rBias03",    &user_data.rBias[3],     // 34
-   1,UNIT_BYTE,             0, 0,           0, "rBias04",    &user_data.rBias[4],     // 35
-   1,UNIT_BYTE,             0, 0,           0, "rBias05",    &user_data.rBias[5],     // 36
-   1,UNIT_BYTE,             0, 0,           0, "rBias06",    &user_data.rBias[6],     // 37
-   1,UNIT_BYTE,             0, 0,           0, "rBias07",    &user_data.rBias[7],     // 38
-   1,UNIT_BYTE,             0, 0,           0, "rBias08",    &user_data.rBias[8],     // 39
-   1,UNIT_BYTE,             0, 0,           0, "rBias09",    &user_data.rBias[9],     // 40
-   1,UNIT_BYTE,             0, 0,           0, "rBias10",    &user_data.rBias[10],    // 41
-   1,UNIT_BYTE,             0, 0,           0, "rBias11",    &user_data.rBias[11],    // 42
-   1,UNIT_BYTE,             0, 0,           0, "rBias12",    &user_data.rBias[12],    // 43
-   1,UNIT_BYTE,             0, 0,           0, "rBias13",    &user_data.rBias[13],    // 44
-   1,UNIT_BYTE,             0, 0,           0, "rBias14",    &user_data.rBias[14],    // 45
-   1,UNIT_BYTE,             0, 0,           0, "rBias15",    &user_data.rBias[15],    // 46
-   1,UNIT_BYTE,             0, 0,           0, "rBias16",    &user_data.rBias[16],    // 47
-   1,UNIT_BYTE,             0, 0,           0, "rBias17",    &user_data.rBias[17],    // 48
-   1,UNIT_BYTE,             0, 0,           0, "rBias18",    &user_data.rBias[18],    // 49
-   1,UNIT_BYTE,             0, 0,           0, "rBias19",    &user_data.rBias[19],    // 50
-   1,UNIT_BYTE,             0, 0,           0, "rBias20",    &user_data.rBias[20],    // 51
-   1,UNIT_BYTE,             0, 0,           0, "rBias21",    &user_data.rBias[21],    // 52
-   1,UNIT_BYTE,             0, 0,           0, "rBias22",    &user_data.rBias[22],    // 53
-   1,UNIT_BYTE,             0, 0,           0, "rBias23",    &user_data.rBias[23],    // 54
-   1,UNIT_BYTE,             0, 0,           0, "rBias24",    &user_data.rBias[24],    // 55
-   1,UNIT_BYTE,             0, 0,           0, "rBias25",    &user_data.rBias[25],    // 56
-   1,UNIT_BYTE,             0, 0,           0, "rBias26",    &user_data.rBias[26],    // 57
-   1,UNIT_BYTE,             0, 0,           0, "rBias27",    &user_data.rBias[27],    // 58
-   1,UNIT_BYTE,             0, 0,           0, "rBias28",    &user_data.rBias[28],    // 59
-   1,UNIT_BYTE,             0, 0,           0, "rBias29",    &user_data.rBias[29],    // 60
-   1,UNIT_BYTE,             0, 0,           0, "rBias30",    &user_data.rBias[30],    // 61
-   1,UNIT_BYTE,             0, 0,           0, "rBias31",    &user_data.rBias[31],    // 62
-   1,UNIT_BYTE,             0, 0,           0, "rBias32",    &user_data.rBias[32],    // 63
-   1,UNIT_BYTE,             0, 0,           0, "rBias33",    &user_data.rBias[33],    // 64
-   1,UNIT_BYTE,             0, 0,           0, "rBias34",    &user_data.rBias[34],    // 65
-   1,UNIT_BYTE,             0, 0,           0, "rBias35",    &user_data.rBias[35],    // 66
-   1,UNIT_BYTE,             0, 0,           0, "rBias36",    &user_data.rBias[36],    // 67
-   1,UNIT_BYTE,             0, 0,           0, "rBias37",    &user_data.rBias[37],    // 68
-   1,UNIT_BYTE,             0, 0,           0, "rBias38",    &user_data.rBias[38],    // 69
-   1,UNIT_BYTE,             0, 0,           0, "rBias39",    &user_data.rBias[39],    // 70
-   1,UNIT_BYTE,             0, 0,           0, "rBias40",    &user_data.rBias[40],    // 71
-   1,UNIT_BYTE,             0, 0,           0, "rBias41",    &user_data.rBias[41],    // 72
-   1,UNIT_BYTE,             0, 0,           0, "rBias42",    &user_data.rBias[42],    // 73
-   1,UNIT_BYTE,             0, 0,           0, "rBias43",    &user_data.rBias[43],    // 74
-   1,UNIT_BYTE,             0, 0,           0, "rBias44",    &user_data.rBias[44],    // 75
-   1,UNIT_BYTE,             0, 0,           0, "rBias45",    &user_data.rBias[45],    // 76
-   1,UNIT_BYTE,             0, 0,           0, "rBias46",    &user_data.rBias[46],    // 77
-   1,UNIT_BYTE,             0, 0,           0, "rBias47",    &user_data.rBias[47],    // 78
-   1,UNIT_BYTE,             0, 0,           0, "rBias48",    &user_data.rBias[48],    // 79
-   1,UNIT_BYTE,             0, 0,           0, "rBias49",    &user_data.rBias[49],    // 80
-   1,UNIT_BYTE,             0, 0,           0, "rBias50",    &user_data.rBias[50],    // 81
-   1,UNIT_BYTE,             0, 0,           0, "rBias51",    &user_data.rBias[51],    // 82
-   1,UNIT_BYTE,             0, 0,           0, "rBias52",    &user_data.rBias[52],    // 83
-   1,UNIT_BYTE,             0, 0,           0, "rBias53",    &user_data.rBias[53],    // 84
-   1,UNIT_BYTE,             0, 0,           0, "rBias54",    &user_data.rBias[54],    // 85
-   1,UNIT_BYTE,             0, 0,           0, "rBias55",    &user_data.rBias[55],    // 86
-   1,UNIT_BYTE,             0, 0,           0, "rBias56",    &user_data.rBias[56],    // 87
-   1,UNIT_BYTE,             0, 0,           0, "rBias57",    &user_data.rBias[57],    // 88
-   1,UNIT_BYTE,             0, 0,           0, "rBias58",    &user_data.rBias[58],    // 89
-   1,UNIT_BYTE,             0, 0,           0, "rBias59",    &user_data.rBias[59],    // 90
-   1,UNIT_BYTE,             0, 0,           0, "rBias60",    &user_data.rBias[60],    // 91
-   1,UNIT_BYTE,             0, 0,           0, "rBias61",    &user_data.rBias[61],    // 92
-   1,UNIT_BYTE,             0, 0,           0, "rBias62",    &user_data.rBias[62],    // 93
-   1,UNIT_BYTE,             0, 0,           0, "rBias63",    &user_data.rBias[63],    // 94
+   4, UNIT_BYTE,            0, 0,           0, "SerialN",    &user_data.SerialN,      // 0
+   4, UNIT_BYTE,            0, 0,           0, "Error",      &user_data.error,        // 1
+   1, UNIT_BYTE,            0, 0,           0, "Control",    &user_data.control,      // 2
+   1, UNIT_BYTE,            0, 0,           0, "Status",     &user_data.status,       // 3
+   1, UNIT_BYTE,            0, 0,           0, "EEPage",     &user_data.eepage,       // 4
+   1, UNIT_BYTE,            0, 0,           0, "swBias",     &user_data.swBias,       // 5
+   2, UNIT_BYTE,            0, 0,           0, "rQpump",     &user_data.rQpump,       // 6
+   2, UNIT_BYTE,            0, 0,           0, "spare",      &user_data.spare,        // 7
 
- //BS
-   1, UNIT_BYTE,            0, 0,           0, "NTemFail",    &user_data.NTemFail,      
-	4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "FailTemp",     &user_data.FailTemp,       
+  
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBias",      &user_data.VBias,        // 8
+   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBias",      &user_data.IBias,        // 9
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pDVMon",     &user_data.pDVMon,       // 10
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pAVMon",     &user_data.pAVMon,       // 11
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "nAVMon",     &user_data.nAVMon,       // 12
+   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "nAIMon",     &user_data.nAIMon,       // 13
+   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "pAIMon",     &user_data.pAIMon,       // 14
+   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "pDIMon",     &user_data.pDIMon,       // 15
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "uCTemp",     &user_data.uCTemp,       // 16
+ 
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp0",      &user_data.Temp[0],      // 17
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp1",      &user_data.Temp[1],      // 18
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp2",      &user_data.Temp[2],      // 19
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp3",      &user_data.Temp[3],      // 20
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp4",      &user_data.Temp[4],      // 21
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp5",      &user_data.Temp[5],      // 22
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp6",      &user_data.Temp[6],      // 23
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp7",      &user_data.Temp[7],      // 24
+ 	
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon0",     &user_data.VBMon[0], 	  // 25
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon1",   	 &user_data.VBMon[1],     // 26
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon2",     &user_data.VBMon[2],     // 27
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon3",     &user_data.VBMon[3], 	  // 28
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon4",     &user_data.VBMon[4], 	  // 29
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon5",     &user_data.VBMon[5], 	  // 30
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon6",     &user_data.VBMon[6], 	  // 31
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon7",     &user_data.VBMon[7], 	  // 32
+ 
+   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon0",   	 &user_data.IBMon[0], 	  // 33
+   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon1",   	 &user_data.IBMon[1], 	  // 34
+   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon2",   	 &user_data.IBMon[2], 	  // 35
+   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon3",   	 &user_data.IBMon[3], 	  // 36
+   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon4",   	 &user_data.IBMon[4], 	  // 37
+   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon5",   	 &user_data.IBMon[5], 	  // 38
+   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon6",   	 &user_data.IBMon[6], 	  // 39
+   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon7",   	 &user_data.IBMon[7], 	  // 40
 
-	/*
-   4, UNIT_BYTE,      0, 0,     0,  "rVBias",   &user_data.rVBias,   // 78
-   4, UNIT_BYTE,      0, 0,     0,  "rIBias",  &user_data.rIBias,    // 79
-   4, UNIT_BYTE,      0, 0,     0,  "rpAV",    &user_data.rpAV,    // 80
-   4, UNIT_BYTE,      0, 0,     0,  "rpAI",    &user_data.rpAI,    // 81
-   4, UNIT_BYTE,      0, 0,     0,  "rpDV",    &user_data.rpDV,    // 82
-   4, UNIT_BYTE,      0, 0,     0,  "rpDI",    &user_data.rpDI,    // 83
-   4, UNIT_BYTE,      0, 0,     0,  "rnAV",    &user_data.rnAV,    // 84
-   4, UNIT_BYTE,      0, 0,     0,  "rnAI",    &user_data.rnAI,    // 85
- */
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon0",   &user_data.VBMon[0], // 94
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon1",   &user_data.VBMon[1], // 95
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon2",   &user_data.VBMon[2], // 96
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon3",   &user_data.VBMon[3], // 97
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon4",   &user_data.VBMon[4], // 98
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon5",   &user_data.VBMon[5], // 99
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon6",   &user_data.VBMon[6], // 100
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon7",   &user_data.VBMon[7], // 101
- 
-   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon0",   &user_data.IBMon[0], // 102
-   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon1",   &user_data.IBMon[1], // 103
-   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon2",   &user_data.IBMon[2], // 104
-   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon3",   &user_data.IBMon[3], // 105
-   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon4",   &user_data.IBMon[4], // 106
-   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon5",   &user_data.IBMon[5], // 107
-   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon6",   &user_data.IBMon[6], // 108
-   4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon7",   &user_data.IBMon[7], // 109
- /*
-   4, UNIT_BYTE,      0, 0,     0,  "rVBMon0",  &user_data.rVBMon[0], // 110
-   4, UNIT_BYTE,      0, 0,     0,  "rVBMon1",  &user_data.rVBMon[1], // 111
-   4, UNIT_BYTE,      0, 0,     0,  "rVBMon2",  &user_data.rVBMon[2], // 112
-   4, UNIT_BYTE,      0, 0,     0,  "rVBMon3",  &user_data.rVBMon[3], // 113
-   4, UNIT_BYTE,      0, 0,     0,  "rVBMon4",  &user_data.rVBMon[4], // 114
-   4, UNIT_BYTE,      0, 0,     0,  "rVBMon5",  &user_data.rVBMon[5], // 115
-   4, UNIT_BYTE,      0, 0,     0,  "rVBMon6",  &user_data.rVBMon[6], // 116
-   4, UNIT_BYTE,      0, 0,     0,  "rVBMon7",  &user_data.rVBMon[7], // 117
- 
-   4, UNIT_BYTE,      0, 0,     0,  "rIBMon0",  &user_data.rIBMon[0], // 118
-   4, UNIT_BYTE,      0, 0,     0,  "rIBMon1",  &user_data.rIBMon[1], // 119
-   4, UNIT_BYTE,      0, 0,     0,  "rIBMon2",  &user_data.rIBMon[2], // 120
-   4, UNIT_BYTE,      0, 0,     0,  "rIBMon3",  &user_data.rIBMon[3], // 121
-   4, UNIT_BYTE,      0, 0,     0,  "rIBMon4",  &user_data.rIBMon[4], // 122
-   4, UNIT_BYTE,      0, 0,     0,  "rIBMon5",  &user_data.rIBMon[5], // 123
-   4, UNIT_BYTE,      0, 0,     0,  "rIBMon6",  &user_data.rIBMon[6], // 124
-   4, UNIT_BYTE,      0, 0,     0,  "rIBMon7",  &user_data.rIBMon[7], // 125
- 
-   */
-   0
+	4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "ssTemp0",    &user_data.ssTemp[0],    // 41
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "ssTemp1",    &user_data.ssTemp[1],    // 42
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "ssTemp2",    &user_data.ssTemp[2],    // 43
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "ssTemp3",    &user_data.ssTemp[3],    // 44
+
+	2, UNIT_BYTE,            0, 0,           0, "rAsum0",     &user_data.rAsum[0],     // 45
+   2, UNIT_BYTE,            0, 0,           0, "rAsum1",     &user_data.rAsum[1],     // 46
+   2, UNIT_BYTE,            0, 0,           0, "rAsum2",     &user_data.rAsum[2],     // 47
+   2, UNIT_BYTE,            0, 0,           0, "rAsum3",     &user_data.rAsum[3],     // 48
+   2, UNIT_BYTE,            0, 0,           0, "rAsum4",     &user_data.rAsum[4],     // 49
+   2, UNIT_BYTE,            0, 0,           0, "rAsum5",     &user_data.rAsum[5],     // 50
+   2, UNIT_BYTE,            0, 0,           0, "rAsum6",     &user_data.rAsum[6],     // 51
+   2, UNIT_BYTE,            0, 0,           0, "rAsum7",     &user_data.rAsum[7],     // 52
+
+   1,UNIT_BYTE,             0, 0,           0, "rBias00",    &user_data.rBias[0],     // 53
+   1,UNIT_BYTE,             0, 0,           0, "rBias01",    &user_data.rBias[1],     // 54
+   1,UNIT_BYTE,             0, 0,           0, "rBias02",    &user_data.rBias[2],     // 55
+   1,UNIT_BYTE,             0, 0,           0, "rBias03",    &user_data.rBias[3],     // 56
+   1,UNIT_BYTE,             0, 0,           0, "rBias04",    &user_data.rBias[4],     // 57
+   1,UNIT_BYTE,             0, 0,           0, "rBias05",    &user_data.rBias[5],     // 58
+   1,UNIT_BYTE,             0, 0,           0, "rBias06",    &user_data.rBias[6],     // 59
+   1,UNIT_BYTE,             0, 0,           0, "rBias07",    &user_data.rBias[7],     // 60
+   1,UNIT_BYTE,             0, 0,           0, "rBias08",    &user_data.rBias[8],     // 61
+   1,UNIT_BYTE,             0, 0,           0, "rBias09",    &user_data.rBias[9],     // 62
+   1,UNIT_BYTE,             0, 0,           0, "rBias10",    &user_data.rBias[10],    // 63
+   1,UNIT_BYTE,             0, 0,           0, "rBias11",    &user_data.rBias[11],    // 64
+   1,UNIT_BYTE,             0, 0,           0, "rBias12",    &user_data.rBias[12],    // 65
+   1,UNIT_BYTE,             0, 0,           0, "rBias13",    &user_data.rBias[13],    // 66
+   1,UNIT_BYTE,             0, 0,           0, "rBias14",    &user_data.rBias[14],    // 67
+   1,UNIT_BYTE,             0, 0,           0, "rBias15",    &user_data.rBias[15],    // 68
+   1,UNIT_BYTE,             0, 0,           0, "rBias16",    &user_data.rBias[16],    // 69
+   1,UNIT_BYTE,             0, 0,           0, "rBias17",    &user_data.rBias[17],    // 70
+   1,UNIT_BYTE,             0, 0,           0, "rBias18",    &user_data.rBias[18],    // 71
+   1,UNIT_BYTE,             0, 0,           0, "rBias19",    &user_data.rBias[19],    // 72
+   1,UNIT_BYTE,             0, 0,           0, "rBias20",    &user_data.rBias[20],    // 73
+   1,UNIT_BYTE,             0, 0,           0, "rBias21",    &user_data.rBias[21],    // 74
+   1,UNIT_BYTE,             0, 0,           0, "rBias22",    &user_data.rBias[22],    // 75
+   1,UNIT_BYTE,             0, 0,           0, "rBias23",    &user_data.rBias[23],    // 76
+   1,UNIT_BYTE,             0, 0,           0, "rBias24",    &user_data.rBias[24],    // 77
+   1,UNIT_BYTE,             0, 0,           0, "rBias25",    &user_data.rBias[25],    // 78
+   1,UNIT_BYTE,             0, 0,           0, "rBias26",    &user_data.rBias[26],    // 79
+   1,UNIT_BYTE,             0, 0,           0, "rBias27",    &user_data.rBias[27],    // 80
+   1,UNIT_BYTE,             0, 0,           0, "rBias28",    &user_data.rBias[28],    // 81
+   1,UNIT_BYTE,             0, 0,           0, "rBias29",    &user_data.rBias[29],    // 82
+   1,UNIT_BYTE,             0, 0,           0, "rBias30",    &user_data.rBias[30],    // 83
+   1,UNIT_BYTE,             0, 0,           0, "rBias31",    &user_data.rBias[31],    // 84
+   1,UNIT_BYTE,             0, 0,           0, "rBias32",    &user_data.rBias[32],    // 85
+   1,UNIT_BYTE,             0, 0,           0, "rBias33",    &user_data.rBias[33],    // 86
+   1,UNIT_BYTE,             0, 0,           0, "rBias34",    &user_data.rBias[34],    // 87
+   1,UNIT_BYTE,             0, 0,           0, "rBias35",    &user_data.rBias[35],    // 88
+   1,UNIT_BYTE,             0, 0,           0, "rBias36",    &user_data.rBias[36],    // 89
+   1,UNIT_BYTE,             0, 0,           0, "rBias37",    &user_data.rBias[37],    // 90
+   1,UNIT_BYTE,             0, 0,           0, "rBias38",    &user_data.rBias[38],    // 91
+   1,UNIT_BYTE,             0, 0,           0, "rBias39",    &user_data.rBias[39],    // 92
+   1,UNIT_BYTE,             0, 0,           0, "rBias40",    &user_data.rBias[40],    // 93
+   1,UNIT_BYTE,             0, 0,           0, "rBias41",    &user_data.rBias[41],    // 94
+   1,UNIT_BYTE,             0, 0,           0, "rBias42",    &user_data.rBias[42],    // 95
+   1,UNIT_BYTE,             0, 0,           0, "rBias43",    &user_data.rBias[43],    // 96
+   1,UNIT_BYTE,             0, 0,           0, "rBias44",    &user_data.rBias[44],    // 97
+   1,UNIT_BYTE,             0, 0,           0, "rBias45",    &user_data.rBias[45],    // 98
+   1,UNIT_BYTE,             0, 0,           0, "rBias46",    &user_data.rBias[46],    // 99
+   1,UNIT_BYTE,             0, 0,           0, "rBias47",    &user_data.rBias[47],    // 100
+   1,UNIT_BYTE,             0, 0,           0, "rBias48",    &user_data.rBias[48],    // 101
+   1,UNIT_BYTE,             0, 0,           0, "rBias49",    &user_data.rBias[49],    // 102
+   1,UNIT_BYTE,             0, 0,           0, "rBias50",    &user_data.rBias[50],    // 103
+   1,UNIT_BYTE,             0, 0,           0, "rBias51",    &user_data.rBias[51],    // 104
+   1,UNIT_BYTE,             0, 0,           0, "rBias52",    &user_data.rBias[52],    // 105
+   1,UNIT_BYTE,             0, 0,           0, "rBias53",    &user_data.rBias[53],    // 106
+   1,UNIT_BYTE,             0, 0,           0, "rBias54",    &user_data.rBias[54],    // 107
+   1,UNIT_BYTE,             0, 0,           0, "rBias55",    &user_data.rBias[55],    // 108
+   1,UNIT_BYTE,             0, 0,           0, "rBias56",    &user_data.rBias[56],    // 109
+   1,UNIT_BYTE,             0, 0,           0, "rBias57",    &user_data.rBias[57],    // 110
+   1,UNIT_BYTE,             0, 0,           0, "rBias58",    &user_data.rBias[58],    // 111
+   1,UNIT_BYTE,             0, 0,           0, "rBias59",    &user_data.rBias[59],    // 112
+   1,UNIT_BYTE,             0, 0,           0, "rBias60",    &user_data.rBias[60],    // 113
+   1,UNIT_BYTE,             0, 0,           0, "rBias61",    &user_data.rBias[61],    // 114
+   1,UNIT_BYTE,             0, 0,           0, "rBias62",    &user_data.rBias[62],    // 115
+   1,UNIT_BYTE,             0, 0,           0, "rBias63",    &user_data.rBias[63],    // 116
+
+	2, UNIT_BYTE,		       0, 0,     		  0, "rVBias", 	 &user_data.rVBias,  	  // 117
+   2, UNIT_BYTE,     		 0, 0,     		  0, "rIBias",     &user_data.rIBias,  	  // 118
+   2, UNIT_BYTE,      		 0, 0,     		  0, "rpDV",    	 &user_data.rpDV,    	  // 119
+   2, UNIT_BYTE,      		 0, 0,     		  0, "rpAV",    	 &user_data.rpAV,    	  // 120
+   2, UNIT_BYTE,      		 0, 0,     		  0, "rnAV",    	 &user_data.rnAV,    	  // 121
+   2, UNIT_BYTE,      		 0, 0,     		  0, "rnAI",    	 &user_data.rnAI,    	  // 122
+   2, UNIT_BYTE,      		 0, 0,     		  0, "rpAI",    	 &user_data.rpAI,    	  // 123
+   2, UNIT_BYTE,      		 0, 0,     		  0, "rpDI",    	 &user_data.rpDI,    	  // 124
+
+	4, UNIT_BYTE,            0, 0,           0,  "rVBMon0",  &user_data.rVBMon[0],     // 125
+   4, UNIT_BYTE,            0, 0,           0,  "rVBMon1",  &user_data.rVBMon[1],     // 126
+   4, UNIT_BYTE,            0, 0,           0,  "rVBMon2",  &user_data.rVBMon[2],     // 127
+   4, UNIT_BYTE,            0, 0,           0,  "rVBMon3",  &user_data.rVBMon[3],     // 128
+   4, UNIT_BYTE,            0, 0,           0,  "rVBMon4",  &user_data.rVBMon[4],     // 129
+   4, UNIT_BYTE,            0, 0,           0,  "rVBMon5",  &user_data.rVBMon[5],     // 130
+   4, UNIT_BYTE,            0, 0,           0,  "rVBMon6",  &user_data.rVBMon[6],     // 131
+   4, UNIT_BYTE,            0, 0,           0,  "rVBMon7",  &user_data.rVBMon[7],     // 132
+   4, UNIT_BYTE,            0, 0,           0,  "rIBMon0",  &user_data.rIBMon[0],     // 133
+   4, UNIT_BYTE,            0, 0,           0,  "rIBMon1",  &user_data.rIBMon[1],     // 134
+   4, UNIT_BYTE,            0, 0,           0,  "rIBMon2",  &user_data.rIBMon[2],     // 135
+   4, UNIT_BYTE,            0, 0,           0,  "rIBMon3",  &user_data.rIBMon[3],     // 136
+   4, UNIT_BYTE,            0, 0,           0,  "rIBMon4",  &user_data.rIBMon[4],     // 137
+   4, UNIT_BYTE,            0, 0,           0,  "rIBMon5",  &user_data.rIBMon[5],     // 138
+   4, UNIT_BYTE,            0, 0,           0,  "rIBMon6",  &user_data.rIBMon[6],     // 139
+   4, UNIT_BYTE,            0, 0,           0,  "rIBMon7",  &user_data.rIBMon[7],     // 140 
+
+	4, 0,            0, 0,MSCBF_FLOAT,  "eepValue", &user_data.eepValue,      // 141  
+	4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,  "eeCtrSet", &user_data.eeCtrSet,      // 142   
+  	0
  };
  MSCB_INFO_VAR *variables = vars;   // Structure mapping
  // Get sysinfo if necessary
@@ -279,6 +285,7 @@
      (svn_rev_code[9]-'0');
  
    add = cur_sub_addr();
+	
  
  //
  // default settings, set only when uC-EEPROM is being erased and written
@@ -290,8 +297,8 @@
      user_data.swBias     = 0x00;    // Turn off all the switches
      user_data.rQpump     = 0x00;    // Set to the lowest scale
      for(i=0;i<8;i++){
-       user_data.rAsum[i] = 0x80;    // BS not sure to what value initialize it
-     	 user_data.Temp[i]  = 0x0;
+       user_data.rAsum[i] = 0x80;    
+     	 user_data.Temp[i]  = 0.0;
 		}
 	  for(i=0;i<64;i++)
        user_data.rBias[i] = 0xFF;    // Set the DAC to lowest value
@@ -357,6 +364,16 @@
  #endif
  
  //
+ //SPI ExtEEPROM 
+ //-----------------------------------------------------------------------------
+ #ifdef _ExtEEPROM_
+	SFRPAGE  = CONFIG_PAGE;
+   P3MDOUT |= 0x80; // Setting the RAM_CSn to push pull
+   P2MDOUT |= 0x18; // Setting the SPI_MOSI and SPI_SCK to push pull
+	P2MDOUT &= 0xFE; // Setting the RAM_WPn to open drain
+	ExtEEPROM_Init();
+ #endif
+ //
  // SMB Charge Pump DAC
  //-----------------------------------------------------------------------------
  #ifdef _LTC1669_
@@ -387,14 +404,23 @@
  //
  // EEPROM memory Initialization/Retrieval
  //-----------------------------------------------------------------------------
- //
 
  //
+ // EEPROM serial number Retrieval
+ //-----------------------------------------------------------------------------
+ #ifdef _ExtEEPROM_
+	ExtEEPROM_Read(WP_START_ADDR,(unsigned char*)&user_data.SerialN, PAGE_SIZE);
+ #endif
+
+
+
+
+ 
  //
  // Final steps 
  //-----------------------------------------------------------------------------
    rESR = 0x00000000;              // No error!
-   rEER = 0xC2;                    // Page 3, Active page 2
+   rEER = 0x00;                    // Active page 0, To be written or read page 0
 	rCTL = 0;                       // Reset control
 	rCSR = 0x00;                    // Initial CSR
 	user_data.error      = rESR;    // Default Error register
@@ -403,8 +429,17 @@
 	user_data.swBias     = 0x00;    // Turn off all the switches
 	user_data.rQpump     = 0x00;    // Set to the lowest scale
 	user_data.control    = 0x80;    // Manual Shutdown
-	for(i=0;i<8;i++)
+	for(i=0;i<8;i++){
 	  user_data.rAsum[i] = i;       // BS not sure to what value initialize it
+	  user_data.VBMon[i] = 0;
+	  user_data.IBMon[i] = 0;
+	  user_data.rVBMon[i] = 0;
+	  user_data.rIBMon[i] = 0;
+	  user_data.Temp[i]  = 0.0;
+	  user_data.eepValue = 0.0;
+	  user_data.eeCtrSet = 0;
+
+   }
 	for(i=0;i<64;i++) 
 	user_data.rBias[i] = i;         // Set the DAC to lowest value
 
@@ -412,11 +447,12 @@
    EN_pA5V  = OFF; 
    EN_nA5V  = OFF;
 
-	//BS
-	user_data.NTemFail = 0x00;
-	user_data.FailTemp = 0.0;
-
  }
+
+//
+// Final state of all input pins and their associated registers
+//
+
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -436,20 +472,26 @@ void user_write(unsigned char index) reentrant
 //
 // -- Index Bias Dac
    if (index == IDXBSWITCH) {
-#ifdef _PCA9539_
-     if (!SsS) {
-       PCA_Flag = 1;
-     } // !Shutdown
-#endif
+		#ifdef _PCA9539_
+     		if (!SsS) {
+       		PCA_Flag = 1;
+     			} // !Shutdown
+		#endif
    }
+
 //
+//-- Index Threashold update
+	if (index == IDXEEP_CTR)
+		EEP_CTR_FLAG = 1;
+	
+
 // -- ASUM Threshold DACs
    if ((index >= FIRST_ASUM) && (index < LAST_ASUM)) {
-     AsumIndex = (index - FIRST_ASUM);
-#ifdef _LTC2600_
-   // Update Bias Dac voltages as requested by bit5 of control register
-     LTC2600_Flag = 1;
-#endif
+      AsumIndex = (index - FIRST_ASUM);
+		#ifdef _LTC2600_
+   		// Update Bias Dac voltages as requested by bit5 of control register
+     		LTC2600_Flag = 1;
+		#endif
    }
 //
 // -- Index Bias Dac
@@ -457,10 +499,10 @@ void user_write(unsigned char index) reentrant
      BiasIndex = (index - FIRST_BIAS);
      chipChan = (BiasIndex / 8) + 1;
      chipAdd  = (BiasIndex % 8) + 1;
-#ifdef _LTC1665_
-     LTC1665_Flag = 1;
-#endif
-  }
+	  #ifdef _LTC1665_
+     		LTC1665_Flag = 1;
+	  #endif
+  	}
 //
 // --- Index Qpump DAC
  #ifdef _LTC1669_
@@ -517,74 +559,109 @@ void user_write(unsigned char index) reentrant
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void user_loop(void) {
-  float xdata volt, temperature, *pfData,adc_value;
+  float xdata volt, temperature, *pfData, adc_value, *eep_address;
   unsigned long xdata mask;
   signed long result;
-  static char adcChannel = 16; // special start value
-
-//
-//-----------------------------------------------------------------------------
-#ifdef _LTC2497_
+  unsigned int xdata eeptemp_addr,*rpfData,rvolt;
+  unsigned char xdata swConversion,*eeptemp_source;
+  unsigned char xdata eep_request;
+  static  unsigned char eeprom_flag =CLEAR;
+  static char adcChannel = N_RB_CHANNEL; // special start value
 	
-	if(adcChannel == 16) {
-		adcChannel = 0;
-		LTC2497_StartConversion(ADDR_LTC2497, adcChannel);
-	} else {
-		adcChannel++;
-		adcChannel %= 16;
-  		if(!LTC2497_ReadConversion(ADDR_LTC2497, adcChannel, &result)) {
-			result = -65536;
+	//
+	//-----------------------------------------------------------------------------
+	#ifdef _LTC2497_	
+		if(adcChannel == N_RB_CHANNEL) {
+			adcChannel = CLEAR;
+			LTC2497_StartConversion(ADDR_LTC2497, adcChannel);
+		} else {
+			adcChannel++;
+			adcChannel %= N_RB_CHANNEL;
+  			if(!LTC2497_ReadConversion(ADDR_LTC2497, adcChannel, &result)) {
+			result = -CONVER_FAC1;
+			}
+			channel = (adcChannel + (N_RB_CHANNEL-1)) % N_RB_CHANNEL;
+			adc_value = ((float)(result + CONVER_FAC1) * (float)(EXT_VREF /CONVER_FAC2));	
+			adc_value = (adc_value * Mon_Coef[channel])+ Mon_Offst[channel];
+		   
+			//BS we have to decide what would be the cut off
+//			if (adc_value < 0.001)
+//				adc_value =0;
+			 				
+			DISABLE_INTERRUPTS;
+			if(channel & CURR_MEAS) {
+				user_data.IBMon[adc_convert [channel]] = adc_value;
+				user_data.rIBMon[adc_convert[channel]] = result;
+			} else {
+				user_data.VBMon[adc_convert [channel]] = adc_value;
+				user_data.rVBMon[adc_convert[channel]] = result;
+			}		
+			ENABLE_INTERRUPTS;
 		}
+	#endif
 
-		channel = (adcChannel + 15) % 16;
-		adc_value = ((((float)result + 65536) / 131071) * 2.5);	
-		if(channel & 0x04) {	
-			adc_value *= 62.5; // Current sense gain
-		} else {
-			adc_value *= 40; // For 70V charge pump
-		}	
-			
-		DISABLE_INTERRUPTS;
-		if(channel & 0x04) {
-			user_data.IBMon[adc_convert[channel]] = adc_value;
-		} else {
-			user_data.VBMon[adc_convert[channel]] = adc_value;
-		}		
-		ENABLE_INTERRUPTS;
-	}
-#endif
+	//
+	//-----------------------------------------------------------------------------
+	//Checking the eeprom control flag
+	if (EEP_CTR_FLAG){
+			//Checking for the special instruction
+			if (user_data.eeCtrSet & EEP_CTRL_KEY){
+				//Checking for the write request	
+				eep_address = (float*)&eepage + (user_data.eeCtrSet & 0x000000ff);	
+				if (user_data.eeCtrSet & EEP_CTRL_WRITE){
+					 *eep_address = user_data.eepValue;
+				//Checking for the read request
+				} else if (user_data.eeCtrSet & EEP_CTRL_READ){					 
+					 user_data.eepValue = *eep_address;
+				} else { 
+					
+					// Tell the user that inappropriate task has been requested
+				   DISABLE_INTERRUPTS;
+					user_data.eepValue = EEP_CTRL_INVAL_REQ;
+					ENABLE_INTERRUPTS;	
+				}
 
+			} else {	
+				
+				// Tell the user that invalid key has been provided
+				   DISABLE_INTERRUPTS;
+					user_data.eepValue = EEP_CTRL_INVAL_KEY;
+					ENABLE_INTERRUPTS;
+   	   }
+		   EEP_CTR_FLAG = CLEAR;
+	}			   
+	
 	//
 	//-----------------------------------------------------------------------------
 	//Checking the flags
 	#ifdef _PCA9539_
-	if(PCA_Flag){
-	 PCA9539_WriteByte(BIAS_WRITE, ~user_data.swBias);
-
-	 PCA_Flag = 0;
-
-	}
+		if(PCA_Flag){
+			swConversion = user_data.swBias;
+			PCA9539_Conversion(&swConversion);
+			PCA9539_WriteByte(BIAS_WRITE, ~swConversion);
+	 		PCA_Flag = CLEAR;
+		}
 	#endif
 
 	#ifdef _LTC2600_
-	if(LTC2600_Flag) {
-	  LTC2600_Cmd(WriteTo_Update,LTC2600_LOAD[AsumIndex], user_data.rAsum[AsumIndex]);
-	  LTC2600_Flag=0;
-	}
+		if(LTC2600_Flag) {
+	  		LTC2600_Cmd(WriteTo_Update,LTC2600_LOAD[AsumIndex], user_data.rAsum[AsumIndex]);
+	  		LTC2600_Flag = CLEAR;
+		}
 	#endif
 
 	#ifdef _LTC1665_
-   if(LTC1665_Flag) {
-	  LTC1665_Cmd(chipAdd,user_data.rBias[BiasIndex] ,chipChan);
-	  LTC1665_Flag = 0;
-	  }
-	 #endif
+   	if(LTC1665_Flag) {
+	  		LTC1665_Cmd(chipAdd,user_data.rBias[BiasIndex] ,chipChan);
+	  		LTC1665_Flag = CLEAR;
+	  	}
+	#endif
 	
 	#ifdef _LTC1669_	
-	if(LTC1669_Flag) {
-	  LTC1669_SetDAC(ADDR_LTC1669, LTC1669_INT_BG_REF, user_data.rQpump);
-	  LTC1669_Flag=0;
-	  }
+		if(LTC1669_Flag) {
+	  		LTC1669_SetDAC(ADDR_LTC1669, LTC1669_INT_BG_REF, user_data.rQpump);
+	  		LTC1669_Flag = CLEAR;
+	  	}
 	#endif
 		
   //-----------------------------------------------------------------------------
@@ -609,7 +686,7 @@ void user_loop(void) {
     } // !Shutdown
 
     // Reset Action        
-    CPup = 0;  // rCTL not updated yet
+    CPup = CLEAR;  // rCTL not updated yet
     // Publish state after V/U check
 
   } // Power Up 
@@ -621,16 +698,18 @@ void user_loop(void) {
     //
     // Time to do V/I Reg reading
     pfData = &(user_data.VBias);
+	 rpfData = &(user_data.rVBias);
     rCSR = user_data.status;
     rESR = user_data.error;
     for (channel=0, mask=0 ; channel<INTERNAL_N_CHN ; channel++, mask++) {
-      volt = read_voltage(channel);
+      volt = read_voltage(channel,&rvolt);
       volt = volt * coeff[channel] + offset[channel];
       DISABLE_INTERRUPTS;
       pfData[channel] = volt;
+		rpfData[channel]= rvolt;
       ENABLE_INTERRUPTS;
       mask = (1<<channel);  // Should be 4 bytes for ESR 
- 		if ((channel > 1) && !SqPump) {  // Skip vQ, I
+ 	/*	if ((channel > 1) && !SqPump) {  // Skip vQ, I
 		   if ((volt >= eepage.lVIlimit[channel])
 		     && (volt <= eepage.uVIlimit[channel])) {
 		       rESR &= ~mask; // in range
@@ -639,7 +718,7 @@ void user_loop(void) {
 		     rESR |= mask; // out of range
 		   }      
 		}
-    }
+   */ }
     if (bdoitNOW) {
 	   if (rESR & SHUTDOWN_MASK) {
         pca_operation(Q_PUMP_OFF);
@@ -668,7 +747,7 @@ void user_loop(void) {
     rCSR = user_data.status;
     rESR = user_data.error;
     // Read uC temperature
-    volt = read_voltage(TCHANNEL);
+    volt = read_voltage(TCHANNEL,&rvolt);
     /* convert to deg. C */
     temperature = 1000 * (volt - 0.776) / 2.86;   // Needs calibration
     /* strip to 0.1 digits */
@@ -685,10 +764,10 @@ void user_loop(void) {
     if ((rESR & SHUTDOWN_MASK) && !SmSd) {
       pca_operation(Q_PUMP_OFF);  // Toggle state
       SqPump   = OFF;
-      SsS = ON;
+      SsS  = ON;
       SPup = OFF;  
     } else {
-      SsS = OFF; // Remove System Shutdown
+      SsS  = OFF; // Remove System Shutdown
     }
     // Publish Error state
     // Publish Registers state
@@ -716,7 +795,7 @@ void user_loop(void) {
       SPup     = OFF;
     } // Manula Shutdown
     // Reset Action        
-    CmSd = 0;  // rCTL not yet published
+    CmSd = CLEAR;  // rCTL not yet published
 
     // Publish Registers state
     DISABLE_INTERRUPTS;
@@ -741,7 +820,7 @@ void user_loop(void) {
     } // !Shutdown
 
     // Reset Action        
-    CqPump = 0;
+    CqPump = CLEAR;
 
     // Publish Registers state
     DISABLE_INTERRUPTS;
@@ -750,80 +829,131 @@ void user_loop(void) {
     ENABLE_INTERRUPTS;
   } // Control Pump
 
-
-  //-----------------------------------------------------------------------------
-  // Temperature reading/monitoring based on time
 #ifdef _ADT7486A_
-  if (uptime() - sstTime > 1) {
+	//BS 		To setting the offset associated with the temperature reading.
+	//			in that case, we probably can get rid of the conversion factors			
+	//			ADT7486A_Cmd(ADT7486A_addrArray[channel], SetExt1Offset, &temperature)
+	//			ADT7486A_Cmd(ADT7486A_addrArray[channel], SetExt2Offset, &temperature)		
+
+	//-----------------------------------------------------------------------------
+	// Temperature reading/monitoring based on time for external temperature
+	if (uptime() - sstExtTime > SST_TIME){
+		for (channel=0;channel < NCHANNEL_ADT7486A; channel++){
+	  		if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt1Temp, &temperature))
+			{
+				ExtssTT = CLEAR;
+			 	DISABLE_INTERRUPTS;
+			 	user_data.Temp[channel*2] = temperature;	
+			 	user_data.error   = rESR;
+			 	ENABLE_INTERRUPTS;
+			}
+			else
+			{
+				DISABLE_INTERRUPTS;
+				ExtssTT = SET;
+				user_data.error   = rESR;
+				ENABLE_INTERRUPTS;
+			}
+     }
+		for (channel=0;channel < NCHANNEL_ADT7486A; channel++){
+	  		if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt2Temp, &temperature))
+			{
+				ExtssTT = CLEAR;
+			 	DISABLE_INTERRUPTS;
+			 	user_data.Temp[(channel*2)+1] = temperature;	
+			 	user_data.error   = rESR;
+			 	ENABLE_INTERRUPTS;
+			}
+			else
+			{
+				DISABLE_INTERRUPTS;
+				ExtssTT = SET;
+				user_data.error   = rESR;
+				ENABLE_INTERRUPTS;
+			}
+     }
+
+     sstExtTime = uptime();
+  }
+
+  
+	//-----------------------------------------------------------------------------
+	// Temperature reading/monitoring based on time for internal temperature
+  if (uptime() - sstTime > SST_TIME) {
     for (channel=0;channel < NCHANNEL_ADT7486A; channel++) {
-
-//BS 		To setting the offset associated with the temperature reading.
-//			in that case, we probably can get rid of the conversion factors			
-//			ADT7486A_Cmd(ADT7486A_addrArray[channel], SetExt1Offset, &temperature)
-//			ADT7486A_Cmd(ADT7486A_addrArray[channel], SetExt2Offset, &temperature)
-
 		if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetIntTemp, &temperature))
 		{
-			 ssTT = 0;
+			 IntssTT = 0;
 			 DISABLE_INTERRUPTS;
-			 user_data.Temp[channel*2] = temperature;			 			
+			 user_data.ssTemp[channel] = temperature;	
 			 user_data.error   = rESR;
 			 ENABLE_INTERRUPTS;
 		}
 		else
 		{
 			DISABLE_INTERRUPTS;
-			ssTT = 1;
+			IntssTT = 1;
 			user_data.error   = rESR;
 			ENABLE_INTERRUPTS;
 		}
-		if( temperature < TEMP_ThRESHOLD )
-	 	{
-			DISABLE_INTERRUPTS;
-			user_data.NTemFail++;
-			user_data.FailTemp = temperature;
-			ENABLE_INTERRUPTS;
-		}
-
-//      ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt2Temp
-//        , &user_data.Temp[channel*2+1]);
     }
     sstTime = uptime();
   }
+
 #endif
 
   //-----------------------------------------------------------------------------
   // EEPROM Save procedure based on CTL bit
-  if (CeeS) {
-    rCSR = user_data.status;
-    //    channel = eeprom_write((user_data.eepage & 0xC0) >> 6);
-    if (channel) {
-      SeeS = DONE;
-    } else {
-      SeeS = FAILED;
-    }
+  #ifdef _ExtEEPROM_
+	  if (CeeS) {    
+  		 //Check if we are here for the first time    
+	 	 if (!eeprom_flag){
+	 	 	rCSR = user_data.status;
+			//Temporary store the first address of page
+		 	eeptemp_addr = PageAddr[(unsigned char)(user_data.eepage & 0x07)];
+			//Temporary store the first address of data which has to be written
+		 	eeptemp_source = (unsigned char*)&eepage;
+	 	 }
+		 //EPROM clear request
+		 if (CeeClr){
+				eep_request = CLEAR_EEPROM;
+		 } else {
+		 		eep_request = WRITE_EEPROM;	 
+	 	 }
+		  
+		 eeprom_channel = ExtEEPROM_Write_Clear (eeptemp_addr,&(eeptemp_source), 
+		 PAGE_SIZE,eep_request,&eeprom_flag);
 
-    // Reset Action        
-    CeeS = 0;  // rCTL not yet published
-    // Publish Qpump state
-    // Publish Registers state
-    DISABLE_INTERRUPTS;
-    user_data.control = rCTL;
-    user_data.status  = rCSR;
-    ENABLE_INTERRUPTS;
-  }
+    	 if (eeprom_channel == DONE) {
+      	SeeS = DONE;
+			eeprom_flag = CLEAR;
+	 		CeeS = CLEAR;
+	 		//Set the active page
+			user_data.eepage |= ((user_data.eepage & 0x07) <<5);
+	 	 } else {
+      	SeeS = FAILED;
+    	 }
 
+    	// Publish Qpump state
+    	// Publish Registers state
+    	DISABLE_INTERRUPTS;
+    	user_data.control = rCTL;
+    	user_data.status  = rCSR;
+    	ENABLE_INTERRUPTS;
+  	 }
+#endif
   //-----------------------------------------------------------------------------
   // EEPROM Restore procedure based on CTL bit
   if (CeeR) {
     rCSR = user_data.status;
-    //    channel = eeprom_read((user_data.eepage & 0xC0) >> 6);
-    if (channel)
-      SeeR = DONE;
-    else
+    channel = ExtEEPROM_Read  (PageAddr[(unsigned char)(user_data.eepage & 0x07)],
+	 (unsigned char*)&eepage2, PAGE_SIZE);
+    if (channel == DONE){
+      CeeR = CLEAR;
+		SeeR = DONE;
+    } else
       SeeR = FAILED;
-    // Reset Action
-    CeeS = 0;  // rCTL not yet published
+   
     // Publish Qpump state
     // Publish Registers state
     DISABLE_INTERRUPTS;

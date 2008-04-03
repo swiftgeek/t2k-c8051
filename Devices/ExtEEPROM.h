@@ -6,7 +6,6 @@
 
   Contents:     EEPROM user interface
 
-  
 \****************************************************************************/
 
 #ifndef  _ExtEEPROM_H_
@@ -22,7 +21,7 @@ sbit RAM_HLDn = RAM_HOLD_DOWN;		 // The Hold Down Signal would puase the serial 
 sbit RAM_WPn  = RAM_WRITE_PROTECT;   // The Write Protection signal would enable/disable write to 
 												 // the status register
 
-#define PAGE_SIZE				0xC8		 //Would define the length of our pages
+#define PAGE_SIZE				0xC7		 //Would define the length of our pages
 #define NUMEBER_PAGES		0x06		 //Would define number of pages  	
 
 //The EEP_CLEAR and EEP_WRITE would be passed to the ExtEEPROM_Write_Clear() function
@@ -63,10 +62,10 @@ sbit RAM_WPn  = RAM_WRITE_PROTECT;   // The Write Protection signal would enable
 void ExtEEPROM_Init (void);
 unsigned char ExtEEPROM_Read (unsigned int ReadPage, unsigned char *destination, 
 unsigned char page_size);
-unsigned char ExtEEPROM_Write_Clear(unsigned int WritePage, unsigned char *source, 
+unsigned char ExtEEPROM_Write_Clear(unsigned int WritePage, unsigned char **source, 
 unsigned char page_size, unsigned char WC_flag, unsigned char *flag);
-void ExtEEPROM_WriteEnable(void);
-void ExtEEPROM_WriteStatusReg(unsigned char status);
+unsigned char ExtEEPROM_WriteEnable(void);
+unsigned char ExtEEPROM_WriteStatusReg(unsigned char status);
 unsigned char ExtEEPROM_Status(void);
 unsigned char ExtEEPROM_Wait(void);
 

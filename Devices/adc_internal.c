@@ -51,7 +51,7 @@ unsigned int adc_read(unsigned char channel)
 }
 
 /*------------------------------------------------------------------*/
-float read_voltage(unsigned char channel)
+float read_voltage(unsigned char channel,unsigned int *rvalue)
 {
   unsigned int  xdata i;
   float         xdata voltage;
@@ -66,7 +66,8 @@ float read_voltage(unsigned char channel)
   }
 
   /* convert to V */
-  voltage = (float)  rawsum / 10;              // averaging
+  *rvalue =  rawsum/10;
+  voltage = (float)  *rvalue;                  // averaging
   voltage = (float)  voltage / 1024.0 * VREF;  // conversion
 
   return voltage;

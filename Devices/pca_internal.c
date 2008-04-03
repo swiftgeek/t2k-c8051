@@ -28,7 +28,7 @@ void pca_operation(unsigned char mode)
 		PCA0MD   = 0x02;  // Sysclk (default CKCON [2MHz])
 		PCA0CPL0 = 0x00;
 		PCA0CPM0 = 0x46; // ECM, TOG, PWM
-		PCA0CPH0 = 6 ;   // (for ~2MHz)		       
+		PCA0CPH0 = 10 ;   // (for ~2MHz)		       
 		PCA0CN   = 0x40; // Enable PCA Run Control 
 
 	} else if (mode == 2) {

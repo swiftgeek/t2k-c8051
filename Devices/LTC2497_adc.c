@@ -66,7 +66,8 @@ void LTC2497_StartConversion(unsigned char addr, unsigned char channel) {
 
 //
 //------------------------------------------------------------------------
-unsigned char LTC2497_ReadConversion(unsigned char addr, unsigned char channel, signed long *pResult) {
+unsigned char LTC2497_ReadConversion(unsigned char addr, 
+unsigned char channel, signed long *pResult) {
 	unsigned char cmd;
 	unsigned char validRange = 1;
 	signed long value;
@@ -100,7 +101,7 @@ unsigned char LTC2497_ReadConversion(unsigned char addr, unsigned char channel, 
 	SFRPAGE = SMB0_PAGE;
 	STA = 1;
 
-	while(SMB_BUSY);
+     	while(SMB_BUSY);
 
 	if(((value & 0xC0000000) == 0xC0000000) || ((value & 0xC0000000) == 0x00000000)) {
 		// Over/Under-range
