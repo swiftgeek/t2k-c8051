@@ -158,70 +158,70 @@
    2, UNIT_BYTE,            0, 0,           0, "rAsum6",     &user_data.rAsum[6],     // 51
    2, UNIT_BYTE,            0, 0,           0, "rAsum7",     &user_data.rAsum[7],     // 52
 
-   1,UNIT_BYTE,             0, 0,           0, "rBias00",    &user_data.rBias[0],     // 53
-   1,UNIT_BYTE,             0, 0,           0, "rBias01",    &user_data.rBias[1],     // 54
-   1,UNIT_BYTE,             0, 0,           0, "rBias02",    &user_data.rBias[2],     // 55
-   1,UNIT_BYTE,             0, 0,           0, "rBias03",    &user_data.rBias[3],     // 56
-   1,UNIT_BYTE,             0, 0,           0, "rBias04",    &user_data.rBias[4],     // 57
-   1,UNIT_BYTE,             0, 0,           0, "rBias05",    &user_data.rBias[5],     // 58
-   1,UNIT_BYTE,             0, 0,           0, "rBias06",    &user_data.rBias[6],     // 59
-   1,UNIT_BYTE,             0, 0,           0, "rBias07",    &user_data.rBias[7],     // 60
-   1,UNIT_BYTE,             0, 0,           0, "rBias08",    &user_data.rBias[8],     // 61
-   1,UNIT_BYTE,             0, 0,           0, "rBias09",    &user_data.rBias[9],     // 62
-   1,UNIT_BYTE,             0, 0,           0, "rBias10",    &user_data.rBias[10],    // 63
-   1,UNIT_BYTE,             0, 0,           0, "rBias11",    &user_data.rBias[11],    // 64
-   1,UNIT_BYTE,             0, 0,           0, "rBias12",    &user_data.rBias[12],    // 65
-   1,UNIT_BYTE,             0, 0,           0, "rBias13",    &user_data.rBias[13],    // 66
-   1,UNIT_BYTE,             0, 0,           0, "rBias14",    &user_data.rBias[14],    // 67
-   1,UNIT_BYTE,             0, 0,           0, "rBias15",    &user_data.rBias[15],    // 68
-   1,UNIT_BYTE,             0, 0,           0, "rBias16",    &user_data.rBias[16],    // 69
-   1,UNIT_BYTE,             0, 0,           0, "rBias17",    &user_data.rBias[17],    // 70
-   1,UNIT_BYTE,             0, 0,           0, "rBias18",    &user_data.rBias[18],    // 71
-   1,UNIT_BYTE,             0, 0,           0, "rBias19",    &user_data.rBias[19],    // 72
-   1,UNIT_BYTE,             0, 0,           0, "rBias20",    &user_data.rBias[20],    // 73
-   1,UNIT_BYTE,             0, 0,           0, "rBias21",    &user_data.rBias[21],    // 74
-   1,UNIT_BYTE,             0, 0,           0, "rBias22",    &user_data.rBias[22],    // 75
-   1,UNIT_BYTE,             0, 0,           0, "rBias23",    &user_data.rBias[23],    // 76
-   1,UNIT_BYTE,             0, 0,           0, "rBias24",    &user_data.rBias[24],    // 77
-   1,UNIT_BYTE,             0, 0,           0, "rBias25",    &user_data.rBias[25],    // 78
-   1,UNIT_BYTE,             0, 0,           0, "rBias26",    &user_data.rBias[26],    // 79
-   1,UNIT_BYTE,             0, 0,           0, "rBias27",    &user_data.rBias[27],    // 80
-   1,UNIT_BYTE,             0, 0,           0, "rBias28",    &user_data.rBias[28],    // 81
-   1,UNIT_BYTE,             0, 0,           0, "rBias29",    &user_data.rBias[29],    // 82
-   1,UNIT_BYTE,             0, 0,           0, "rBias30",    &user_data.rBias[30],    // 83
-   1,UNIT_BYTE,             0, 0,           0, "rBias31",    &user_data.rBias[31],    // 84
-   1,UNIT_BYTE,             0, 0,           0, "rBias32",    &user_data.rBias[32],    // 85
-   1,UNIT_BYTE,             0, 0,           0, "rBias33",    &user_data.rBias[33],    // 86
-   1,UNIT_BYTE,             0, 0,           0, "rBias34",    &user_data.rBias[34],    // 87
-   1,UNIT_BYTE,             0, 0,           0, "rBias35",    &user_data.rBias[35],    // 88
-   1,UNIT_BYTE,             0, 0,           0, "rBias36",    &user_data.rBias[36],    // 89
-   1,UNIT_BYTE,             0, 0,           0, "rBias37",    &user_data.rBias[37],    // 90
-   1,UNIT_BYTE,             0, 0,           0, "rBias38",    &user_data.rBias[38],    // 91
-   1,UNIT_BYTE,             0, 0,           0, "rBias39",    &user_data.rBias[39],    // 92
-   1,UNIT_BYTE,             0, 0,           0, "rBias40",    &user_data.rBias[40],    // 93
-   1,UNIT_BYTE,             0, 0,           0, "rBias41",    &user_data.rBias[41],    // 94
-   1,UNIT_BYTE,             0, 0,           0, "rBias42",    &user_data.rBias[42],    // 95
-   1,UNIT_BYTE,             0, 0,           0, "rBias43",    &user_data.rBias[43],    // 96
-   1,UNIT_BYTE,             0, 0,           0, "rBias44",    &user_data.rBias[44],    // 97
-   1,UNIT_BYTE,             0, 0,           0, "rBias45",    &user_data.rBias[45],    // 98
-   1,UNIT_BYTE,             0, 0,           0, "rBias46",    &user_data.rBias[46],    // 99
-   1,UNIT_BYTE,             0, 0,           0, "rBias47",    &user_data.rBias[47],    // 100
-   1,UNIT_BYTE,             0, 0,           0, "rBias48",    &user_data.rBias[48],    // 101
-   1,UNIT_BYTE,             0, 0,           0, "rBias49",    &user_data.rBias[49],    // 102
-   1,UNIT_BYTE,             0, 0,           0, "rBias50",    &user_data.rBias[50],    // 103
-   1,UNIT_BYTE,             0, 0,           0, "rBias51",    &user_data.rBias[51],    // 104
-   1,UNIT_BYTE,             0, 0,           0, "rBias52",    &user_data.rBias[52],    // 105
-   1,UNIT_BYTE,             0, 0,           0, "rBias53",    &user_data.rBias[53],    // 106
-   1,UNIT_BYTE,             0, 0,           0, "rBias54",    &user_data.rBias[54],    // 107
-   1,UNIT_BYTE,             0, 0,           0, "rBias55",    &user_data.rBias[55],    // 108
-   1,UNIT_BYTE,             0, 0,           0, "rBias56",    &user_data.rBias[56],    // 109
-   1,UNIT_BYTE,             0, 0,           0, "rBias57",    &user_data.rBias[57],    // 110
-   1,UNIT_BYTE,             0, 0,           0, "rBias58",    &user_data.rBias[58],    // 111
-   1,UNIT_BYTE,             0, 0,           0, "rBias59",    &user_data.rBias[59],    // 112
-   1,UNIT_BYTE,             0, 0,           0, "rBias60",    &user_data.rBias[60],    // 113
-   1,UNIT_BYTE,             0, 0,           0, "rBias61",    &user_data.rBias[61],    // 114
-   1,UNIT_BYTE,             0, 0,           0, "rBias62",    &user_data.rBias[62],    // 115
-   1,UNIT_BYTE,             0, 0,           0, "rBias63",    &user_data.rBias[63],    // 116
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias00",    &user_data.rBias[0],     // 53
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias01",    &user_data.rBias[1],     // 54
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias02",    &user_data.rBias[2],     // 55
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias03",    &user_data.rBias[3],     // 56
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias04",    &user_data.rBias[4],     // 57
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias05",    &user_data.rBias[5],     // 58
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias06",    &user_data.rBias[6],     // 59
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias07",    &user_data.rBias[7],     // 60
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias08",    &user_data.rBias[8],     // 61
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias09",    &user_data.rBias[9],     // 62
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias10",    &user_data.rBias[10],    // 63
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias11",    &user_data.rBias[11],    // 64
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias12",    &user_data.rBias[12],    // 65
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias13",    &user_data.rBias[13],    // 66
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias14",    &user_data.rBias[14],    // 67
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias15",    &user_data.rBias[15],    // 68
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias16",    &user_data.rBias[16],    // 69
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias17",    &user_data.rBias[17],    // 70
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias18",    &user_data.rBias[18],    // 71
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias19",    &user_data.rBias[19],    // 72
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias20",    &user_data.rBias[20],    // 73
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias21",    &user_data.rBias[21],    // 74
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias22",    &user_data.rBias[22],    // 75
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias23",    &user_data.rBias[23],    // 76
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias24",    &user_data.rBias[24],    // 77
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias25",    &user_data.rBias[25],    // 78
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias26",    &user_data.rBias[26],    // 79
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias27",    &user_data.rBias[27],    // 80
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias28",    &user_data.rBias[28],    // 81
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias29",    &user_data.rBias[29],    // 82
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias30",    &user_data.rBias[30],    // 83
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias31",    &user_data.rBias[31],    // 84
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias32",    &user_data.rBias[32],    // 85
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias33",    &user_data.rBias[33],    // 86
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias34",    &user_data.rBias[34],    // 87
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias35",    &user_data.rBias[35],    // 88
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias36",    &user_data.rBias[36],    // 89
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias37",    &user_data.rBias[37],    // 90
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias38",    &user_data.rBias[38],    // 91
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias39",    &user_data.rBias[39],    // 92
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias40",    &user_data.rBias[40],    // 93
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias41",    &user_data.rBias[41],    // 94
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias42",    &user_data.rBias[42],    // 95
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias43",    &user_data.rBias[43],    // 96
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias44",    &user_data.rBias[44],    // 97
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias45",    &user_data.rBias[45],    // 98
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias46",    &user_data.rBias[46],    // 99
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias47",    &user_data.rBias[47],    // 100
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias48",    &user_data.rBias[48],    // 101
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias49",    &user_data.rBias[49],    // 102
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias50",    &user_data.rBias[50],    // 103
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias51",    &user_data.rBias[51],    // 104
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias52",    &user_data.rBias[52],    // 105
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias53",    &user_data.rBias[53],    // 106
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias54",    &user_data.rBias[54],    // 107
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias55",    &user_data.rBias[55],    // 108
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias56",    &user_data.rBias[56],    // 109
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias57",    &user_data.rBias[57],    // 110
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias58",    &user_data.rBias[58],    // 111
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias59",    &user_data.rBias[59],    // 112
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias60",    &user_data.rBias[60],    // 113
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias61",    &user_data.rBias[61],    // 114
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias62",    &user_data.rBias[62],    // 115
+   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias63",    &user_data.rBias[63],    // 116
 
    2, UNIT_BYTE,            0, 0,           0, "rVBias",     &user_data.rVBias,       // 117
    2, UNIT_BYTE,            0, 0,           0, "rIBias",     &user_data.rIBias,       // 118
