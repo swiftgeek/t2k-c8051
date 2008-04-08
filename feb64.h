@@ -41,7 +41,8 @@
 #define IDXASUM       45
 #define IDXSST        41 
 #define IDXBIAS       53
-#define IDXEEP_CTR	 142
+#define IDXEEP_CTL	 142
+#define IDXASUM_CTL  143
 
 unsigned int xdata PageAddr[]={0x0,0x100,0x200,0x300,0x400,0x500};
 
@@ -251,6 +252,7 @@ struct user_data_type {
 	signed long rIBMon[8];
 	float eepValue;
 	unsigned long eeCtrSet;
+	unsigned long asumCtl;
 };
 struct user_data_type xdata user_data;
    		
