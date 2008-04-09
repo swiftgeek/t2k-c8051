@@ -101,6 +101,9 @@
 #ifdef	ext_eeprom
 #define  EXT_EEPROM
 #endif
+#ifdef   cmb
+#define  CMB
+#endif
 #ifdef titan_rf      // GPIB
 #define TITAN_RF
 #endif
@@ -517,6 +520,26 @@ sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
 #define MSCB_SPI_MISO P2 ^ 1
 #define MSCB_SPI_MOSI P2 ^ 4
 
+
+sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
+
+
+/*--------------------------------*/
+#elif defined(CMB)
+#include <c8051F120.h>
+#define CPU_C8051F120
+
+#define LED_0 P2 ^ 7 
+#if defined(LED_1) 
+#undef LED_1
+#endif
+ 
+#define LED_ON 0 //defines LED "ON" as forcing the specified pin to low
+
+
+//The pins that are used for Threshold voltages for comparator 0 and comparator 1
+#define MSCB_SST1 P1 ^ 0 //SST1 line  SST_IO (Write/Push-Pull)
+#define SST_ClientResponse (char) ((CPT1CN & 0x40) >> 6) //Comparator1 overflow bit
 
 sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
 
