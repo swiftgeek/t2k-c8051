@@ -22,7 +22,7 @@ control/monitoring of the high voltage fed to the MPPCs.
 - @ref internaluit : Board condition monitoring.
 - @ref afterchip : MPPC signal processing.
 - @ref asumcircuit : Analog sum signal for trigger generation (transmitted to @ref CMB card).
-- @ref eeprom : Permanent board parameters.
+- @ref eeprom : Permanent configuration parameter saving/restoring.
    
   
  * <center> Block Diagram layout.
@@ -99,7 +99,7 @@ Isource    R1      1/Gain    #of bits          VREF      VREF/# of bits
 *\image html IMonExample.jpg
 * </center>
 \section vregdoc  INA194AIDBVT Data Sheet:
-http://www.alldatasheet.co.kr/view.jsp?Searchword=INA194AIDBVT
+http://www.chipcatalog.com/Datasheet/A0392B99E733E7F9E0AD6CB4C8AC3C4E.htm
 */
 
 /*!\page boardtemperatures CPU Temperature and FEB64 Board Temperature monitoring
@@ -176,8 +176,7 @@ MSCB(1) :   WORD  : Error^0 : QPump Voltage out of range
 MSCB(1) :   WORD  : Error^1 : QPump Current out of range
 \endcode
 \section qpumpdocument LTC1669CMS Data Sheet:
-http://www.alldatasheet.co.kr/view.jsp?Searchword=LTC1669CMS
-
+http://www.ortodoxism.ro/datasheets/lineartechnology/1669f.pdf
 */
 
 /*!\page qpumpmonitoring U/I QPump Monitoring
@@ -198,7 +197,7 @@ R1/%         R2/%        R3/%       R4/%        R5/%      #of bits       VREF   
 *\image html QPump_Example.jpg
 * </center>
 \section qpumpdoc LTC6102 Data Sheet:
-http://www.digchip.com/datasheets/new_parts/200706/1109113.php
+http://www.digchip.com/datasheets/download_datasheet.php?id=1109077&part-number=LTC6102
 */
 
 /*!\page channelsw Bias 8 Branches Switch
@@ -213,7 +212,7 @@ MSCB(5). The switches are controlled by PCA9539PW-T device which uses the @ref s
 - MSCB(5) : WORD  : swBias :  Switch Bias 
 */
 
-/*!\page afterchip SCA ASIC Chip
+/*!\page afterchip ASIC AFTER circuit
 The cards contains 2 AFTER SCA chips recording 2 signal shape from the 
 same input under 2 different amplification setting. 
 */
@@ -289,14 +288,26 @@ Setting the MSCB(116..53) will set the corresponding DAQ and in return would cha
 the corresponding MPPC. The communication with the DAQ is performed through the @ref spiprotoc .
 
 \section biasvoltdoc LTC1655CGN Data Sheet:
-http://www.alldatasheet.com/datasheet-pdf/pdf/70816/LINER/LTC1665CGN.html
+http://www.digchip.com/datasheets/download_datasheet.php?id=537292&part-number=LTC1665CGN
 */
 
-/*!\page asumcircuit ASUM circuit for Trigger generation
+/*!\page asumcircuit ASUM circuit 
+The ASUM circuit includes @ref chargediv , @ref asumbranch , @ref serializer and asum itself.
+*/
+
+/*!\page chargediv Charge Division Circuit
 ...
 */
 
-/*!\page eeprom Permanent configuration parameter saving/restoring
+/*!\page asumbranch Asum 8Branches Threshold
+...
+*/
+
+/*!\page serializer Serializer 200 MHz
+...
+*/
+
+/*!\page eeprom Config Memory
 \section Purpose
 The FEB 64 board contains a 64K (8192 x 8) external memory. Quarter of
 memory is assigned as a protected area which will be used to store 
@@ -323,7 +334,7 @@ MSCB(1) : WORD : Error^11 : eeprom error
 \endcode
 
 \section eepDocumen Link to DataSheet:
-http://www.digchip.com/datasheets/parts/datasheet/054/AT25080A.php
+http://www.digchip.com/datasheets/download_datasheet.php?id=161550&part-number=AT25080A
 
 */
 
@@ -354,7 +365,7 @@ instructions have been clearly presented on the figure.
 *\image html SST_Command.jpg
 * </center> 
 \section sensordoc ADT7486A Data Sheet:
-http://www.alldatasheet.co.kr/datasheet-pdf/pdf_kor/163191/AD/ADT7486A.html
+http://www.onsemi.cn/PowerSolutions/product.do?id=ADT7486A&pdf=Y
 */
 
 /*!\page feb64_limits FEB64 Limit parameters
