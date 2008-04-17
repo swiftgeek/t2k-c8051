@@ -13,6 +13,9 @@
 #ifndef  _FEB64_H
 #define  _FEB64_H
 
+// External Vref
+#define VREF       2.432f
+
 // Device Address mapping
 #define ADDR_LTC1669   0x20
 #define ADDR_PCA9539   0x74
@@ -264,5 +267,6 @@ void user_loop(void);
 void user_write(unsigned char index) reentrant;
 unsigned char user_read(unsigned char index);
 unsigned char user_func(unsigned char *data_in, unsigned char *data_out);
+float read_voltage(unsigned char channel,unsigned int *rvalue);
 
 #endif

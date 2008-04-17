@@ -268,6 +268,37 @@
                                        LTC2600_LOAD_E,LTC2600_LOAD_F,
                                        LTC2600_LOAD_G,LTC2600_LOAD_H};
 
+ //
+ // 
+ //-----------------------------------------------------------------------------
+float read_voltage(unsigned char channel,unsigned int *rvalue)
+{
+  unsigned int  xdata i;
+  float         xdata voltage;
+  unsigned int  xdata rawbin;
+  unsigned long xdata rawsum = 0;
+
+// Averaging on 10 measurements for now.
+  for (i=0 ; i<10 ; i++) {
+    rawbin = adc_read(channel);
+    rawsum += rawbin;
+    yield();
+  }
+
+  /* convert to V */
+  *rvalue =  rawsum/10;
+  voltage = (float)  *rvalue;                  // averaging
+  voltage = (float)  voltage / 1024.0 * VREF;  // conversion
+  if ( channel != TCHANNEL)
+	  voltage = voltage * coeff[channel] + offset[channel];
+
+  return voltage;
+}
+
+
+
+
+
  /********************************************************************\
  Application specific init and in/output routines
  \********************************************************************/
@@ -725,7 +756,6 @@ void user_loop(void) {
     rESR = user_data.error;
     for (channel=0, mask=0 ; channel<INTERNAL_N_CHN ; channel++, mask++) {
       volt = read_voltage(channel,&rvolt);
-      volt = volt * coeff[channel] + offset[channel];
       DISABLE_INTERRUPTS;
       pfData[channel] = volt;
     rpfData[channel]= rvolt;
