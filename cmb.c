@@ -39,28 +39,30 @@
  //-----------------------------------------------------------------------------
  MSCB_INFO_VAR code vars[] = {
 	1, UNIT_BYTE,            0, 0, 			  0, "Error",      &user_data.error,      // 0
-	4, UNIT_AMPERE,          0, 0, MSCBF_FLOAT, "pIs4V",      &user_data.pIs4V,      // 0
-   4, UNIT_AMPERE, 			 0, 0, MSCBF_FLOAT, "IsSC",       &user_data.IsSC,       // 1
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "A33VMon",    &user_data.A33VMon,    // 2
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "A25VMon",    &user_data.A25VMon,    // 3
-   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "p15VMon",    &user_data.p15VMon,    // 4
-	4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "p18VMon",    &user_data.p18VMon,    // 5	
-	4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "p25VMon",    &user_data.p25VMon,    // 6
-	4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "p33VMon",    &user_data.p33VMon,    // 7
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "uCTemp",     &user_data.uCTemp,     // 8
+	4, UNIT_BYTE,            0, 0, 			  0, "SerialN",    &user_data.SerianN,    // 1
+	4, UNIT_AMPERE,          0, 0, MSCBF_FLOAT, "pIs4V",      &user_data.pIs4V,      // 2
+   4, UNIT_AMPERE, 			 0, 0, MSCBF_FLOAT, "IsSC",       &user_data.IsSC,       // 3
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "A33VMon",    &user_data.A33VMon,    // 4
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "A25VMon",    &user_data.A25VMon,    // 5
+   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "p15VMon",    &user_data.p15VMon,    // 6
+	4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "p18VMon",    &user_data.p18VMon,    // 7	
+	4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "p25VMon",    &user_data.p25VMon,    // 8
+	4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "p33VMon",    &user_data.p33VMon,    // 9
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "uCTemp",     &user_data.uCTemp,     // 10
 
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "ssTemp0",    &user_data.ssTemp[0],  // 9
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "ssTemp1",    &user_data.ssTemp[1],  // 10
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "ssTemp2",    &user_data.ssTemp[2],  // 11
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "InteTemp",   &user_data.InteTemp,  // 11
+
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "FPGATemp",   &user_data.FPGATemp,  // 12
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "VregTemp",   &user_data.VregTemp,  // 13
    
-	4, UNIT_BYTE,            0, 0, 		0, "rpIs4V",      &user_data.rpIs4V,      // 12
-   4, UNIT_BYTE, 			    0, 0, 		0, "rIsSC",       &user_data.rIsSC,       // 13
-   4, UNIT_BYTE,            0, 0,		0, "rA33VMon",    &user_data.rA33VMon,    // 14
-   4, UNIT_BYTE,            0, 0, 		0, "rA25VMon",    &user_data.rA25VMon,    // 15
-   4, UNIT_BYTE,            0, 0, 		0, "rp15VMon",    &user_data.rp15VMon,    // 16
-	4, UNIT_BYTE,            0, 0, 		0, "rp18VMon",    &user_data.rp18VMon,    // 17	
-	4, UNIT_BYTE,            0, 0, 		0, "rp25VMon",    &user_data.rp25VMon,    // 18
-	4, UNIT_BYTE,            0, 0, 		0, "rp33VMon",    &user_data.rp33VMon,    // 19	
+	4, UNIT_BYTE,            0, 0, 		0, "rpIs4V",      &user_data.rpIs4V,      // 14
+   4, UNIT_BYTE, 			    0, 0, 		0, "rIsSC",       &user_data.rIsSC,       // 15
+   4, UNIT_BYTE,            0, 0,		0, "rA33VMon",    &user_data.rA33VMon,    // 16
+   4, UNIT_BYTE,            0, 0, 		0, "rA25VMon",    &user_data.rA25VMon,    // 17
+   4, UNIT_BYTE,            0, 0, 		0, "rp15VMon",    &user_data.rp15VMon,    // 18
+	4, UNIT_BYTE,            0, 0, 		0, "rp18VMon",    &user_data.rp18VMon,    // 19	
+	4, UNIT_BYTE,            0, 0, 		0, "rp25VMon",    &user_data.rp25VMon,    // 20
+	4, UNIT_BYTE,            0, 0, 		0, "rp33VMon",    &user_data.rp33VMon,    // 21	
 	0
  };
 
@@ -69,7 +71,33 @@
  extern SYS_INFO sys_info;          // For address setting
  
 
- 
+ //
+ // 
+ //-----------------------------------------------------------------------------
+float read_voltage(unsigned char channel,unsigned int *rvalue)
+{
+  unsigned int  xdata i;
+  float         xdata voltage;
+  unsigned int  xdata rawbin;
+  unsigned long xdata rawsum = 0;
+
+// Averaging on 10 measurements for now.
+  for (i=0 ; i<10 ; i++) {
+    rawbin = adc_read(channel);
+    rawsum += rawbin;
+    yield();
+  }
+
+  /* convert to V */
+  *rvalue =  rawsum/10;
+  voltage = (float)  *rvalue;                  // averaging
+  voltage = (float)  voltage / 1024.0 * VREF;  // conversion
+  if ( channel != TCHANNEL)
+	  voltage = voltage * coeff[channel] + offset[channel];
+
+  return voltage;
+}
+
  
  /********************************************************************\
  Application specific init and in/output routines
@@ -78,13 +106,14 @@
  /*---- User init function ------------------------------------------*/
  void user_init(unsigned char init)
  {
- 	char xdata i,add;
+ 	char xdata add;
 
- 	if (init)
-	{
-	  for (i=0;i<3;i++)	    	
-		user_data.ssTemp[i]  = 0.0;	
+ 	if (init){
+    	user_data.InteTemp = 0;	
+		user_data.FPGATemp = 0;
+		user_data.VregTemp = 0;
 		user_data.error = 0;
+		user_data.SerianN = 0x0;
 	}
  
  //
@@ -157,7 +186,6 @@ void user_loop(void) {
     rpfData = &(user_data.rpIs4V);
     for (channel=0; channel<INTERNAL_N_CHN ; channel++) {
       volt = read_voltage(channel,&rvolt);
-      //volt = volt * coeff[channel] + offset[channel];
       DISABLE_INTERRUPTS;
       pfData[channel] = volt;
     	rpfData[channel]= rvolt;
@@ -183,7 +211,7 @@ void user_loop(void) {
     	if(!ADT7486A_Cmd(ADT7486A_address, GetIntTemp, &temperature)){
 		  IntssTT = CLEAR;
         DISABLE_INTERRUPTS;
-         user_data.ssTemp[0] = temperature;
+         user_data.InteTemp = temperature;
          user_data.error   = rESR;
         ENABLE_INTERRUPTS;
     	} else {
@@ -199,7 +227,7 @@ void user_loop(void) {
      if(!ADT7486A_Cmd(ADT7486A_address, GetExt1Temp, &temperature)){
          Ext1ssTT = CLEAR;
          DISABLE_INTERRUPTS;
-          user_data.ssTemp[1] = temperature;
+          user_data.FPGATemp = temperature;
           user_data.error   = rESR;
          ENABLE_INTERRUPTS;
      } else {
@@ -212,7 +240,7 @@ void user_loop(void) {
      if(!ADT7486A_Cmd(ADT7486A_address, GetExt2Temp, &temperature)){
          Ext2ssTT = CLEAR;
          DISABLE_INTERRUPTS;
-          user_data.ssTemp[2] = temperature;
+          user_data.VregTemp = temperature;
           user_data.error   = rESR;
          ENABLE_INTERRUPTS;
      } else {
