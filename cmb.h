@@ -11,6 +11,9 @@
 #ifndef _CMB_H_
 #define _CMB_H_
 
+// External Vrefa 
+#define VREF       2.445f
+
 // ADT7486A temperature addresses
 #define ADT7486A_address 0x48	
 
@@ -24,9 +27,28 @@ sbit IntssTT   = rESR ^ 0;
 sbit Ext1ssTT  = rESR ^ 1;	
 sbit Ext2ssTT  = rESR ^ 2;	
 
+
+// Coeff
+//
+//  V      R1   R2    (R1+R2)/R1
+// 33Mon   2K   4.7K   6.7/4.7
+// 25Mon   2K   4.7K   6.7/4.7
+// A+33Mon 2K   4.7K   6.7/4.7
+// A+25Mon 2K   4.7K   6.7/4.7
+// +1.5    no conversion.
+// +1.8    no conversion
+
+// I		  R1	  R2	  (R1+R2)/R2	Rsense 	Isense/Vout
+//	Is4     2K	  4.7K	6.7/4.7     0.015    10/(100*0.015)= 3.33     
+// IsSC	  2K	  4.7K   6.7/4.7	   0.47		10/(100*4.7) = 0.0106
+float code coeff[8] = {9.5,0.304,1.426,1.426,1.0,1.0,1.426,1.426};
+float code offset[8] = {0,0,0,0,0,0,0,0}; 
+
+
 /*---- Define variable parameters returned to CMD_GET_INFO command ----*/
 struct user_data_type {
 unsigned char error;
+unsigned long SerianN;
 float	pIs4V;
 float IsSC;       
 float A33VMon;    
@@ -37,8 +59,9 @@ float p25VMon;
 float p33VMon;    
 float uCTemp;     
 
-float ssTemp[3];  
-
+float InteTemp;  
+float FPGATemp;
+float VregTemp;
 unsigned int rpIs4V;
 unsigned int rIsSC;       
 unsigned int rA33VMon;    
@@ -59,5 +82,6 @@ void user_loop(void);
 void user_write(unsigned char index) reentrant;
 unsigned char user_read(unsigned char index);
 unsigned char user_func(unsigned char *data_in, unsigned char *data_out);
+float read_voltage(unsigned char channel,unsigned int *rvalue);
 
 #endif
