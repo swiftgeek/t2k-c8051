@@ -98,8 +98,8 @@
 #ifdef	feb64
 #define FEB64
 #endif
-#ifdef	ext_eeprom
-#define  EXT_EEPROM
+#ifdef	loader
+#define  LOADER
 #endif
 #ifdef   cmb
 #define  CMB
@@ -504,7 +504,7 @@ sbit RS485_ENABLE = P0 ^ 3; //MSCB communication enable port
 sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
 
 /*--------------------------------*/
-#elif defined(EXT_EEPROM)
+#elif defined(LOADER)
 #include <c8051F120.h>
 #define CPU_C8051F120
 
