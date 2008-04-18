@@ -91,7 +91,7 @@ unsigned int xdata PageAddr[]={0x0,0x100,0x200,0x300,0x400,0x500};
 //+6Va,+6Vd are off roughly by 5mV, -6Va is off roughly by -30mV
 // Fix conversion coeef for V/I internal ADC
 							 // Vb        Vbi   		+6Vd     +6Va     -6Va  	 -6Ia   +6Ia  	  +6Id 
-float code  coeff[8]  = {41.448   ,2.496587   ,4.025   ,4.025   ,8.4534   ,40.9  ,41.21  ,238.211};
+float code  coeff[8]  = {41.448   ,2.496587   ,4.025   ,4.025   ,8.4534   ,0.237  ,0.475  ,0.237};
 float code  offset[8] = {-0.2813  ,0.         ,-0.06   ,-0.054  ,-18.622  ,0     ,0.     ,0.  };
 
 // External ADC channel conversion table
