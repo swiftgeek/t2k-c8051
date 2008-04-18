@@ -50,26 +50,4 @@ unsigned int adc_read(unsigned char channel)
   return (((ADC0H & 0x03) << 8) + ADC0L);
 }
 
-/*------------------------------------------------------------------*/
-float read_voltage(unsigned char channel,unsigned int *rvalue)
-{
-  unsigned int  xdata i;
-  float         xdata voltage;
-  unsigned int  xdata rawbin;
-  unsigned long xdata rawsum = 0;
-
-// Averaging on 10 measurements for now.
-  for (i=0 ; i<10 ; i++) {
-    rawbin = adc_read(channel);
-    rawsum += rawbin;
-    yield();
-  }
-
-  /* convert to V */
-  *rvalue =  rawsum/10;
-  voltage = (float)  *rvalue;                  // averaging
-  voltage = (float)  voltage / 1024.0 * VREF;  // conversion
-
-  return voltage;
-}
 
