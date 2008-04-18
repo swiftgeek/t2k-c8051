@@ -21,8 +21,18 @@
 #define WRITE				0x00
 
 //Defining the page mapping
-
 unsigned int xdata page_addr[]={0x600,0x0,0x100,0x200,0x300,0x400,0x500};
+
+#define ADDR_PCA9539   0x74
+// PCA9539 Macro Definitions
+#define BIAS_OUTPUT_ENABLE      ADDR_PCA9539, PCA9539_CONFIG0, PCA9539_ALL_OUTPUT
+#define BIAS_DISABLE            ADDR_PCA9539, PCA9539_OUTPUT0, 0xFF
+#define BIAS_ENABLE             ADDR_PCA9539, PCA9539_OUTPUT0, 0x00
+#define BIAS_READ			        ADDR_PCA9539, PCA9539_INPUT0
+#define BIAS_WRITE				  ADDR_PCA9539, PCA9539_OUTPUT0
+
+#define BACKPLANE_INPUT_ENABLE  ADDR_PCA9539, PCA9539_CONFIG1, PCA9539_ALL_INPUT
+#define BACKPLANE_READ			  ADDR_PCA9539, PCA9539_INPUT1	 
 
 /*---- Define variable parameters returned to CMD_GET_INFO command ----*/
 struct user_data_type {

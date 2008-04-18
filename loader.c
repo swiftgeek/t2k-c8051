@@ -19,7 +19,10 @@
  #include "mscbemb.h"
  #include "loader.h"
  #include "Devices/AT25160A.h"
- 
+
+#ifdef _PCA9539_
+ #include "Devices/PCA9539_io.h"
+#endif
  
  //
  // Global declarations
@@ -62,14 +65,15 @@
    	user_data.control = 0;
 		user_data.status = 0;
 	}
- 
+ 	add = cur_sub_addr();
+
  //
  // Initial setting for communication and overall ports (if needed).
  //-----------------------------------------------------------------------------
    SFRPAGE  = CONFIG_PAGE;
    // P0MDOUT contains Tx in push-pull
    P0MDOUT |= 0x20;   // add RS485_ENABLE in push-pull
-
+ 
  //
  // SPI Setting
  //-----------------------------------------------------------------------------
@@ -78,12 +82,23 @@
    P2MDOUT |= 0x18; // Setting the SPI_MOSI and SPI_SCK to push pull
 	P2MDOUT &= 0xFE; // Setting the RAM_WPn to open drain
 	
+#ifdef _PCA9539_
+   PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
+	PCA9539_WriteByte(BACKPLANE_INPUT_ENABLE);
+	
+	// Physical backplane address retrieval
+	//-----------------------------------------------------------------------------
+  	PCA9539_Read(BACKPLANE_READ, &add, 1);
+
+	//BS I am not sure where I have to pass the add.
+
+#endif
+	
 	if(ExtEEPROM_Init(NUMEBER_PAGES,PAGE_SIZE))
 	{
 	  user_data.status = (1<<7);
 	}
 
- 	add = cur_sub_addr();
  }
 
 /*---- User write function -----------------------------------------*/
