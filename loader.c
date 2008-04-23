@@ -90,7 +90,7 @@
 	//-----------------------------------------------------------------------------
   	PCA9539_Read(BACKPLANE_READ, &add, 1);
 
-	//BS I am not sure where I have to pass the add.
+	sys_info.node_addr = add;
 
 #endif
 	
@@ -131,10 +131,10 @@ void user_loop(void)
 		signed char check=0;
 
 		check=ExtEEPROM_WriteProtect ((unsigned char*)&eepage, PAGE_SIZE);
-		check=ExtEEPROM_Read  (WP_START_ADDR,(unsigned char*)&eepage2, PAGE_SIZE);
-		check=ExtEEPROM_Write_Clear (0x0000,(unsigned char*)&test1, 
+//		check=ExtEEPROM_Read  (WP_START_ADDR,(unsigned char*)&eepage2, PAGE_SIZE);
+		check=ExtEEPROM_Write_Clear (0x0000,(unsigned char*)&eepage, 
 		PAGE_SIZE,WRITE);
-		check=ExtEEPROM_Read  (0x0000,(unsigned char*)&test2, PAGE_SIZE);
+//		check=ExtEEPROM_Read  (0x0000,(unsigned char*)&test2, PAGE_SIZE);
 									
 	yield();
 } 

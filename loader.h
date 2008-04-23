@@ -44,31 +44,59 @@ struct user_data_type {
 struct user_data_type xdata user_data;
 
 struct EEPAGE {
+
 float lVIlimit[8]; // vQ iQ +6Vd +6Va -6Va -6Ia +6Ia +6Id 
-float uVIlimit[8];   
-float luCTlimit;
-float uuCTlimit;
-float lSSTlimit;
-float uSSTlimit;
-float lVQlimit;
-float uVQlimit;
-float lIQlimit;
-float uIQlimit;
-float lVBiaslimit;
-float uVBiaslimit;
-float lIBiaslimit;
-float uIBiaslimit;
+float uVIlimit[8];
+
+float luCTlimit, uuCTlimit;
+float lSSTlimit, uSSTlimit;
+
+float lVQlimit,  uVQlimit;
+float lIQlimit,  uIQlimit;
+
+float lVBiaslimit, uVBiaslimit;
+float lIBiaslimit, uIBiaslimit;
+
+unsigned long SerialN;
+unsigned int rasum[8];
+unsigned int rqpump;
+unsigned char SWbias;
+unsigned char rbias [64];
 };
 
-//   vQ   iQ  +6Vd  +6Va  -6Va  -6Ia  +6Ia  +6Id 
-// uC Temperature
-// SST Temperature
-//   vQ    iQ  +6Vd  +6Va -6Va  -6Ia   +6Ia  +6Id 
+//   LvQ   LiQ   Lp6Vd  Lp6Va Ln6Va  Lp6Ia Lp6Ia  Lp6Id 
+//   HvQ   HiQ   Hp6Vd  Hp6Va Hp6Va  Hp6Ia Hp6Ia  Hp6Id 
+//   LuC Temperature,  HuC Temperature
+//   LSST Temperature, LSST Temperature
+//   LVQ, HVQ (V)
+//   LIQ, HIQ (uA)
+//	  LVBias, HVBias (V)
+//	  LIBias, LVBias (uA)
+//	  rasum
+//	  rpump
+//	  SW
+//	  DAQ
 struct EEPAGE xdata eepage = {
-     30.0, 0.0, 5.5, 5.5, -6.5, -20.0, 5.0,   5.0
-    ,73.0, 0.1, 6.5, 6.5, -5.5, -1.0, 100.0, 200.0
+     30.0, 0.0,  5.5,   5.5, -6.5,  20.0,  5.0,   5.0
+    ,73.0, 0.1,  6.5,   6.5, -5.5,  1.0,   100.0, 200.0
 	 ,23., 45.
     ,20., 30.
+	 ,-1.0,1.0
+	 ,-0.1,1.0
+	 ,0.0,73.0
+	 ,0.0,10.0
+	 ,0x00000000
+	 ,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff
+	 ,0x0000
+	 ,0x00
+	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 };
 
 struct EEPAGE xdata eepage2 ;
