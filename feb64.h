@@ -47,6 +47,9 @@
 #define IDXEEP_CTL	 142
 #define IDXASUM_CTL  143
 
+#define SERIALN_LENGTH 4
+#define SERIALN_ADD  0x670    
+
 unsigned int xdata PageAddr[]={0x0,0x100,0x200,0x300,0x400,0x500};
 
 #define FIRST_BIAS   IDXBIAS
@@ -174,6 +177,7 @@ float lIQlimit,  uIQlimit;
 float lVBiaslimit, uVBiaslimit;
 float lIBiaslimit, uIBiaslimit;
 
+unsigned long SerialN;
 unsigned int rasum[8];
 unsigned int rqpump;
 unsigned char SWbias;
@@ -201,6 +205,7 @@ struct EEPAGE xdata eepage = {
 	 ,-0.1,1.0
 	 ,0.0,73.0
 	 ,0.0,10.0
+	 ,0x00000000
 	 ,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff
 	 ,0x0000
 	 ,0x00

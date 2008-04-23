@@ -12,6 +12,7 @@
         SMB      _LTC1669_      : Q pump DAC
         SPI      _LTC1665_      : SiPm_DACs
         SPI      _LTC2600_      : Asum DAC
+ 
  Memory usage:
  define(FEB64) define(_SPI_PROTOCOL_) define(_LTC1665_)
  define(_SMB_PROTOCOL_) define (_LTC1669_)  define(_LTC2600_)
@@ -436,7 +437,7 @@ float read_voltage(unsigned char channel,unsigned int *rvalue)
  #ifdef _PCA9539_
    PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
 
-   PCA9539_WriteByte(BIAS_OUTPUT_ENABLE);
+  PCA9539_WriteByte(BIAS_OUTPUT_ENABLE);
   PCA9539_WriteByte(BACKPLANE_INPUT_ENABLE);
 
  //
@@ -449,13 +450,24 @@ float read_voltage(unsigned char channel,unsigned int *rvalue)
  //
  // EEPROM memory Initialization/Retrieval
  //-----------------------------------------------------------------------------
-
+#ifdef _ExtEEPROM_
+  ExtEEPROM_Read(WP_START_ADDR,(unsigned char*)&eepage, PAGE_SIZE);
+  DISABLE_INTERRUPTS;
+  for(i=0;i<8;i++)
+  		user_data.rAsum[i] = eepage.rasum[i];
+  for(i=0;i<64;i++)
+  		user_data.rBias[i] = eepage.rbias[i];
+  user_data.SerialN = eepage.SerialN;
+  user_data.rQpump = eepage.rqpump;
+  user_data.swBias = eepage.SWbias;
+  ENABLE_INTERRUPTS;
+#endif
  //
  // EEPROM serial number Retrieval
  //-----------------------------------------------------------------------------
- #ifdef _ExtEEPROM_
-  ExtEEPROM_Read(WP_START_ADDR,(unsigned char*)&user_data.SerialN, PAGE_SIZE);
- #endif
+// #ifdef _ExtEEPROM_
+//  ExtEEPROM_Read(SERIALN_ADD,(unsigned char*)&user_data.SerialN, SERIALN_LENGTH);
+// #endif
 
  //
  // Final steps
@@ -467,11 +479,8 @@ float read_voltage(unsigned char channel,unsigned int *rvalue)
   user_data.error      = rESR;    // Default Error register
   user_data.eepage     = rEER;    // Default EE page
   user_data.status     = rCSR;    // Shutdown state
-  user_data.swBias     = 0x00;    // Turn off all the switches
-  user_data.rQpump     = 0x00;    // Set to the lowest scale
   user_data.control    = 0x80;    // Manual Shutdown
   for(i=0;i<8;i++){
-    user_data.rAsum[i] = i;       // BS not sure to what value initialize it
     user_data.VBMon[i] = 0;
     user_data.IBMon[i] = 0;
     user_data.rVBMon[i] = 0;
@@ -479,10 +488,7 @@ float read_voltage(unsigned char channel,unsigned int *rvalue)
     user_data.Temp[i]  = 0.0;
     user_data.eepValue = 0.0;
     user_data.eeCtrSet = 0;
-
    }
-  for(i=0;i<64;i++)
-    user_data.rBias[i] = i;         // Set the DAC to lowest value
 
   EN_pD5V  = ON;                  // Needed for debug
   EN_pA5V  = ON;                  //-PAA- needed for ASUM test
@@ -659,29 +665,31 @@ void user_loop(void) {
   if (EEP_CTR_FLAG){
       //Checking for the special instruction
       if (user_data.eeCtrSet & EEP_CTRL_KEY){
-        //Checking for the write request
-        eep_address = (float*)&eepage + (user_data.eeCtrSet & 0x000000ff);
-        if (user_data.eeCtrSet & EEP_CTRL_WRITE){
-           *eep_address = user_data.eepValue;
-        //Checking for the read request
-        } else if (user_data.eeCtrSet & EEP_CTRL_READ){
-           user_data.eepValue = *eep_address;
-        } else {
+	   	eep_address = (float*)&eepage + (user_data.eeCtrSet & 0x000000ff);
+   	   //Checking for the write request
+			if (user_data.eeCtrSet & EEP_CTRL_WRITE){
+      		if ((user_data.eeCtrSet & 0x000000ff) < (SERIALN_ADD - WP_START_ADDR))
+					*eep_address = user_data.eepValue;
+        	  //Checking for the read request
+        	  } else if (user_data.eeCtrSet & EEP_CTRL_READ){
+           	 	user_data.eepValue = *eep_address;
+        	  } else {
 
-          // Tell the user that inappropriate task has been requested
-           DISABLE_INTERRUPTS;
-          user_data.eepValue = EEP_CTRL_INVAL_REQ;
-          ENABLE_INTERRUPTS;
-        }
+          	   // Tell the user that inappropriate task has been requested
+           	   DISABLE_INTERRUPTS;
+          	   user_data.eepValue = EEP_CTRL_INVAL_REQ;
+          	   ENABLE_INTERRUPTS;
+          }
+	
+     	} else {
 
-      } else {
+        	// Tell the user that invalid key has been provided
+         DISABLE_INTERRUPTS;
+         user_data.eepValue = EEP_CTRL_INVAL_KEY;
+         ENABLE_INTERRUPTS;
+      }
 
-        // Tell the user that invalid key has been provided
-           DISABLE_INTERRUPTS;
-          user_data.eepValue = EEP_CTRL_INVAL_KEY;
-          ENABLE_INTERRUPTS;
-        }
-       EEP_CTR_FLAG = CLEAR;
+      EEP_CTR_FLAG = CLEAR;
   }
 
   //
