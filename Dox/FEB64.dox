@@ -224,6 +224,12 @@ The FEB64 can be controlled for the following operation:
 - Manual Power Up sequence, ie: turn ON all the DC Voltage (Def:OFF)
 - Manual Shutdown sequence, ie: turn OFF all the DC Voltage.
 - Toggle the activation of the Charge Pump (Def:OFF)
+
+\section FlowChart The Overal Monitoring Procedure
+* \image html FEB64Monitoring.jpg
+* </center>
+
+
 @section Location
 Local (FEB64)
 @section Condition
