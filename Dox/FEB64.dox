@@ -4,21 +4,20 @@
 The FEB64 board handles 64 MPPC Silicon PM mounted in the FGD detector.
 Reads the 64 (76) MPPC channels. The information is stored in the
 AFTER SCA chip. On Trigger each cell of the analog memory (76x512 cells) is
-digitized, the digital value representing the amplitude at a given time (50Msps)
+digitized, the digital value representing the amplitude at a given time (20Msps)
 is transmitted to the @ref CMB card. In parallel to its main function, the
-@ref FEB64 has a "slow control" section which run completely independently from the
+FE64 has a "slow control" section which run completely independently from the
 data acquisition section and provides card condition status, board and internal detector
 temperature monitoring and control/monitoring of the high voltage fed to the MPPCs.
 
 @section feb64functions Functions
 - @ref internaluit : Board condition monitoring.
-- @ref uimonitoring : Control & Monitoring of voltages and currents associated with +V6Va, -V6Va, +6Vd 
-  sources.
-- @ref boardtemperatures : Board and micro-controller temperature monitoring.
-- @ref busboardtemperature : FGD Internal detector temperature monitoring
+- @ref uimonitoring : Voltages and Currents monitoring.
+- @ref boardtemperatures : Board and micro controller temperature monitoring.
+- @ref busboardtemperature : FGD Internal detector temperature monitoring.
 - @ref mppchv : High Voltage control for each MPPC. 
-- @ref qpumpmonitoring : Charge pump voltage and current.
-- @ref channelsw : Each of 8 switches is associated with 8 consecutive MPPC.
+ - @ref qpumpmonitoring : Charge pump voltage and current.
+ - @ref channelsw : Each of 8 switches is associated with 8 consecutive MPPC.
 - @ref channelmonitoring : Voltage and current associated to each of the 8 MPPC branches.
 - @ref biasvolt : The 64 DAQs
 - @ref afterchip : MPPC signal processing.
@@ -31,28 +30,28 @@ temperature monitoring and control/monitoring of the high voltage fed to the MPP
  * </center> 
 
 @section feb64operation Card Operation
-- By default at power up the main card elements of the card are kept turned off.
-- By default configuration from page 1 of the permanent board memory is 
+- By default at power up the main elements of the card are kept unpowered.
+- By default configuration from page 1 of the onboard memory is 
 restored.
 
 - <b>To power up the card</b>:
- - Send command : CTL = 0x1
-  - The charge pump stays off
-  - The CSR will shows bit^0 = 1
+ - CTL register : Set bit ^ 0 [0x1]
+ - The CSR register will shows bit ^ 0 = 1/0 (1=on, 0=off)
 
-- <b>To power up the MPPCs</b>:
- - Send command : CTL = 0x2 (toggle)
-  - The CSR will shows bit^1 = 1
+- <b>To power up the Charge pump</b>:
+ - CTL register : Set bit ^ 1 [0x2] <i> this is a toggeling bit</i>
+ - The CSR register will shows bit ^ 1 = 1/0 (1=on, 0=off)
 
-- <b>To power down the MPPCs</b>:
- - send command : CTL = 0x2 (toggle)
-  - The CSR will shows bit^1 = 0
+- <b>To power down the Charge pump</b>:
+ - CTL register : Set bit ^ 1 [0x2] <i> this is a toggeling bit</i>
+ - The CSR register will shows bit ^ 1 = 1/0 (1=on, 0=off)
   
 - <b>To power down the card</b>:
- - Send command : CTL = 0x80 (Manual Shutdown)
-  - The CSR will shows bit^0 = 1
+ - CTL register : Set bit ^ 7 [0x80]  Manual Shutdown
+ - The CSR register will shows bit ^ 0 = 1/0 (1=on, 0=off)
 
-\section feb64location Location
+ 
+@section feb64location Location
 This card is located in each "crate" mounted on the surrounding structure
 of each FGD (24 crates per FGD). Each crate contains 4 FEB64 cards.
 */
@@ -152,7 +151,7 @@ Isource    R1      1/Gain    #of bits          VREF      VREF/# of bits   Conver
 ....
 
 @section DataSheets
-INA194AIDBVT : http://www.chipcatalog.com/Datasheet/A0392B99E733E7F9E0AD6CB4C8AC3C4E.htm
+<a href=http://www.chipcatalog.com/Datasheet/A0392B99E733E7F9E0AD6CB4C8AC3C4E.htm >INA194AIDBVT</a>
 */
 
 /*!<!----------------------------------------------------------------->*/
@@ -253,8 +252,8 @@ MSCB(1) :   WORD  : Error^0 : QPump Voltage out of range
 MSCB(1) :   WORD  : Error^1 : QPump Current out of range
 @endcode
 
-@section qpumpdocument LTC1669CMS Data Sheet:
-http://www.ortodoxism.ro/datasheets/lineartechnology/1669f.pdf
+@section DataSheet
+<a href=http://www.ortodoxism.ro/datasheets/lineartechnology/1669f.pdf >LTC1669CMS</a>
 */
 
 /*!<!----------------------------------------------------------------->*/
@@ -280,7 +279,7 @@ R1/%         R2/%        R3/%       R4/%        R5/%      #of bits       VREF   
 * </center>
 
 @section DataSheet
-- LTC6102 : http://www.digchip.com/datasheets/download_datasheet.php?id=1109077&part-number=LTC6102
+<a href=http://www.digchip.com/datasheets/download_datasheet.php?id=1109077&part-number=LTC6102 >LTC6102</a>
 */
 
 /*!<!----------------------------------------------------------------->*/
@@ -300,7 +299,7 @@ MSCB(5) : WORD  : swBias :  Switch Bias (bitwise).
 @endcode
 
 @section DataSheet
-- PCA9539PW-T : http://www....
+<a href=http://.... >PCA9539PW-T</a>
 */
 
 /*!<!----------------------------------------------------------------->*/
@@ -338,7 +337,7 @@ R1/%       R2/%        R3/%        #of bits        VREF     (VREF/1024)    Atten
 * </center>
 
 @section DataSheet
-HV7800  : http://www.supertex.com/pdf/datasheets/HV7800.pdf 
+<a href=http://www.supertex.com/pdf/datasheets/HV7800.pdf >HV7800</a>
 */
 
 /*!<!----------------------------------------------------------------->*/
@@ -355,7 +354,7 @@ Setting the MSCB(116..53) will set the corresponding DAQ and in return would cha
 the corresponding MPPC. The communication with the DAQ is performed through the @ref spiprotoc .
 
 @section DataSheet
-LTC1655CGN : http://www.digchip.com/datasheets/download_datasheet.php?id=537292&part-number=LTC1665CGN
+<a href=http://www.digchip.com/datasheets/download_datasheet.php?id=537292&part-number=LTC1665CGN >LTC1655CGN</a>
 */
 
 /*!<!----------------------------------------------------------------->*/
@@ -415,42 +414,10 @@ The following steps will be used to store data into the page 2 of the external E
 
 @section DataSheet
 
-AT2508A : http://www.digchip.com/datasheets/download_datasheet.php?id=161550&part-number=AT25080A
+<a href=http://www.digchip.com/datasheets/download_datasheet.php?id=161550&part-number=AT25080A >AT2508A</a>
 */
 
-/*!@page smbus SMBus protocol
-*/
-
-/*!@page spiprotoc SPI protocol
-*/
-
-/*!@page SSTProtocol The SST protocol
-
-@section Purpose
-The SST protocol has unique characterestics which will be explored here. Logic 1 is defined
-by driving the SST line high for three quarter of period, following one quarter of period low. 
-The logic 0 is defined by driving the SST line high for one quarter of period following driving the
-line low for rest of the period. It is presented in the following figure. 
-
-* <center>Example stream of 0101
-* \image html SST_protocol.jpg
-* </center>
-
-@section SSTOperation SST Operation
-Specific sets of instructions have to be passed to the device (ADT7486A) in order to provide
-the right temperature. The first two zeros are called Address Timing Negotiation bits. Then the chip
-address will be provided following one zero, Message Timing Negotiation bit. After sending the Read Length,
-the Command will be provided to device to determine what type of temperature reading is required. The rest of
-instructions have been clearly presented on the figure.
-
-* <center>
-* \image html SST_Command.jpg
-* </center> 
-
-@section sensordoc ADT7486A Data Sheet:
-http://www.onsemi.cn/PowerSolutions/product.do?id=ADT7486A&pdf=Y
-*/
-
+/*!<!----------------------------------------------------------------->*/
 /*!@page feb64_limits FEB64 Limit parameters
 
 @section Purpose
