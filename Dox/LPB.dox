@@ -1,4 +1,130 @@
 /*! @page LPB LPB board 
 
-- blablabla
+@section lpbpurpose Purpose
+The Light Pulser Board (LPB) handles the operation of the LED light flasher foo all the 
+MPPC channels of one crate.
+
+@section LPBfunctions Functions
+- @ref internaluit : Board condition monitoring.
+- @ref uimonitoring : Voltages and Currents monitoring.
+- @ref boardtemperatures : Board and micro controller temperature monitoring.
+  
+ * <center> Block Diagram layout.
+ *  \image html LPB-block.jpg
+ * </center> 
+
+@section LPBoperation Card Operation
+- By default at power up the main elements of the card are kept unpowered.
+
+- <b>To power up the card</b>:
+ - CTL register : Set bit ^ 0 [0x1]
+ - The CSR register will shows bit ^ 0 = 1/0 (1=on, 0=off)
+
+  
+- <b>To power down the card</b>:
+ - CTL register : Set bit ^ 7 [0x80]  Manual Shutdown
+ - The CSR register will shows bit ^ 0 = 1/0 (1=on, 0=off)
+
+ 
+@section LPBlocation Location
+This card is located in each "crate" mounted on the surrounding structure
+of each FGD (24 crates per FGD). Each crate contains 1 LPB card.
+*/
+
+/*!<!----------------------------------------------------------------->*/
+/*!@page internaluit LPB board condition monitoring
+
+@section Purpose
+Monitor periodically (~1Hz) all the DC Voltages required for the proper 
+operation of the LPB card. Corresponding current consumption is also 
+monitored as well as the local board temperature and the FPGA inner temperature.
+The LPB can be controlled for the following operation:
+- Manual Power Up sequence, ie: turn ON all the DC Voltage (Def:OFF)
+- Manual Shutdown sequence, ie: turn OFF all the DC Voltage.
+
+@section Condition
+-  board temperature T > 60degC : Shutdown the LPB card.
+- +4Vdigital off limits : Shutdown the LPB (@ref cmb_limits).
+- +1.5Vdigital off limits  : Shutdown LPB (@ref cmb_limits).
+- uC Temperature off limits: Shutdown LPB (@ref cmb_limits).
+- FPGA Temperature off limits: Shutdown LPB (@ref cmb_limits).
+
+@section cmb-internal MSCB Registers
+@code
+MSCB(?): Float: ssTemp[3..0] : Board Temperature [C]   
+MSCB(?) : WORD : Error^2 : +6Vdigital error []
+MSCB(1) : WORD : Error^8 :  uCTemp error    []
+...
+@endcode
+*/                         
+
+/*!<!----------------------------------------------------------------->*/
+/*!@page uimonitoring Vreg U/I Monitoring 
+
+@section monitoringpurpose Purpose
+Obtain continuous information regarding the LPB voltage and current of the regulators.
+This information is compared to pre-set parameters for possible actions.
+
+@section VoltageMonSec Voltage monitoring
+* <center> Diagram and Equations for monitoring voltage:
+* \image html VoltageMon.jpg
+* </center> 
+
+<center> Table of values associated with VMon </center>
+@code
+Usource   R1       R2         Attenuation   #of bits       VREF,Vref    (VREF/# of bits)   Offset      ConverFactor (V/Byte)
++DIG_4V   18k/1%   6.04k/1%   0.2512479     10 bits(1024)  2.43V         0.002373          N/A         0.00944
+@endcode
+
+@section VMonExamples 
+* <center>
+*\image html VMonExample.jpg
+* </center>
+
+@section CurrentMonSec Current monitoring
+* <center> Diagram and equation for monitoring current:
+* \image html CurrentMon.jpg
+* </center> 
+
+
+<center>Table of values associated with IMon</center>
+@code 
+Isource    R1      1/Gain    #of bits          VREF      VREF/# of bits   ConversionFactor(mA/Byte)
++DIG_4V    0.05R   100       10 bits (1024)    2.43V     0.002373         474.6
+@endcode
+
+@section IMonExamples 
+* <center>
+*\image html IMonExample.jpg
+* </center>
+
+@section Condition
+ - +I6a >= 10A : Board shutdown
+ -
+....
+
+@section DataSheets
+<a hrf=http://www.chipcatalog.com/Datasheet/A0392B99E733E7F9E0AD6CB4C8AC3C4E.htm >INA194AIDBVT</a>
+*/
+
+/*!<!----------------------------------------------------------------->*/
+/*!@page boardtemperatures Board Temperature monitoring
+
+@section Purpose
+Monitor periodically (~1Hz) the internal temperature of the micro-controller as well as the FPGA temperature.
+For the uC, the temperature is readout through its internal ADC[8].
+For board temperature, dedicated device ADT7486A used for the remote temperature has an internal sensor. This device uses a particular @ref SSTProtocol. 
+
+@section Condition
+- T > 60degC : Shutdown LPB card.
+
+@section cmb-SST MSCB Registers
+@code
+MSCB(?)  : Float  : ssTemp[3..0] : The LPB board temperature
+MSCB(?)  : Float  : uCTemp       : The SC's micro-controller internal temperature
+MSCB(?)  : Float  : FPGATemp     : The FPGA internal temperature
+MSCB(1)   : Word  : Error^8      : The micro-controller internal temperature exceeded its threshold
+@endcode
+*/
+
 */
