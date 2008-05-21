@@ -5,9 +5,9 @@ The Light Pulser Board (LPB) handles the operation of the LED light flasher foo 
 MPPC channels of one crate.
 
 @section LPBfunctions Functions
-- @ref internaluit : Board condition monitoring.
-- @ref uimonitoring : Voltages and Currents monitoring.
-- @ref boardtemperatures : Board and micro controller temperature monitoring.
+- @ref lpbinternaluit : Board condition monitoring.
+- @ref lpbuimonitoring : Voltages and Currents monitoring.
+- @ref lpbboardtemperatures : Board and micro controller temperature monitoring.
   
  * <center> Block Diagram layout.
  *  \image html LPB-block.jpg
@@ -32,7 +32,7 @@ of each FGD (24 crates per FGD). Each crate contains 1 LPB card.
 */
 
 /*!<!----------------------------------------------------------------->*/
-/*!@page internaluit LPB board condition monitoring
+/*!@page lpbinternaluit LPB board condition monitoring
 
 @section Purpose
 Monitor periodically (~1Hz) all the DC Voltages required for the proper 
@@ -59,7 +59,7 @@ MSCB(1) : WORD : Error^8 :  uCTemp error    []
 */                         
 
 /*!<!----------------------------------------------------------------->*/
-/*!@page uimonitoring Vreg U/I Monitoring 
+/*!@page lpbuimonitoring Vreg U/I Monitoring 
 
 @section monitoringpurpose Purpose
 Obtain continuous information regarding the LPB voltage and current of the regulators.
@@ -108,7 +108,7 @@ Isource    R1      1/Gain    #of bits          VREF      VREF/# of bits   Conver
 */
 
 /*!<!----------------------------------------------------------------->*/
-/*!@page boardtemperatures Board Temperature monitoring
+/*!@page lpbboardtemperatures Board Temperature monitoring
 
 @section Purpose
 Monitor periodically (~1Hz) the internal temperature of the micro-controller as well as the FPGA temperature.

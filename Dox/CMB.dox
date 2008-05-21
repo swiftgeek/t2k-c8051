@@ -4,9 +4,9 @@
 The Crate Master Board (CMB) handles the operation of 4 FEB64 boards.
 
 @section cmbfunctions Functions
-- @ref internaluit : Board condition monitoring.
-- @ref uimonitoring : Voltages and Currents monitoring.
-- @ref boardtemperatures : Board and micro controller temperature monitoring.
+- @ref cmbinternaluit : Board condition monitoring.
+- @ref cmbuimonitoring : Voltages and Currents monitoring.
+- @ref cmbboardtemperatures : Board and micro controller temperature monitoring.
   
  * <center> Block Diagram layout.
  *  \image html cmb-block.jpg
@@ -31,7 +31,7 @@ of each FGD (24 crates per FGD). Each crate contains 1 CMB card.
 */
 
 /*!<!----------------------------------------------------------------->*/
-/*!@page internaluit CMB board condition monitoring
+/*!@page cmbinternaluit CMB board condition monitoring
 
 @section Purpose
 Monitor periodically (~1Hz) all the DC Voltages required for the proper 
@@ -58,7 +58,7 @@ MSCB(1) : WORD : Error^8 :  uCTemp error    []
 */                         
 
 /*!<!----------------------------------------------------------------->*/
-/*!@page uimonitoring Vreg U/I Monitoring 
+/*!@page cmbuimonitoring Vreg U/I Monitoring 
 
 @section monitoringpurpose Purpose
 Obtain continuous information regarding the CMB voltage and current of the regulators.
@@ -80,7 +80,7 @@ Usource   R1       R2         Attenuation   #of bits       VREF,Vref    (VREF/# 
 *\image html VMonExample.jpg
 * </center>
 
-@section CurrentMonSec Current monitoring
+@section cmbCurrentMonSec Current monitoring
 * <center> Diagram and equation for monitoring current:
 * \image html CurrentMon.jpg
 * </center> 
@@ -107,7 +107,7 @@ Isource    R1      1/Gain    #of bits          VREF      VREF/# of bits   Conver
 */
 
 /*!<!----------------------------------------------------------------->*/
-/*!@page boardtemperatures Board Temperature monitoring
+/*!@page cmbboardtemperatures Board Temperature monitoring
 
 @section Purpose
 Monitor periodically (~ 1Hz) the internal temperature of the micro-controller as well as the FPGA temperature.

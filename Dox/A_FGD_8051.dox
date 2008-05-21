@@ -18,22 +18,23 @@ repository is organized as follow:
   - All FEB64, CMB, LPB device drivers
 - Protocols/
   - SPI, SMB, SST buses
+- Support/
+  - Supporting files for this documentation
 - Dox/
   - This plain documentation
 - Images/
   - Those necessary images
 - html/
-  - This fency documentation
+  - This web based documentation
 - Projects
   - private development area 
 @endcode
 
-@section feb64-content Content
+@section fgd8051-content Content
 @arg @ref FEB64     Front End Board 64 channels MPPC readout.
 @arg @ref CMB       Crate Master Board controlling 4 FEB64.
 @arg @ref LPB       Light Pulser Board.
 @arg @ref TTB       TPC 36 Temperature sense Board.
 @arg @ref GSCIO     General MSCB use mostly for Temperature/Humidity readout.
-  <br>
 */
 
