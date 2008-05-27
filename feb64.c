@@ -260,14 +260,19 @@
  // Get sysinfo if necessary
  extern SYS_INFO sys_info;          // For address setting
 
+#ifdef _ADT7486A_
  unsigned char ADT7486A_addrArray[] = {ADT7486A_ADDR1
                                      , ADT7486A_ADDR0
                                      , ADT7486A_ADDR3
                                      , ADT7486A_ADDR2};
+#endif
+
+#ifdef _LTC2600_
  unsigned char xdata LTC2600_LOAD[] = {LTC2600_LOAD_A,LTC2600_LOAD_B,
                                        LTC2600_LOAD_C,LTC2600_LOAD_D,
                                        LTC2600_LOAD_E,LTC2600_LOAD_F,
                                        LTC2600_LOAD_G,LTC2600_LOAD_H};
+#endif
 
  //
  // 
@@ -636,12 +641,15 @@ void user_loop(void) {
     } else {
       adcChannel++;
       adcChannel %= N_RB_CHANNEL;
-        if(!LTC2497_ReadConversion(ADDR_LTC2497, adcChannel, &result)) {
-      result = -CONVER_FAC1;
+	 
+		// Make sure the result is valid!
+		if(!LTC2497_ReadConversion(ADDR_LTC2497, adcChannel, &result)) {
+      	result = -CONVER_FAC1;
       }
+
       channel = (adcChannel + (N_RB_CHANNEL-1)) % N_RB_CHANNEL;
-      adc_value = ((float)(result + CONVER_FAC1) * (float)(EXT_VREF /CONVER_FAC2));
-      adc_value = (adc_value * Mon_Coef[channel])+ Mon_Offst[channel];
+      adc_value = ((float)(result + CONVER_FAC1) * (float)(EXT_VREF / CONVER_FAC2));
+      adc_value = (adc_value * Mon_Coef[channel]) + Mon_Offst[channel];
 
       //BS we have to decide what would be the cut off
 //      if (adc_value < 0.001)
@@ -766,7 +774,7 @@ void user_loop(void) {
       volt = read_voltage(channel,&rvolt);
       DISABLE_INTERRUPTS;
       pfData[channel] = volt;
-    rpfData[channel]= rvolt;
+     rpfData[channel] = rvolt;
       ENABLE_INTERRUPTS;
       mask = (1<<channel);  // Should be 4 bytes for ESR
    /*  if ((channel > 1) && !SqPump) {  // Skip vQ, I
@@ -1006,8 +1014,12 @@ void user_loop(void) {
   // EEPROM Restore procedure based on CTL bit
   if (CeeR) {
     rCSR = user_data.status;
+
+#ifdef _ExtEEPROM_
     channel = ExtEEPROM_Read  (PageAddr[(unsigned char)(user_data.eepage & 0x07)],
    (unsigned char*)&eepage2, PAGE_SIZE);
+#endif
+
     if (channel == DONE){
       CeeR = CLEAR;
     SeeR = DONE;
@@ -1025,9 +1037,8 @@ void user_loop(void) {
   //-----------------------------------------------------------------------------
   //
   // General loop delay
-  delay_ms(10);
-
-
+  // delay_ms(10);
+  //	ASUM_TESTN = ~ASUM_TESTN;
   //
   // General loop delay
 } // End of User loop
