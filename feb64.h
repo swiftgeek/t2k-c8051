@@ -78,10 +78,13 @@ unsigned int xdata PageAddr[]={0x0,0x100,0x200,0x300,0x400,0x500};
 
 //For External ADC
 #define N_RB_CHANNEL	 16
-#define EXT_VREF      2.4989f
-#define CURR_MEAS		0x04
-#define CONVER_FAC1  65536.0f
-#define CONVER_FAC2	131072.0f
+#define EXT_VREF      1.25f //2.4989f
+#define CURR_MEAS		 0x04
+// #define CONVER_FAC1  65536.0f
+// #define CONVER_FAC2	131072.0f	// 65536 x 2
+#define CONVER_FAC1 0.0f
+#define CONVER_FAC2 65536.0f
+
 //BS Temperature testing
 #define TEMP_ThRESHOLD  27
 #define SST_TIME			5 //In us
@@ -94,8 +97,10 @@ unsigned int xdata PageAddr[]={0x0,0x100,0x200,0x300,0x400,0x500};
 //+6Va,+6Vd are off roughly by 5mV, -6Va is off roughly by -30mV
 // Fix conversion coeef for V/I internal ADC
 							 // Vb        Vbi   		+6Vd     +6Va     -6Va  	 -6Ia   +6Ia  	  +6Id 
+//float code  coeff[8]  = {41.448   ,2.496587   ,4.025   ,4.025   ,8.4534   ,0.237  ,0.475  ,0.237};
+//float code  offset[8] = {-0.2813  ,0.         ,-0.06   ,-0.054  ,-18.622  ,0     ,0.     ,0.  };
 float code  coeff[8]  = {41.448   ,2.496587   ,4.025   ,4.025   ,8.4534   ,0.237  ,0.475  ,0.237};
-float code  offset[8] = {-0.2813  ,0.         ,-0.06   ,-0.054  ,-18.622  ,0     ,0.     ,0.  };
+float code  offset[8] = {-0.3464 ,0.         ,-0.06   ,-0.054  ,-18.622  ,0     ,0.     ,0.  };
 
 // External ADC channel conversion table
 char code adc_convert[] = { 1, 3, 5, 7, 1, 3, 5, 7, 0, 2, 4, 6, 0, 2, 4, 6 };
@@ -106,6 +111,17 @@ char code adc_convert[] = { 1, 3, 5, 7, 1, 3, 5, 7, 0, 2, 4, 6, 0, 2, 4, 6 };
 						 // VBMon0,VBMon2,VBMon4,VBMon6,
 						 // IBMon0,VBMon2,IBMon4,IBMon6,
 
+float code Mon_Coef[]={  100, 100, 100, 100
+                       , 1000, 1000, 1000, 1000
+							  , 100, 100, 100, 100
+							  , 1000, 1000, 1000, 1000};
+
+
+float code Mon_Offst[]={  0.2278, 0.2278, 0.2278, 0.2278
+								, 0, 0, 0, 0
+								, 0.2278, 0.2278, 0.2278, 0.2278
+								, 0, 0, 0, 0};
+/*
 float code Mon_Coef[]={41.249, 41.286, 41.231, 40.263,
                        62.5   ,62.5,	62.5,	  62.5,
                        41.27 , 41.269, 41.263, 40.278,
@@ -114,7 +130,7 @@ float code Mon_Offst[]={0.0107, 0.0019, 0.0147,-0.0009,
 								0,		  0,	    0,		0,
 							  -0.0086,-0.0082,-0.0125, 0.0003,
 							   0,		  0,		 0,		0};
-
+*/
 // Shutdown mask
 #define SHUTDOWN_MASK   0xFC
 
