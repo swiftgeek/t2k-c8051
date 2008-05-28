@@ -2,13 +2,11 @@
 Name: 				ADT7486A_tsensor.c
 Created by: 	Brian Lee 							 May/11/2007
 Modified By:	Bahman Sotoodian					 March/03/2008
-
+Modified by:   Noel Wu                        May/12/2008
 Contents: 		Temperature sensor array (ADT7486A) handler
 
 $Id$
 \**********************************************************************************/
-
-#ifdef _ADT7486A_
 
 #ifndef _SST_PROTOCOL_
 #define _SST_PROTOCOL_
@@ -26,8 +24,8 @@ $Id$
 /**
 Initialize the SST communication protocol
 */
-void ADT7486A_Init(void) {	
-	SST_Init();
+void ADT7486A_Init(int SST_LINE) {	
+	SST_Init(SST_LINE);
 }
 
 //
@@ -55,7 +53,7 @@ Ths is the cmd list...
 signed char ADT7486A_Cmd(unsigned char addr, unsigned char command
 											 , unsigned char writeLength, unsigned char readLength 
 											 , unsigned char datMSB, unsigned char datLSB
-											 , float *fdata) {
+											 , int SST_LINE, float *fdata) {
 	signed char k, status, ntry;							
 	unsigned char xdata writeFCS_Org; 			 // Originator's side write FCS 
 	float xdata tempsum = 0.0f; 			 // Read sum for average	
@@ -82,35 +80,35 @@ signed char ADT7486A_Cmd(unsigned char addr, unsigned char command
 	while(k && ntry) {
 
 		//Start the message
-		SST_DrvLow(); 						 // Sending two zero (the address timing negotiation bits)
-		SST_DrvLow();
-		SST_WriteByte(addr);		 // Target address
-		SST_DrvLow(); 			 // Send the message timing negotiation bit
-		SST_WriteByte(writeLength);  // WriteLength
-		SST_WriteByte(readLength);	 // ReadLength
+		SST_DrvLow(SST_LINE); 						 // Sending two zero (the address timing negotiation bits)
+		SST_DrvLow(SST_LINE);
+		SST_WriteByte(addr,SST_LINE);		 // Target address
+		SST_DrvLow(SST_LINE); 			 // Send the message timing negotiation bit
+		SST_WriteByte(writeLength,SST_LINE);  // WriteLength
+		SST_WriteByte(readLength,SST_LINE);	 // ReadLength
 		if(writeLength == PING_WL) {
 			// PING
-			return ADT7486A_Read(writeFCS_Org, DONT_READ_DATA, fdata);
+			return ADT7486A_Read(writeFCS_Org, DONT_READ_DATA, SST_LINE, fdata);
 		}
 
 		// Send CMD
-		SST_WriteByte(command); 	//Optional : sending the commands
+		SST_WriteByte(command,SST_LINE); 	//Optional : sending the commands
 
 		// RESET
 		if(command == RESET_CMD) {
-			return ADT7486A_Read(writeFCS_Org, DONT_READ_DATA, fdata);
+			return ADT7486A_Read(writeFCS_Org, DONT_READ_DATA, SST_LINE, fdata);
 		}
 		// SET
 		if(writeLength == SET_OFFSET_WL) {
 			//Send the data in little endian format
-			SST_WriteByte(datLSB);
-			SST_WriteByte(datMSB);
-			return ADT7486A_Read(writeFCS_Org, DONT_READ_DATA, fdata);			
+			SST_WriteByte(datLSB,SST_LINE);
+			SST_WriteByte(datMSB,SST_LINE);
+			return ADT7486A_Read(writeFCS_Org, DONT_READ_DATA, SST_LINE,fdata);			
 		}
 		// GET 
 		if((writeLength == GET_CMD_WL) && (readLength == GET_CMD_RL)) {
 			if(k) {
-				status = ADT7486A_Read(writeFCS_Org, READ_DATA, fdata);
+				status = ADT7486A_Read(writeFCS_Org, READ_DATA, SST_LINE, fdata);
 				if (status == SUCCESS) {
 					tempsum += *fdata;
 					k--;
@@ -124,7 +122,7 @@ signed char ADT7486A_Cmd(unsigned char addr, unsigned char command
 
 		//Clear for the next msg and delay for conversion to finish
 		if (AVG_COUNT > 1) {
-		SST_Clear();
+		SST_Clear(SST_LINE);
 			delay_ms(ADT7486A_CONVERSION_TIME);
 	}
 	ntry--;
@@ -145,8 +143,9 @@ GetExt1Offset and GetExt2Offset.
 @return SUCCESS, INVALID_TEMP, FCS_WERROR, CLIENT_ABORT, OUT_OF_RANGE 								 							
 */
 signed char ADT7486A_Read(unsigned char writeFCS_Originator
-												, unsigned char cmdFlag
-						, float *temperature) {	
+							     ,unsigned char cmdFlag
+						        ,int SST_LINE, float *temperature) {	
+
 	//Declare local variables
 	unsigned char LSB_Received; 	
 	unsigned char MSB_Received; 		
@@ -155,7 +154,7 @@ signed char ADT7486A_Read(unsigned char writeFCS_Originator
 	unsigned char readFCS_Client	= 0x00;  // client read FCS	(rm var once debugged)
 
 	// Get the client FCS to compare against the originator
-	writeFCS_Client = SST_ReadByte();
+	writeFCS_Client = SST_ReadByte(SST_LINE);
 
 	//WriteFCS check (needs to match to continue)
 	if(writeFCS_Originator != writeFCS_Client)
@@ -173,9 +172,9 @@ signed char ADT7486A_Read(unsigned char writeFCS_Originator
 	if(cmdFlag == READ_DATA) 
 	{
 		// Read data
-		LSB_Received 	= SST_ReadByte(); 	//get LSB
-		MSB_Received 	= SST_ReadByte(); 	//get MSB
-		readFCS_Client	= SST_ReadByte(); 	//get FCS
+		LSB_Received 	= SST_ReadByte(SST_LINE); 	//get LSB
+		MSB_Received 	= SST_ReadByte(SST_LINE); 	//get MSB
+		readFCS_Client	= SST_ReadByte(SST_LINE); 	//get FCS
 
 		// Client FC check
 		if(FCS_Step(MSB_Received, FCS_Step(LSB_Received, 0x00)) != readFCS_Client) 
@@ -204,5 +203,3 @@ signed char ADT7486A_Read(unsigned char writeFCS_Originator
 	// Valid temperature
 	return SUCCESS;
 }
-
-#endif // _ADT7486A_
