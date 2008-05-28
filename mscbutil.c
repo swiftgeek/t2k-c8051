@@ -1728,9 +1728,15 @@ void lcd_puts(char *str)
 
 #ifdef HAVE_RTC
 
+#ifdef TEMP36		//NW modification has been made because pins are different for TEMP36
+sbit RTC_IO  = P0 ^ 6;
+sbit RTC_CLK = P2 ^ 4;
+sbit RTC_CE  = P0 ^ 5;  //A new pin has been assigned because there is no internal DAC
+
+#else
 sbit RTC_IO  = P1 ^ 2;
 sbit RTC_CLK = P1 ^ 3;
-
+#endif
 /********************************************************************\
 
   Routine: Real time clock (RTC) routines
@@ -1745,7 +1751,11 @@ sbit RTC_CLK = P1 ^ 3;
 void rtc_output(unsigned char d)
 {
    unsigned char i;
-
+#ifdef TEMP36 //NW
+   SFRPAGE = CONFIG_PAGE; 
+   P0MDOUT |= 0x60;	//Set the RTC CE to be push/pull
+   P2MDOUT |= 0x10;	//Set the SCLK line to be push/pull
+#endif
    for (i=0 ; i<8 ; i++) {
       RTC_IO = d & 0x01;
       delay_us(10);
@@ -1761,10 +1771,27 @@ void rtc_output(unsigned char d)
 
 unsigned char rtc_read_byte(unsigned char adr)
 {
+
    unsigned char idata i, d, m;
-
+#ifdef TEMP36 //NW
+   SFRPAGE = CONFIG_PAGE;
+   P0MDOUT |= 0x60;	//Set the RTC CE to be push/pull
+   P2MDOUT |= 0x10;	//Set the SCLK line to be push/pull
+#endif
    RTC_CLK = 0;
+#ifdef TEMP36 //NW
 
+	RTC_CE=1;
+
+	SFRPAGE = CONFIG_PAGE;
+   P0MDOUT |= 0x40; 
+
+	rtc_output(adr);
+
+   /* switch port to input */
+   SFRPAGE = CONFIG_PAGE;
+   P0MDOUT &= ~ 0x40;
+#else
    SFRPAGE = DAC1_PAGE;
    DAC1L = 0xFF;
    DAC1H = 0x0F;
@@ -1780,6 +1807,8 @@ unsigned char rtc_read_byte(unsigned char adr)
    /* switch port to input */
    SFRPAGE = CONFIG_PAGE;
    P1MDOUT &= ~ 0x04;
+
+#endif
    RTC_IO = 1;
 
    delay_us(10);
@@ -1792,13 +1821,16 @@ unsigned char rtc_read_byte(unsigned char adr)
       delay_us(10);
       m <<= 1;
    }
-
+#ifdef TEMP36   //NW
+	SFRPAGE = CONFIG_PAGE;
+	RTC_CE=0;
+#else
    SFRPAGE = DAC1_PAGE;
    DAC1L = 0;
    DAC1H = 0;
 
    delay_us(10); // wait for DAC
-
+#endif
    return d;
 }
 
@@ -1806,10 +1838,27 @@ unsigned char rtc_read_byte(unsigned char adr)
 
 void rtc_read(unsigned char d[6])
 {
+
    unsigned char idata i, j, b, m;
-
+#ifdef TEMP36 //NW
+   SFRPAGE = CONFIG_PAGE;
+   P0MDOUT |= 0x60;	//Set the RTC CE to be push/pull
+   P2MDOUT |= 0x10;	//Set the SCLK line to be push/pull
+#endif
    RTC_CLK = 0;
+#ifdef TEMP36    //NW
+	SFRPAGE = CONFIG_PAGE;
+	RTC_CE=1;
 
+ 	SFRPAGE = CONFIG_PAGE;
+   P0MDOUT |= 0x40; 
+
+   rtc_output(0xBF); // burst read
+
+   /* switch port to input */
+   SFRPAGE = CONFIG_PAGE;
+   P0MDOUT &= ~ 0x40;
+#else
    SFRPAGE = DAC1_PAGE;
    DAC1L = 0xFF;
    DAC1H = 0x0F;
@@ -1825,7 +1874,9 @@ void rtc_read(unsigned char d[6])
    /* switch port to input */
    SFRPAGE = CONFIG_PAGE;
    P1MDOUT &= ~ 0x04;
-   RTC_IO = 1;
+   
+#endif	
+	RTC_IO = 1;
 
    delay_us(10); // wait for RTC output
 
@@ -1848,43 +1899,84 @@ void rtc_read(unsigned char d[6])
         d[2] = b;
    }
 
+#ifdef TEMP36   //NW
+	SFRPAGE = CONFIG_PAGE;
+	RTC_CE=0;
+#else
    SFRPAGE = DAC1_PAGE;
    DAC1L = 0;
    DAC1H = 0;
 
    delay_us(10); // wait for DAC
+#endif
 }
 
 /*------------------------------------------------------------------*/
-
+    
 void rtc_write_byte(unsigned char adr, unsigned char d)
 {
+#ifdef TEMP36 //NW
+   SFRPAGE = CONFIG_PAGE;
+   P0MDOUT |= 0x60;	//Set the RTC CE to be push/pull
+   P2MDOUT |= 0x10;	//Set the SCLK line to be push/pull
+#endif
    RTC_CLK = 0;
+#ifdef TEMP36   //NW
+	SFRPAGE = CONFIG_PAGE;
+	RTC_CE=1;
+
+	/* switch port to output */
+   SFRPAGE = CONFIG_PAGE;
+   P0MDOUT |= 0x40; 
+#else
    SFRPAGE = DAC1_PAGE;
    DAC1L = 0xFF;
    DAC1H = 0x0F;
 
    delay_us(10); // wait for DAC
 
+
    /* switch port to output */
    SFRPAGE = CONFIG_PAGE;
    P1MDOUT |= 0x04; 
 
+#endif
    rtc_output(adr);
    rtc_output(d);
 
+#ifdef TEMP36	//NW
+	SFRPAGE = CONFIG_PAGE;
+	RTC_CE=0;
+#else  
+  
    SFRPAGE = DAC1_PAGE;
    DAC1L = 0;
    DAC1H = 0;
 
+
    delay_us(10); // wait for DAC
+#endif
 }
 
 /*------------------------------------------------------------------*/
 
 void rtc_write(unsigned char d[6])
 {
+#ifdef TEMP36 //NW
+   SFRPAGE = CONFIG_PAGE;
+   P0MDOUT |= 0x60;	//Set the RTC CE to be push/pull
+   P2MDOUT |= 0x10;	//Set the SCLK line to be push/pull
+#endif
    RTC_CLK = 0;
+#ifdef TEMP36		//NW
+	SFRPAGE = CONFIG_PAGE;
+	RTC_CE=1;
+
+   /* switch port to output */
+   SFRPAGE = CONFIG_PAGE;
+   P0MDOUT |= 0x40; 
+
+#else
    SFRPAGE = DAC1_PAGE;
    DAC1L = 0xFF;
    DAC1H = 0x0F;
@@ -1894,6 +1986,7 @@ void rtc_write(unsigned char d[6])
    /* switch port to output */
    SFRPAGE = CONFIG_PAGE;
    P1MDOUT |= 0x04; 
+#endif
 
    rtc_output(0xBE); // clock burst write
 
@@ -1906,15 +1999,21 @@ void rtc_write(unsigned char d[6])
    rtc_output(d[2]);     // year
    rtc_output(0);        // WP
 
+#ifdef TEMP36		//NW
+	SFRPAGE = CONFIG_PAGE;
+	RTC_CE=0;
+#else
    SFRPAGE = DAC1_PAGE;
    DAC1L = 0;
    DAC1H = 0;
 
    delay_us(10); // wait for DAC
+#endif
 }
-
+//NW: The following is coded out because the compiler complains about the functions
+//are not in used
 /*------------------------------------------------------------------*/
-
+/*
 void rtc_write_item(unsigned char item, unsigned char d)
 {
    switch (item) {
@@ -1926,9 +2025,9 @@ void rtc_write_item(unsigned char item, unsigned char d)
       case 5: rtc_write_byte(0x80, d); break; // second
    }
 }
-
+*/
 /*------------------------------------------------------------------*/
-
+/*
 void rtc_conv_date(unsigned char d[6], char *str)
 {
    if (d[0] == 0xFF) { // no clock mounted
@@ -1951,7 +2050,7 @@ void rtc_conv_date(unsigned char d[6], char *str)
 }
 
 /*------------------------------------------------------------------*/
-
+/*
 void rtc_conv_time(unsigned char d[6], char *str)
 {
    if (d[0] == 0xFF) { // no clock mounted
@@ -1974,7 +2073,7 @@ void rtc_conv_time(unsigned char d[6], char *str)
 }
 
 /*------------------------------------------------------------------*/
-
+/*
 void rtc_print()
 {
    unsigned char xdata d[6];
@@ -1989,9 +2088,9 @@ void rtc_print()
       puts(str);
    }
 }
-
+*/
 /*------------------------------------------------------------------*/
-
+/*
 unsigned char rtc_present()
 {
    unsigned char d;
