@@ -1,6 +1,7 @@
 /**********************************************************************************\
-  Name:         SST_handler.c
+  Name:         temp36_SST_handler.c
   Created by:   Brian Lee                May/11/2007
+  Modified by:  Noel Wu						  May/12/2008
   Contents:     SST protocol for general MSCB-embedded experiments
   Last updated: Jun/08/2007
 
@@ -10,22 +11,16 @@
 // --------------------------------------------------------
 //  Include files
 // --------------------------------------------------------
-#ifndef _SST_PROTOCOL_
-#define _SST_PROTOCOL_
-#endif
-
 #include "../mscbemb.h"
 #include "SST_handler.h"
 
 /* SST related variables */
-sbit SST = MSCB_SST1; //This variable chooses between SST lines (e.g. SST1, SST2, etc)
-				 //Default to SST1
-				 //SFR definitions of SST1 and SST2 ports are defined in mscbemb.h
-
-#ifndef SST_ClientResponse
-sbit SST_ClientResponse = SST1_ClientResponse; //Response read through
-											   			  //comparator output
+//SFR definitions of SST1 and SST2 ports are defined in mscbemb.h
+sbit SST1 = MSCB_SST1; //This variable chooses between SST lines (e.g. SST1, SST2, etc)
+#ifdef MORE_THAN_ONE_LINE
+sbit SST2 = MSCB_SST2;
 #endif
+
 
 /* CRC-8 Table for Polynomial x^8 + x^2 + x^1 + 1 (used for FCS in SST Protocol) */
 unsigned char code FCS_data[] = {
@@ -69,7 +64,10 @@ unsigned char code FCS_data[] = {
 Single calculation for 8-bit cyclic redundancy checksum
 usually used in FORWARD recursive format (to save code-space)
 Reentrant function 
-@param msg
+/code
+
+/endcode
+@param msg 
 @param fcs
 @return FCS value  (CRC-8 code)                 							
 */
@@ -82,9 +80,9 @@ unsigned char FCS_Step(unsigned int msg, unsigned char fcs) reentrant {
 /**
 Initialize the SST bus by issuing a CLEAR
 */
-void SST_Init(void) {	
+void SST_Init(int SST_LINE) {	
 	//Clear the SST signals (drive Low for a certain period)
-	SST_Clear();
+	SST_Clear(SST_LINE);
 }
 
 //
@@ -93,9 +91,14 @@ void SST_Init(void) {
 Drives SST line to low for a reasonably long time which gives enough time for
 the SST to go idle. 
 */
-void SST_Clear(void) {
+void SST_Clear(int SST_LINE) {
   // Test this, high low high low
-  SST = 0;
+  if(SST_LINE==1)
+     SST1 = 0;
+#ifdef MORE_THAN_ONE_LINE
+  else if(SST_LINE==2)					
+  	  SST2 = 0;
+#endif
   delay_ms(SST_CLEAR_DELAY); //clear to 0's
 }
 
@@ -105,12 +108,24 @@ void SST_Clear(void) {
 Drives SST line to a logic "high" or "1", which is defined as driving SST
 high 3/4 cycle of t_Bit and the rest of it low
 */
-void SST_DrvHigh(void) {
+void SST_DrvHigh(int SST_LINE) {
   // Drive high for 0.75 * T_BIT
-  SST = 1;
-  delay_us(T_H1);
-  SST = 0; //drive the rest of T_BIT low
-  delay_us(T_BIT - T_H1);
+  if(SST_LINE==1)
+  {
+     SST1 = 1;
+     delay_us(T_H1);
+     SST1 = 0; //drive the rest of T_BIT low
+     delay_us(T_BIT - T_H1);
+  }
+#ifdef MORE_THAN_ONE_LINE
+  else if(SST_LINE==2)
+  {
+     SST2 = 1;
+     delay_us(T_H1);
+     SST2 = 0; //drive the rest of T_BIT low
+     delay_us(T_BIT - T_H1);
+  }
+#endif
 }
 
 //
@@ -119,12 +134,24 @@ void SST_DrvHigh(void) {
 To drive SST line to a logic "low" or "0", which is defined as driving SST
 high for 1/4 cycle of t_Bit and the rest of it low.
 */
-void SST_DrvLow(void) {
+void SST_DrvLow(int SST_LINE) {
   // Drive high for 0.25 * T_BIT
-  SST = 1;
-  delay_us(T_H0);
-  SST = 0; //drive the rest of T_BIT low
-  delay_us(T_BIT - T_H0);
+  if(SST_LINE==1)
+  {
+     SST1 = 1;
+     delay_us(T_H0);
+     SST1 = 0; //drive the rest of T_BIT low
+     delay_us(T_BIT - T_H0);
+  }
+#ifdef MORE_THAN_ONE_LINE
+  else if(SST_LINE==2)
+  {
+     SST2 = 1;
+     delay_us(T_H0);
+     SST2 = 0; //drive the rest of T_BIT low
+     delay_us(T_BIT - T_H0);
+  }   
+#endif
 }
 
 //
@@ -133,29 +160,60 @@ void SST_DrvLow(void) {
 Get the comparator bit value (Client response)
 @return Read Bit from Client's Response, Only 1 or 0 (gone through comparator)
 */
-unsigned char SST_DrvClientResponse(void) {
+unsigned char SST_DrvClientResponse(int SST_LINE) {
 
   // Drive SST to logic "0" (high 1/4, low 3/4) to let Client
   // drive SST to its desired state
-  SST = 1; //Drv high (originator drives SST bus high to toggle client's response
-  delay_us (1);
-  SST = 0;
+  if(SST_LINE==1)
+  {
+     SST1 = 1; //Drv high (originator drives SST bus high to toggle client's response
+     delay_us (1);
+     SST1 = 0;
 
-  delay_us(T_BIT / 2.0); //delay for half of T_BIT time
+     delay_us(T_BIT / 2.0); //delay for half of T_BIT time
 
-  SFRPAGE  = CPT1_PAGE;	
-  if(SST_ClientResponse == 1)
+#if defined(CPU_C8051F120)
+     SFRPAGE  = CPT0_PAGE;	
+#endif
+     if(SST_ClientResponse1 == 1)
   //if the comparator output is high, then return 1
-  {
-    delay_us(2 * T_H0);
-    return 1;
+     {
+        delay_us(2 * T_H0);
+        return 1;
+     }
+     else
+     //if the comparator output is low, then return 0
+     {
+        delay_us(2 * T_H0);
+        return 0;
+     }
   }
-  else
-  //if the comparator output is low, then return 0
+#ifdef MORE_THAN_ONE_LINE
+  else if(SST_LINE==2)
   {
-    delay_us(2 * T_H0);
-    return 0;
-  }
+     SST2 = 1; //Drv high (originator drives SST bus high to toggle client's response
+     delay_us (1);
+     SST2 = 0;
+
+     delay_us(T_BIT / 2.0); //delay for half of T_BIT time
+
+#if defined(CPU_C8051F120)
+     SFRPAGE  = CPT1_PAGE;	
+#endif
+     if(SST_ClientResponse2 == 1)
+  //if the comparator output is high, then return 1
+     {
+        delay_us(2 * T_H0);
+        return 1;
+     }
+     else
+     //if the comparator output is low, then return 0
+     {
+        delay_us(2 * T_H0);
+        return 0;
+     }
+   }
+#endif
 }
 
 //
@@ -164,27 +222,28 @@ unsigned char SST_DrvClientResponse(void) {
 Write a single byte to the SST device.
 @param datByte
 */
-void SST_WriteByte(unsigned char datByte) {
+void SST_WriteByte(unsigned char datByte, int SST_LINE) {
   //declare local variables
   unsigned char toBeDrv = 0;
   int i = 0;
 
   for(i = 7; i >= 0; i--) //8bits in 1 byte
   {
-    toBeDrv = (datByte >> i) & 0x1;
-    if(toBeDrv == 0) //if the bit to be driven is logic 0
-    {
-      SST_DrvLow();
-    }
-    else if(toBeDrv == 1) //if the bit to be driven is logic 1
-    {
-      SST_DrvHigh();
-    }
-    else //if the bit to be driven is neither 0 nor 1
-    {
-      return; //error
-    }
+     toBeDrv = (datByte >> i) & 0x1;
+     if(toBeDrv == 0) //if the bit to be driven is logic 0
+     {
+        SST_DrvLow(SST_LINE);
+     }
+     else if(toBeDrv == 1) //if the bit to be driven is logic 1
+     {
+        SST_DrvHigh(SST_LINE);
+     }
+     else //if the bit to be driven is neither 0 nor 1
+     {
+        return; //error
+     }
   }
+
 }
 
 //
@@ -193,14 +252,14 @@ void SST_WriteByte(unsigned char datByte) {
 Read a single byte from the SST device.
 @return Device Client byte response
 */
-unsigned char SST_ReadByte(void) {
+unsigned char SST_ReadByte(int SST_LINE) {
   unsigned char din = 0;
   unsigned char dataReceived = 0;
   signed char j = 0;
 
   for(j = 7; j >= 0; j--) {
     // Get single bit from comparator
-    din = SST_DrvClientResponse();
+    din = SST_DrvClientResponse(SST_LINE);
     dataReceived |= (din << j);
   }
   return dataReceived;
