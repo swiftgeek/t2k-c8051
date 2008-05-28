@@ -144,6 +144,12 @@ void setup(void)
    XBR2 = 0x44;
 #endif
 
+#ifdef TEMP36
+   XBR0 = 0x04;                 // Enable XBar,UART0
+   XBR1 = 0x00;
+   XBR2 = 0x40;
+#endif
+
 #ifdef TREVAL_12X
    XBR1 = 0x00;                 // Sysclk (0x80) Disable
    XBR2 = 0x40;                 // UART1 Disable
@@ -252,6 +258,10 @@ void setup(void)
 
 #ifdef HAVE_RTC
    rtc_set = 0;
+#ifdef TEMP36			//NW 		
+	rtc_init();			//No write protection
+	rtc_write_byte(0x90,0xA5);  //Charges the supercap
+#endif
 #endif
 
    RS485_ENABLE = 0;
