@@ -98,6 +98,9 @@
 #ifdef	feb64
 #define FEB64
 #endif
+#ifdef	temp36
+#define TEMP36
+#endif
 #ifdef	loader
 #define  LOADER
 #endif
@@ -482,8 +485,6 @@ sbit RS485_ENABLE = P0 ^ 3; //MSCB communication enable port
 #undef LED_1
 #endif
  
-
-
 //The pins that are used for Threshold voltages for comparator 0 and comparator 1
 #define MSCB_SST1 P1 ^ 0 //SST1 line  SST_IO (Write/Push-Pull)
 #define SST_ClientResponse (char) ((CPT1CN & 0x40) >> 6) //Comparator1 overflow bit
@@ -502,7 +503,28 @@ sbit RS485_ENABLE = P0 ^ 3; //MSCB communication enable port
 // SST
 
 sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
+/*--------------------------------*/
+#elif defined(TEMP36)
+#include <c8051F120.h>
+#define CPU_C8051F120
+#define LED_0 P2 ^ 7 
+#define LED_1 P2 ^ 6
+#define LED_ON 1
+sbit RS485_ENABLE = P0 ^ 2; //MSCB communication enable port
 
+// SST
+#define MORE_THAN_ONE_LINE	//2 SST Lines
+#define MSCB_SST1 P0^3 //SST1 line  SST_IO (Write/Push-Pull)
+#define MSCB_SST2 P0^4
+#define SST_ClientResponse1 (char) ((CPT0CN & 0x40) >> 6) //Comparator1 overflow bit
+#define SST_ClientResponse2 (char) ((CPT1CN & 0x40) >> 6)
+
+//SPI
+#define MSCB_SPI_SCK  P2 ^ 4
+#define MSCB_SPI_MISO P2 ^ 1
+#define MSCB_SPI_MOSI P2 ^ 5 
+
+#define HAVE_RTC
 /*--------------------------------*/
 #elif defined(LOADER)
 #include <c8051F120.h>
@@ -538,7 +560,8 @@ sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
 
 
 //The pins that are used for Threshold voltages for comparator 0 and comparator 1
-#define MSCB_SST1 P1 ^ 0 //SST1 line  SST_IO (Write/Push-Pull)
+#define MSCB_SST1 P0 ^ 3 //SST1 line  SST_IO (Write/Push-Pull)
+#define MSCB_SST2 P0 ^ 4 
 #define SST_ClientResponse (char) ((CPT1CN & 0x40) >> 6) //Comparator1 overflow bit
 
 sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
@@ -964,6 +987,5 @@ void rtc_write_item(unsigned char item, unsigned char d);
 void rtc_conv_date(unsigned char d[6], char *str);
 void rtc_conv_time(unsigned char d[6], char *str);
 void rtc_print(void);
-
-
+void rtc_write_byte(unsigned char adr, unsigned char d);
 
