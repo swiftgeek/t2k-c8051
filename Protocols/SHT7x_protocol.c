@@ -62,9 +62,9 @@ unsigned char SHT7x_FCS_Step(unsigned int msg, unsigned char fcs) reentrant {
 
 
 //Initializing the SHT7x protocol communication
-void SHT7x_Init(void){
+void SHT7x_Init(int humsen){
 	
-	SHT7x_ConnectionReset();
+	SHT7x_ConnectionReset(humsen);
 }
 
 //----------------------------------------------------------------------------------
@@ -74,18 +74,26 @@ void SHT7x_Init(void){
 //			   _    _    _    _    _    _    _    _    _        ___     ___
 // SCK : __| |__| |__| |__| |__| |__| |__| |__| |__| |______|   |___|   |______
 //---------------------------------------------------------------------------------
-void SHT7x_ConnectionReset(void){
+void SHT7x_ConnectionReset(int humsen){
 	unsigned char i;
-
-	//Initial state
-	SHT7x_DATA=1; 
-	SHT7x_SCK=0;	  		
-
+	if(humsen==1)
+	{
+		//Initial state
+		SHT7x_DATA1=1; 
+		SHT7x_SCK1=0;	  		
+	}
+#ifdef MORETHANONEHUM
+	else if(humsen==2)
+	{
+		SHT7x_DATA2=1;
+		SHT7x_SCK2=0;
+	}
+#endif
 	for(i=0;i<9;i++){ 	//9 SCK cycles
-		  SHT7x_ClockOnce();
+		  SHT7x_ClockOnce(humsen);
 		}
 
-	SHT7x_TransStart(); //transmission start
+	SHT7x_TransStart(humsen); //transmission start
 }        
  
 //---------------------------------------------------------------------------------
@@ -95,49 +103,100 @@ void SHT7x_ConnectionReset(void){
 // 			___     ___
 // SCK : __|   |___|   |______	
 //---------------------------------------------------------------------------------
-void SHT7x_TransStart(void){
-
-	//Initial state
-	SHT7x_DATA=1; 
-	delay_us(SHT7x_DELAY);
-	SHT7x_SCK=1;
-	delay_us(SHT7x_DELAY);
-	SHT7x_DATA=0;
-	delay_us(SHT7x_DELAY);
-	SHT7x_SCK=0;
-	delay_us(SHT7x_DELAY);		//low pulse, but in the sample code, it used 3 _nop_();
-	SHT7x_SCK=1;
-	delay_us(SHT7x_DELAY);
-	SHT7x_DATA=1;
-	delay_us(SHT7x_DELAY);
-	SHT7x_SCK=0;
+void SHT7x_TransStart(int humsen){
+	if(humsen==1)
+	{
+		//Initial state
+		SHT7x_DATA1=1; 
+		delay_us(SHT7x_DELAY);
+		SHT7x_SCK1=1;
+		delay_us(SHT7x_DELAY);
+		SHT7x_DATA1=0;
+		delay_us(SHT7x_DELAY);
+		SHT7x_SCK1=0;
+		delay_us(SHT7x_DELAY);		//low pulse, but in the sample code, it used 3 _nop_();
+		SHT7x_SCK1=1;
+		delay_us(SHT7x_DELAY);
+		SHT7x_DATA1=1;
+		delay_us(SHT7x_DELAY);
+		SHT7x_SCK1=0;
+	}
+#ifdef MORETHANONEHUM
+	else if(humsen==2)
+	{
+		//Initial state
+		SHT7x_DATA2=1; 
+		delay_us(SHT7x_DELAY);
+		SHT7x_SCK2=1;
+		delay_us(SHT7x_DELAY);
+		SHT7x_DATA2=0;
+		delay_us(SHT7x_DELAY);
+		SHT7x_SCK2=0;
+		delay_us(SHT7x_DELAY);		//low pulse, but in the sample code, it used 3 _nop_();
+		SHT7x_SCK2=1;
+		delay_us(SHT7x_DELAY);
+		SHT7x_DATA2=1;
+		delay_us(SHT7x_DELAY);
+		SHT7x_SCK2=0;
+	}
+#endif
 }
 
-void SHT7x_ClockOnce(void){
-
-	delay_us(SHT7x_DELAY);
-	SHT7x_SCK = 1;
-	delay_us(SHT7x_DELAY);
-	SHT7x_SCK = 0;
+void SHT7x_ClockOnce(int humsen){
+	if(humsen==1)
+	{
+		delay_us(SHT7x_DELAY);
+		SHT7x_SCK1 = 1;
+		delay_us(SHT7x_DELAY);
+		SHT7x_SCK1 = 0;
+	}
+#ifdef MORETHANONEHUM
+	else if(humsen==2)
+	{
+		delay_us(SHT7x_DELAY);
+		SHT7x_SCK2 = 1;
+		delay_us(SHT7x_DELAY);
+		SHT7x_SCK2 = 0;
+	}
+#endif
 }
 
 // Writes a byte on the DATA line and checks the acknowledge
-unsigned char SHT7x_WriteByte(unsigned char dataToSend){
+unsigned char SHT7x_WriteByte(unsigned char dataToSend, int humsen){
 
   signed char xdata i;
   unsigned char xdata status;
-  for(i = 7; i >= 0; i--) {
-	  	SHT7x_DATA = (dataToSend >> i) & 0x01;
-		SHT7x_ClockOnce();	
+  if(humsen==1)
+  {  
+  		for(i = 7; i >= 0; i--) {
+	  		SHT7x_DATA1 = (dataToSend >> i) & 0x01;
+			SHT7x_ClockOnce(humsen);	
+		}
+
+		SHT7x_DATA1 = 1;							//Release SHT7x_DATA line
+		delay_us(SHT7x_DELAY);
+		SHT7x_SCK1 = 1;								//The 9th clock cycle for ACK/NACK
+		delay_us(SHT7x_DELAY);											   
+		status = SHT7x_DATA1;						//Check ACK(SHT7x_DATA will be pulled down by SHT7x device)
+		SHT7x_SCK1=0;
+		delay_us(SHT7x_DELAY);
 	}
-	
-	SHT7x_DATA = 1;							//Release SHT7x_DATA line
-	delay_us(SHT7x_DELAY);
-	SHT7x_SCK = 1;								//The 9th clock cycle for ACK/NACK
-	delay_us(SHT7x_DELAY);											   
-	status = SHT7x_DATA;						//Check ACK(SHT7x_DATA will be pulled down by SHT7x device)
-	SHT7x_SCK=0;
-	delay_us(SHT7x_DELAY);
+#ifdef MORETHANONEHUM
+	else if(humsen==2)
+	{
+  		for(i = 7; i >= 0; i--) {
+	  		SHT7x_DATA2 = (dataToSend >> i) & 0x01;
+			SHT7x_ClockOnce(humsen);	
+		}
+		SHT7x_DATA2 = 1;							//Release SHT7x_DATA line
+		delay_us(SHT7x_DELAY);
+		SHT7x_SCK2 = 1;								//The 9th clock cycle for ACK/NACK
+		delay_us(SHT7x_DELAY);											   
+		status = SHT7x_DATA2;						//Check ACK(SHT7x_DATA will be pulled down by SHT7x device)
+		SHT7x_SCK2=0;
+		delay_us(SHT7x_DELAY);
+	}	
+#endif
 	if (status == NACK)						//1 in case of No acknowledge
 		 return ERROR; 						
 	return DONE;
@@ -145,36 +204,57 @@ unsigned char SHT7x_WriteByte(unsigned char dataToSend){
 
 
 // Reads a byte form the SHT7x_DATA line and gives an acknowledge in case of "ack=1"
-unsigned char SHT7x_ReadByte(unsigned char read_flag){
+unsigned char SHT7x_ReadByte(unsigned char read_flag, int humsen){
 
 	signed char i;
 	unsigned char dataReceived=0, din=0;
-	
-	SHT7x_DATA=1; //release SHT7x_DATA line
-	//NW Read when the clock line is high 
-	for (i = 7; i >= 0; i--) { 
-	 	SHT7x_ClockOnce2();
-		din = SHT7x_DATA;
-    	dataReceived |= (din << i);	
-	}
-	
-	/*
-	for (i = 7; i >= 0; i--) { 
-		din = SHT7x_DATA;
-    	dataReceived |= (din << i);
-	 	SHT7x_ClockOnce();	
-	}
-	*/
-	SHT7x_DATA=read_flag; 		//Sending ACK/NACK. In case of ACK pull the SHT7x_DATA line low
-	SHT7x_ClockOnce();			//The 9th clock cycle
-	SHT7x_DATA=1;		  			//Release the SHT7x_DATA line
+	if(humsen==1)
+	{
+		SHT7x_DATA1=1; //release SHT7x_DATA line
+		//NW Read when the clock line is high 
+		for (i = 7; i >= 0; i--) { 
+	 		SHT7x_ClockOnce2(humsen);
+			din = SHT7x_DATA1;
+    		dataReceived |= (din << i);	
+		}
 
+		SHT7x_DATA1=read_flag; 		//Sending ACK/NACK. In case of ACK pull the SHT7x_DATA line low
+		SHT7x_ClockOnce(humsen);			//The 9th clock cycle
+		SHT7x_DATA1=1;		  			//Release the SHT7x_DATA line
+	}
+#ifdef MORETHANONEHUM
+	else if(humsen==2)
+	{
+		SHT7x_DATA2=1; //release SHT7x_DATA line
+		//NW Read when the clock line is high 
+		for (i = 7; i >= 0; i--) { 
+	 		SHT7x_ClockOnce2(humsen);
+			din = SHT7x_DATA2;
+    		dataReceived |= (din << i);	
+		}
+		SHT7x_DATA2=read_flag; 		//Sending ACK/NACK. In case of ACK pull the SHT7x_DATA line low
+		SHT7x_ClockOnce(humsen);			//The 9th clock cycle
+		SHT7x_DATA2=1;		  			//Release the SHT7x_DATA line
+	}
+#endif
 	return dataReceived;
 }
-void SHT7x_ClockOnce2(void){
+void SHT7x_ClockOnce2(int humsen){
 
-	delay_us(SHT7x_DELAY);
-	SHT7x_SCK = 0;
-	delay_us(SHT7x_DELAY);
-	SHT7x_SCK = 1;
+	if(humsen==1)
+	{
+		delay_us(SHT7x_DELAY);
+		SHT7x_SCK1 = 0;
+		delay_us(SHT7x_DELAY);
+		SHT7x_SCK1 = 1;
+	}
+#ifdef MORETHANONEHUM
+	else if(humsen==2)
+	{
+		delay_us(SHT7x_DELAY);
+		SHT7x_SCK2 = 0;
+		delay_us(SHT7x_DELAY);
+		SHT7x_SCK2 = 1;
+	}
+#endif-+
 }
