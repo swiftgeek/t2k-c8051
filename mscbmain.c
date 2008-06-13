@@ -258,9 +258,12 @@ void setup(void)
 
 #ifdef HAVE_RTC
    rtc_set = 0;
-#ifdef TEMP36			//NW 		
+#ifdef TEMP36			//NW
+   SFRPAGE = CONFIG_PAGE;
+   P0MDOUT |= 0x60;	//Set the RTC CE to be push/pull
+   P2MDOUT |= 0x10;	//Set the SCLK line to be push/pull	
 	rtc_init();			//No write protection
-	rtc_write_byte(0x90,0xA5);  //Charges the supercap
+	rtc_write_byte(0x90,0xA5);  //Charges the supercap, uses 2k ohm resistor and 1 diode
 #endif
 #endif
 

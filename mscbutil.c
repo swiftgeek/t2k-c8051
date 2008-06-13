@@ -1751,11 +1751,6 @@ sbit RTC_CLK = P1 ^ 3;
 void rtc_output(unsigned char d)
 {
    unsigned char i;
-#ifdef TEMP36 //NW
-   SFRPAGE = CONFIG_PAGE; 
-   P0MDOUT |= 0x60;	//Set the RTC CE to be push/pull
-   P2MDOUT |= 0x10;	//Set the SCLK line to be push/pull
-#endif
    for (i=0 ; i<8 ; i++) {
       RTC_IO = d & 0x01;
       delay_us(10);
@@ -1773,11 +1768,6 @@ unsigned char rtc_read_byte(unsigned char adr)
 {
 
    unsigned char idata i, d, m;
-#ifdef TEMP36 //NW
-   SFRPAGE = CONFIG_PAGE;
-   P0MDOUT |= 0x60;	//Set the RTC CE to be push/pull
-   P2MDOUT |= 0x10;	//Set the SCLK line to be push/pull
-#endif
    RTC_CLK = 0;
 #ifdef TEMP36 //NW
 
@@ -1840,11 +1830,6 @@ void rtc_read(unsigned char d[6])
 {
 
    unsigned char idata i, j, b, m;
-#ifdef TEMP36 //NW
-   SFRPAGE = CONFIG_PAGE;
-   P0MDOUT |= 0x60;	//Set the RTC CE to be push/pull
-   P2MDOUT |= 0x10;	//Set the SCLK line to be push/pull
-#endif
    RTC_CLK = 0;
 #ifdef TEMP36    //NW
 	SFRPAGE = CONFIG_PAGE;
@@ -1915,11 +1900,6 @@ void rtc_read(unsigned char d[6])
     
 void rtc_write_byte(unsigned char adr, unsigned char d)
 {
-#ifdef TEMP36 //NW
-   SFRPAGE = CONFIG_PAGE;
-   P0MDOUT |= 0x60;	//Set the RTC CE to be push/pull
-   P2MDOUT |= 0x10;	//Set the SCLK line to be push/pull
-#endif
    RTC_CLK = 0;
 #ifdef TEMP36   //NW
 	SFRPAGE = CONFIG_PAGE;
@@ -1962,11 +1942,6 @@ void rtc_write_byte(unsigned char adr, unsigned char d)
 
 void rtc_write(unsigned char d[6])
 {
-#ifdef TEMP36 //NW
-   SFRPAGE = CONFIG_PAGE;
-   P0MDOUT |= 0x60;	//Set the RTC CE to be push/pull
-   P2MDOUT |= 0x10;	//Set the SCLK line to be push/pull
-#endif
    RTC_CLK = 0;
 #ifdef TEMP36		//NW
 	SFRPAGE = CONFIG_PAGE;
