@@ -1,0 +1,129 @@
+/*!\page TEMP36 TEMP36 board 
+
+\section temp36purpose Purpose
+The main objective of the temp36 board is to measure tempearture at 36 different locations using 18 ADT7486A. The ADT7486A is a digital temperature
+sensor chip that is capable of measuring temperature with a resolution of 0.016 degrees Celsius. Each ADT7486A is connected to two diodes that can be
+placed in remote locations and due to properties of the diode and a combination of the chip itself each one will deviate from each other in terms of 
+absolute temperature. The ADT7486A contains a register to compensates for this offet. The absolute temperature of the diodes are calibrated with an extremely 
+precise temperature instrument in an isolated environment. These offset values are stored onto a 16kb external EEPROM chip and are read and sent to the 
+ADT7486A during initization. In addition, the temp36 board also contains a real time clock and an external DAC for generic purposes.
+
+\section temp36 Functions
+- @ref exttemp : 36 external temperature measurements
+- @ref memory : 16kb of memory
+- @ref rtc : Real Time Clock
+- @ref dac : DAC
+*/
+ 
+ /*!\page exttemp Temperature Sensors
+ \section Purpose
+ADT7486A is a digital temperature sensor chip that is capable of measuring temperature with a resolution of 0.016 degrees Celsius. 
+The ADT7486A drives current to a external temperature sensitive diode, calculates the temperature, and converts it into digital information 
+which can be accessed through SST protocol. 9 ADT7486A with different addresses are connected to one SST Line and a maximum of 2 diodes can be 
+attached to one chip. The diodes are connected to the chip using shielded twisted pair cables to reduce error in transmission and improve accuracy
+of the temperature reading in a noisy environment. Each temperature diode have a slight deviation from each other in absolute term which, in most cases,
+they do not differ by 1 degree Celsius. To adjust this effect, ADT7486A contains two internal registers, one for each channel, to correct this offset 
+with a resolution of 0.25 degrees Celsius. 
+
+The first picture below shows the microcontroller communicating with one ADT7486A chip. Since there is no clock line in this protocol, the two 
+binary states are interpreted by the timing of the on and off sequence. (Refer to the SST protocol section for more details). The total time to write
+and read from one chip is 2.1 miliseconds.  
+
+The second picture below shows a typical temperature reading from the diode. Temperature for most diodes fluctuates within 0.2 degree Celsius. A rolling average function
+has been implemented for the 36 channels. The user has to specify the maximum number of average point below 30 in order to initate the function. The index for the 
+MSCB registers are shown in the MSCB Registers section. In addition, if there is a transmission error, a speific bit in the unit byte TExx-xx variable will 
+be set. For example, if there is a temperature reading error for temp04 the TE01-08 variable will show 0000 1000(assuming the other temperature sensors are 
+reading correctly).   
+
+
+*\image html temp36-adt7486a.gif
+
+
+*\image html temperaturereading.gif
+
+
+\section MSCB Registers
+\code
+- MSCB(9..44)   : Float : Temp[1..36]  : 36 external temperature in degrees Celsius
+- MSCB(67)      : Int   : Navg         : Maxmium number of rolling average 
+- MSCB(68..103) : Float : Tavg[1..36]  : 36 external rolling average temperature in degrees Celsius
+- MSCB(4..8)    : Float : TExx-xx      : Errors in Transmission
+\endcode
+*/
+
+/*!\page memory EEPROM
+\section Purpose
+AT25160AN is a 16Kb EEPROM chip. Quarter of the memory is protected and used to store the serial number of the board and 
+the 36 calibrated external temperature offset values. These values cannot be modified by the users. The rest of the memory is divided 
+into equal sized pages ranged from 0-5, and is intended for the users to save any modifications to the
+offset values. The MCU is capable of reading and writing from these pages by setting the MSCB variables.
+
+The EEPROM uses a standard SPI communication protocol. For each 32 bytes of transmission, the EEPROM transfers the data in its buffer to its memory;
+hence, this will require a transmission delay. Refer to the sections below for the principle of operation. 
+
+\section Operation
+- Write the desired offset value in the eepValue register (MSCB 45) to change the default value 
+- Write the correct key in the eeCtrSet register (MSCB 46) to modify or read the EEPAGE array 
+	-0x3Cxx00yy
+	-3C is the key for writing/reading EEPAGE array 
+	-Set xx to 11 for reading from the EEPAGE array and 22 for writing to it
+	-Set yy to be the particular index value to be modified or read from	
+- Write (0..5) to the eepage register(MSCB 5) to specify the page in the EEPROM to write or read 
+- Set the appropriate bit of control register (MSCB 1), and this will initiate 
+	-Set a 1 for writing to the PAGE
+	-Set a 2 for reading from the PAGE
+	-Set a 4 for clearing the PAGE 
+- Wait for the appropriate bit of the status register(MSCB 2) to be set
+	-1 for writing and clearing 
+	-2 for reading
+	
+\section Example
+The following steps store data into the page 2 of the external EEPROM.
+-# Write 1 into MSCB(45) (Temperature offset value)
+-# Write 0x3C220001 into MSCB(46) (Change the temperature offset value for temperature02 to be 1)
+-# Write 2 into MSCB(4) (Page 2 of the EEPROM)   
+-# Write 1 into MSCB(1) (Write the default values and the change to page 2)
+\section temp36-eeprom MSCB Registers
+\code
+MSCB(1)	: Byte : Control    	: eeprom control
+MSCB(4)	: Byte : EEPage		: eeprom page
+MSCB(2) : Byte : Status         : eeprom status
+MSCB(45): Float: eepValue 	: eeprom value
+MSCB(46): Byte : eeCtrSet	: eeprom set 
+\endcode
+*/
+
+/*!\page rtc Real Time Clock
+\section Purpose
+The DS1302 chip is a trickle charge timekeeping chip. It is connected to a supercapacitor and is intended to keep the time record even when 
+the main power is turned off. With the newest version of the msc application, upon connection, one can type in "sync" to synchronize the real time
+clock with the computer, and the clock along with other information can be read by typing in the letter "i". The chip consumes less than 300nA at 
+2V and the supercap is 0.47F; therefore, in theory the chip can keep track of the time for about one month with the main power turned off. 
+*/
+
+/*!\page dac Digital to Analog Conversion
+\section Purpose
+The LT1665CGN is a 8 bit digital to anaglog convertor and consists of 8 output ports. It is intended for generic purposes. The reference voltage 
+is 2.5V and is the maximum that the ports can output. Set the MSCB register which corresponds to the output pin on the board with a desired 
+value and in return the voltage will change to that level.
+
+\section MSCB Registers
+\code
+MSCB(59..66) : Int :DAC[0..7]  : Digital to Analog Raw Data 
+\endcode
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
