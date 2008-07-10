@@ -55,14 +55,14 @@
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "FPGATemp",   &user_data.FPGATemp,  // 12
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "VregTemp",   &user_data.VregTemp,  // 13
    
-	4, UNIT_BYTE,            0, 0, 		0, "rpIs4V",      &user_data.rpIs4V,      // 14
-   4, UNIT_BYTE, 			    0, 0, 		0, "rIsSC",       &user_data.rIsSC,       // 15
-   4, UNIT_BYTE,            0, 0,		0, "rA33VMon",    &user_data.rA33VMon,    // 16
-   4, UNIT_BYTE,            0, 0, 		0, "rA25VMon",    &user_data.rA25VMon,    // 17
-   4, UNIT_BYTE,            0, 0, 		0, "rp15VMon",    &user_data.rp15VMon,    // 18
-	4, UNIT_BYTE,            0, 0, 		0, "rp18VMon",    &user_data.rp18VMon,    // 19	
-	4, UNIT_BYTE,            0, 0, 		0, "rp25VMon",    &user_data.rp25VMon,    // 20
-	4, UNIT_BYTE,            0, 0, 		0, "rp33VMon",    &user_data.rp33VMon,    // 21	
+	2, UNIT_BYTE,            0, 0, 		0, "rpIs4V",      &user_data.rpIs4V,      // 14
+   2, UNIT_BYTE, 			    0, 0, 		0, "rIsSC",       &user_data.rIsSC,       // 15
+   2, UNIT_BYTE,            0, 0,		0, "rA33VMon",    &user_data.rA33VMon,    // 16
+   2, UNIT_BYTE,            0, 0, 		0, "rA25VMon",    &user_data.rA25VMon,    // 17
+   2, UNIT_BYTE,            0, 0, 		0, "rp15VMon",    &user_data.rp15VMon,    // 18
+	2, UNIT_BYTE,            0, 0, 		0, "rp18VMon",    &user_data.rp18VMon,    // 19	
+	2, UNIT_BYTE,            0, 0, 		0, "rp25VMon",    &user_data.rp25VMon,    // 20
+	2, UNIT_BYTE,            0, 0, 		0, "rp33VMon",    &user_data.rp33VMon,    // 21	
 	0
  };
 
@@ -106,7 +106,8 @@ float read_voltage(unsigned char channel,unsigned int *rvalue)
  /*---- User init function ------------------------------------------*/
  void user_init(unsigned char init)
  {
- 	char xdata add;
+   char xdata pca_add=0;
+	unsigned int xdata crate_add=0, board_address=0;
 
  	if (init){
     	user_data.InteTemp = 0;	
@@ -142,11 +143,21 @@ float read_voltage(unsigned char channel,unsigned int *rvalue)
    CPT1MD   = 0x03; //Comparator1 Mode Selection
    //Use default, adequate TYP (CP1 Response Time, no edge triggered interrupt)
 
-   ADT7486A_Init();
+   ADT7486A_Init(SST_LINE1);
  #endif
 	
 	user_data.error = 0;
-	add = cur_sub_addr();
+	
+	//Configure and read the address
+   //C C C C C C 0 B B is the MSCB Addr[8..0], 9 bits
+   //Modifying what the board reads from the PCA 
+	SFRPAGE = CONFIG_PAGE;
+	P3MDOUT = 0x00;
+	P3=0xFF;
+	pca_add= P3;
+   crate_add= ((~pca_add)<<3)  & 0x01F8;
+   board_address=(crate_add &  0x01FC) | 0x0004;
+   sys_info.node_addr   = board_address; 
  }
 
 /*---- User write function -----------------------------------------*/
@@ -177,7 +188,8 @@ void user_write(unsigned char index) reentrant
 void user_loop(void) {
 
 	float volt,temperature, *pfData;
-	unsigned int *rpfData,rvolt;
+	unsigned int *xdata rpfData;
+	unsigned int xdata rvolt;
 
   //
   //-----------------------------------------------------------------------------
@@ -208,7 +220,7 @@ void user_loop(void) {
   //-----------------------------------------------------------------------------
   // Internal temperature reading
 	 #ifdef _ADT7486A_
-    	if(!ADT7486A_Cmd(ADT7486A_address, GetIntTemp, &temperature)){
+    	if(!ADT7486A_Cmd(ADT7486A_address, GetIntTemp, SST_LINE1, &temperature)){
 		  IntssTT = CLEAR;
         DISABLE_INTERRUPTS;
          user_data.InteTemp = temperature;
@@ -224,7 +236,7 @@ void user_loop(void) {
   //
   //-----------------------------------------------------------------------------
   // External temperature readings
-     if(!ADT7486A_Cmd(ADT7486A_address, GetExt1Temp, &temperature)){
+     if(!ADT7486A_Cmd(ADT7486A_address, GetExt1Temp, SST_LINE1, &temperature)){
          Ext1ssTT = CLEAR;
          DISABLE_INTERRUPTS;
           user_data.FPGATemp = temperature;
@@ -237,7 +249,7 @@ void user_loop(void) {
          ENABLE_INTERRUPTS;
      }
     
-     if(!ADT7486A_Cmd(ADT7486A_address, GetExt2Temp, &temperature)){
+     if(!ADT7486A_Cmd(ADT7486A_address, GetExt2Temp, SST_LINE1, &temperature)){
          Ext2ssTT = CLEAR;
          DISABLE_INTERRUPTS;
           user_data.VregTemp = temperature;
