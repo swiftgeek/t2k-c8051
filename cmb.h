@@ -12,17 +12,17 @@
 #define _CMB_H_
 
 // External Vrefa 
-#define VREF       2.445f
+#define VREF       2.44f
 
 // ADT7486A temperature addresses
 #define ADT7486A_address 0x48	
-
+#define SST_LINE1 1
 // Global definition
 #define CLEAR 0
 #define SET 1
 
 // ESR Error Register
-unsigned long bdata rESR;
+unsigned char bdata rESR;
 sbit IntssTT   = rESR ^ 0; 
 sbit Ext1ssTT  = rESR ^ 1;	
 sbit Ext2ssTT  = rESR ^ 2;	
