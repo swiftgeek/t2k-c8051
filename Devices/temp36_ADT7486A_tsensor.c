@@ -5,7 +5,7 @@ Modified By:	Bahman Sotoodian					 March/03/2008
 
 Contents: 		Temperature sensor array (ADT7486A) handler
 
-$Id: ADT7486A_tsensor.c 130 2008-03-19 21:27:42Z bryerton $
+$Id$
 \**********************************************************************************/
 
 #ifndef _SST_PROTOCOL_

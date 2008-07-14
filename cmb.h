@@ -6,7 +6,7 @@
  Contents:     Application specific (user) part of
  					Midas Slow Control for CMB board. 					 
  
- $Id:$
+ $Id$
  \********************************************************************/
 #ifndef _CMB_H_
 #define _CMB_H_

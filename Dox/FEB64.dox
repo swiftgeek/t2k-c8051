@@ -2,8 +2,9 @@
 
 @section feb64purpose Purpose
 The FEB64 board handles 64 MPPC Silicon PM mounted in the FGD detector.
-Reads the 64 (76) MPPC channels. The information is stored in the
-AFTER SCA chip. On Trigger each cell of the analog memory (76x512 cells) is
+Its main purpose is to read the 64 (76) MPPC channels. The information is stored in the
+AFTER SCA chip (Analog memory).
+On Trigger each cell of the analog memory (76x512 cells) is
 digitized, the digital value representing the amplitude at a given time (20Msps)
 is transmitted to the @ref CMB card. In parallel to its main function, the
 FE64 has a "slow control" section which run completely independently from the
@@ -64,11 +65,11 @@ Monitor periodically (~1Hz) all the DC Voltages required for the proper
 operation of the FEB64 card. Corresponding current consumption is also 
 monitored as well as the local FEB64 board temperature.
 The FEB64 can be controlled for the following operation:
-- Manual Power Up sequence, ie: turn ON all the DC Voltage (Def:OFF)
+- Manual Power Up sequence, ie: turn ON all the DC Voltage (Def:OFF).
 - Manual Shutdown sequence, ie: turn OFF all the DC Voltage.
-- Toggle the activation of the Charge Pump (Def:OFF)
-- Set Individual Bias DAC
-- Save/Restore current Qpump, Switch, Bias DACs
+- Toggle the activation of the Charge Pump (Def:OFF).
+- Set Individual Bias DACs.
+- Save/Restore current Qpump, Switch, Bias DACs.
 
 @section The Overal Monitoring Procedure
 * <center>
@@ -213,8 +214,8 @@ monitoring is available as well.
 @code
 MSCB(2)     : Byte    : Control^1   : Toggle the Charge Pump Votlage 
 MSCB(3)     : Byte    : Status^1    : Qpump current state [on=1, off=0]
-MSCB(5)     : 2 Bytes : rQpump      : Qpump DAQ which cause the Qpump output to be 48V-73V   
-MSCB(5)     : Byte    : swBias      : HV Switch Arm [7..0] (bitwise)
+MSCB(5)     : WORD    : rQpump      : Qpump DAQ which cause the Qpump output to be 48V-73V   
+MSCB(6)     : Byte    : swBias      : HV Switch Arm [7..0] (bitwise)
 MSCB(25..32): Float   : VBMon[7..0] : Channel Voltage monitoring [V]
 MSCB(8)     : Float   : VBias       : Qpump Voltage monitoring [V]
 MSCB(9)     : Float   : IBias       : Qpump Current monitoring [uA]
@@ -291,7 +292,7 @@ This voltage will be monitored regularly. This voltage will be provided to the C
 
 @section Operation
 After the Qpump has been turned on, each HV branch can be set by the appropriate bit setting of
-the MSCB(5). The switches are controlled by PCA9539PW-T device which uses the @ref smbus.
+the MSCB(6). The switches are controlled by PCA9539PW-T device which uses the @ref smbus.
 
 @section vbiasmscb MSCB Registers
 @code
@@ -351,8 +352,12 @@ When the DAQ output is set at 0V, the voltage across the corresponding MPPC is a
 
 @section Operation 
 Setting the MSCB(116..53) will set the corresponding DAQ and in return would change the voltage across
-the corresponding MPPC. The communication with the DAQ is performed through the @ref spiprotoc .
+the corresponding MPPC. The communication with the DAQ is performed through the @ref spiprotoc.
 
+@section biasscb MSCB Registers
+@code
+MSCB(116..53): BYTE : rbias[63..0] : DAC Bias Voltage 0..5V   
+@endcode
 @section DataSheet
 <a href=http://www.digchip.com/datasheets/download_datasheet.php?id=537292&part-number=LTC1665CGN >LTC1655CGN</a>
 */
@@ -368,7 +373,7 @@ The 8 ASUM Threshold DAC are available in the Slow Control.
 @code
 MSCB(52..45): BYTE : rAsum[7..0] : ASUM Threshold DAC   
 @endcode
-
+*/
 
 /*!<!----------------------------------------------------------------->*/
 /*!@page eeprom Config Memory
@@ -411,9 +416,9 @@ MSCB(4)   : BYTE  : EEPage      : eeprom page number
 The following steps will be used to store data into the page 2 of the external EEPROM.
 -# Write 2 into MSCB(4)
 -# Write 0x10 into MSCB(2)
+-# Wait for control bit turned off.
 
 @section DataSheet
-
 <a href=http://www.digchip.com/datasheets/download_datasheet.php?id=161550&part-number=AT25080A >AT2508A</a>
 */
 
@@ -421,9 +426,7 @@ The following steps will be used to store data into the page 2 of the external E
 /*!@page feb64_limits FEB64 Limit parameters
 
 @section Purpose
-The parameter limits are hardcoded and require a special procedure for parameter modification. This operation
-should be done stricly by expert.
-...
+The parameter limits are accessible by expert opertation, If change is required, please contact FGD-Slow Control Software team (midas@triumf.ca)...
 
 @section Limits
 <center>

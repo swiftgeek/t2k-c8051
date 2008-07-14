@@ -6,7 +6,7 @@
 
   Contents:     Temperature sensor array (ADT7486A) handler for feb64 board
 
-  $Id: ADT7486A_tsensor.h 141 2008-03-26 22:29:59Z fgddaq $
+  $Id$
 \**********************************************************************************/
 
 #ifndef  _ADT7486A_TSENSOR_H

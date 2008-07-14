@@ -4,7 +4,7 @@
   Created: 		March 28, 2008
   Description:	Humidity and Temperature measurements
 
-  $Id:$
+  $Id$
 \**********************************************************************************/
 
 #ifndef _SHT7x_PROTOCOL_H

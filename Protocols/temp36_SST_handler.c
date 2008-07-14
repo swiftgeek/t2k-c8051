@@ -5,7 +5,7 @@
   Contents:     SST protocol for general MSCB-embedded experiments
   Last updated: Jun/08/2007
 
-  $Id: SST_handler.c 148 2008-04-03 22:23:25Z fgddaq $
+  $Id$
 \**********************************************************************************/
 
 // --------------------------------------------------------

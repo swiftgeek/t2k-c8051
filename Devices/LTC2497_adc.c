@@ -7,7 +7,7 @@
   Contents:     This ADC provides the VBias and IBias readbacks,
   					 uses interrupt based SMB protocol.
 
-  $Id: LTC2497_adc.c 104 2008-03-15 01:13:21Z bryerton $
+  $Id$
 
 \********************************************************************/
 //  Need to have FEB64 defined

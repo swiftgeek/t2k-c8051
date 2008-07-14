@@ -6,7 +6,7 @@
 
   Contents:     EEPROM (T25160AN-10SU-2.7) user interface
 
-  $Id:$
+  $Id$
 
 \********************************************************************/
 //  need to have EXT_EEPROM defined

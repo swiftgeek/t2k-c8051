@@ -7,7 +7,7 @@
                 Midas Slow Control Bus protocol
                 for External EEPROM of FEB64 test board
 
-  $Id:$
+  $Id$
 
 \********************************************************************/
 #ifndef  _LOADER_H_
@@ -121,3 +121,4 @@ unsigned char user_read(unsigned char index);
 unsigned char user_func(unsigned char *data_in, unsigned char *data_out);
 
 #endif
+
