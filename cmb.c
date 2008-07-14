@@ -151,10 +151,12 @@ float read_voltage(unsigned char channel,unsigned int *rvalue)
 	//Configure and read the address
    //C C C C C C 0 B B is the MSCB Addr[8..0], 9 bits
    //Modifying what the board reads from the PCA 
-	SFRPAGE = CONFIG_PAGE;
-	P3MDOUT = 0x00;
-	P3=0xFF;
-	pca_add= P3;
+   SFRPAGE = CONFIG_PAGE;
+   //change p3 to digital input
+   P3MDOUT = 0x00;
+   P3=0xFF;
+   //read crate address
+   pca_add= P3;
    crate_add= ((~pca_add)<<3)  & 0x01F8;
    board_address=(crate_add &  0x01FC) | 0x0004;
    sys_info.node_addr   = board_address; 
