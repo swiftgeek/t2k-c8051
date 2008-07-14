@@ -79,7 +79,7 @@
  unsigned long xdata currentTime=0, sstTime=0,sstExtTime=0;
  unsigned char xdata eeprom_channel,channel, chipAdd, chipChan;
  unsigned char xdata BiasIndex, AsumIndex;
-
+ unsigned char xdata SST_LINE1=1;
  // Global bit register
  unsigned char bdata bChange;
 // Local flag
@@ -94,12 +94,12 @@
  sbit ASUM_SYNC      = P1 ^7;
  sbit ASUM_TESTN     = P1 ^6;
  sbit ASUM_PWDN      = P1 ^5;
- 
+
  // User Data structure declaration
  //-----------------------------------------------------------------------------
  MSCB_INFO_VAR code vars[] = {
    4, UNIT_BYTE,            0, 0,           0, "SerialN",    &user_data.SerialN,      // 0
-   4, UNIT_BYTE,            0, 0,           0, "Error",      &user_data.error,        // 1
+   2, UNIT_BYTE,            0, 0,           0, "Error",      &user_data.error,        // 1
    1, UNIT_BYTE,            0, 0,           0, "Control",    &user_data.control,      // 2
    1, UNIT_BYTE,            0, 0,           0, "Status",     &user_data.status,       // 3
    1, UNIT_BYTE,            0, 0,           0, "EEPage",     &user_data.eepage,       // 4
@@ -253,7 +253,8 @@
    4, UNIT_BYTE,            0, 0,MSCBF_FLOAT|MSCBF_HIDDEN,  "eepValue", &user_data.eepValue,  // 141
    4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,              "eeCtrSet", &user_data.eeCtrSet,  // 142
    4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,              "asumctl", &user_data.asumCtl,    // 143
-   0
+
+	0
  };
  MSCB_INFO_VAR *variables = vars;   // Structure mapping
 
@@ -304,7 +305,6 @@ float read_voltage(unsigned char channel,unsigned int *rvalue)
 
 
 
-
  /********************************************************************\
  Application specific init and in/output routines
  \********************************************************************/
@@ -312,8 +312,9 @@ float read_voltage(unsigned char channel,unsigned int *rvalue)
  /*---- User init function ------------------------------------------*/
  void user_init(unsigned char init)
  {
-   char xdata i, add;
-
+   char xdata i, pca_add=0;
+	unsigned int xdata crate_add=0, board_address=0;
+	float xdata temperature;
  // Inititialize local variables
 
    /* Format the SVN and store this code SVN revision into the system */
@@ -327,7 +328,7 @@ float read_voltage(unsigned char channel,unsigned int *rvalue)
      (svn_rev_code[8]-'0')*10+
      (svn_rev_code[9]-'0');
 
-   add = cur_sub_addr();
+   board_address = cur_sub_addr();
 
 
  //
@@ -340,13 +341,16 @@ float read_voltage(unsigned char channel,unsigned int *rvalue)
      user_data.swBias     = 0x00;    // Turn off all the switches
      user_data.rQpump     = 0x00;    // Set to the lowest scale
      for(i=0;i<8;i++){
-       user_data.rAsum[i] = 0x80;
+        user_data.rAsum[i] = 0x80;
         user_data.Temp[i]  = 0.0;
-    }
-    for(i=0;i<64;i++)
-       user_data.rBias[i] = 0xFF;    // Set the DAC to lowest value
-
-    sys_info.group_addr  = 400;
+     }
+     for(i=0;i<64;i++)
+	  {
+        user_data.rBias[i] = 0xFF;    // Set the DAC to lowest value
+	   	 //NW mirror of the rBias values
+		  ltc1665mirror[i]      = 0xFF;
+	  }
+     sys_info.group_addr  = 400;
    }
 
  //
@@ -377,19 +381,6 @@ float read_voltage(unsigned char channel,unsigned int *rvalue)
    P3MDOUT |= 0x1C; //Setting the Regulators control pins to push pull (3 Vreg)
    adc_internal_init();
 
- //
- // SST Temperatures
- //-----------------------------------------------------------------------------
- #ifdef _ADT7486A_
-   SFRPAGE  = CONFIG_PAGE;
-   P1MDOUT |= 0x01; // Setting the SST_DRV (SST) to push pull
-   SFRPAGE  = CPT1_PAGE;
-   CPT1CN  |= 0x80; // Enable the Comparator 1
-   CPT1MD   = 0x03; //Comparator1 Mode Selection
-   //Use default, adequate TYP (CP1 Response Time, no edge triggered interrupt)
-
-   ADT7486A_Init();
- #endif
 
  //
  // SPI Dac (Bias voltages, 64 channels)
@@ -440,7 +431,7 @@ float read_voltage(unsigned char channel,unsigned int *rvalue)
  // SMB Bias Voltage switches
  //-----------------------------------------------------------------------------
  #ifdef _PCA9539_
-   PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
+  PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
 
   PCA9539_WriteByte(BIAS_OUTPUT_ENABLE);
   PCA9539_WriteByte(BACKPLANE_INPUT_ENABLE);
@@ -448,20 +439,28 @@ float read_voltage(unsigned char channel,unsigned int *rvalue)
  //
  // Physical backplane address retrieval
  //-----------------------------------------------------------------------------
-  PCA9539_Read(BACKPLANE_READ, &add, 1);
-   sys_info.node_addr   = 0x1; // add;
+  PCA9539_Read(BACKPLANE_READ, &pca_add, 1);
+  //C C C C C C 0 B B is the MSCB Addr[8..0], 9 bits
+  //Modifying what the board reads from the PCA 
+  crate_add= ((~pca_add)<<1)  & 0x01F8;
+  board_address=crate_add | ((~pca_add) & 0x0003);
+  sys_info.node_addr   = board_address; 
  #endif
 
  //
  // EEPROM memory Initialization/Retrieval
  //-----------------------------------------------------------------------------
 #ifdef _ExtEEPROM_
-  ExtEEPROM_Read(WP_START_ADDR,(unsigned char*)&eepage, PAGE_SIZE);
+  //ExtEEPROM_Read(WP_START_ADDR,(unsigned char*)&eepage, PAGE_SIZE);
   DISABLE_INTERRUPTS;
   for(i=0;i<8;i++)
   		user_data.rAsum[i] = eepage.rasum[i];
   for(i=0;i<64;i++)
+  {
   		user_data.rBias[i] = eepage.rbias[i];
+		//NW mirror of the rBias values
+		ltc1665mirror[i] = eepage.rbias[i];
+  }
   user_data.SerialN = eepage.SerialN;
   user_data.rQpump = eepage.rqpump;
   user_data.swBias = eepage.SWbias;
@@ -475,25 +474,58 @@ float read_voltage(unsigned char channel,unsigned int *rvalue)
 // #endif
 
  //
+ // SST Temperatures
+ //-----------------------------------------------------------------------------
+ #ifdef _ADT7486A_
+   SFRPAGE  = CONFIG_PAGE;
+   P1MDOUT |= 0x01; // Setting the SST_DRV (SST) to push pull
+   SFRPAGE  = CPT1_PAGE;
+   CPT1CN  |= 0x80; // Enable the Comparator 1
+   CPT1MD   = 0x03; //Comparator1 Mode Selection
+   //Use default, adequate TYP (CP1 Response Time, no edge triggered interrupt)
+
+   ADT7486A_Init(SST_LINE1); //NW modified ADT7486A to support more than one line
+ 
+   for (channel=0;channel < NCHANNEL_ADT7486A; channel++){
+      ADT7486A_Cmd(ADT7486A_addrArray[channel]
+		           , SetExt1Offset
+					  , ((int)eepage.ext1offset[channel]>>8)
+					  , (int)eepage.ext1offset[channel]
+					  , SST_LINE1
+					  , &temperature); //NW
+		delay_us(100);
+
+   }
+   for (channel=0;channel < NCHANNEL_ADT7486A; channel++){
+      ADT7486A_Cmd(ADT7486A_addrArray[channel]
+		           , SetExt2Offset
+					  , ((int)eepage.ext2offset[channel]>>8)
+					  , (int)eepage.ext2offset[channel]
+					  , SST_LINE1
+					  , &temperature); //NW
+		delay_us(100);
+   }
+ #endif
+ //
  // Final steps
  //-----------------------------------------------------------------------------
-  rESR = 0x00000000;              // No error!
+  rESR = 0x0000;              // No error!
   rEER = 0x00;                    // Active page 0, To be written or read page 0
   rCTL = 0;                       // Reset control
   rCSR = 0x00;                    // Initial CSR
-  user_data.error      = rESR;    // Default Error register
+  user_data.error      = rESR;    // Default Error register //NW
   user_data.eepage     = rEER;    // Default EE page
   user_data.status     = rCSR;    // Shutdown state
   user_data.control    = 0x80;    // Manual Shutdown
   for(i=0;i<8;i++){
-    user_data.VBMon[i] = 0;
-    user_data.IBMon[i] = 0;
-    user_data.rVBMon[i] = 0;
-    user_data.rIBMon[i] = 0;
-    user_data.Temp[i]  = 0.0;
-    user_data.eepValue = 0.0;
-    user_data.eeCtrSet = 0;
-   }
+     user_data.VBMon[i] = 0;
+     user_data.IBMon[i] = 0;
+     user_data.rVBMon[i] = 0;
+     user_data.rIBMon[i] = 0;
+     user_data.Temp[i]  = 0.0;
+     user_data.eepValue = 0.0;
+     user_data.eeCtrSet = 0;
+  }
 
   EN_pD5V  = ON;                  // Needed for debug
   EN_pA5V  = ON;                  //-PAA- needed for ASUM test
@@ -547,9 +579,6 @@ void user_write(unsigned char index) reentrant
 //
 // -- Index Bias Dac
    if ((index >= FIRST_BIAS) && (index < LAST_BIAS)) {
-     BiasIndex = (index - FIRST_BIAS);
-     chipChan = (BiasIndex / 8) + 1;
-     chipAdd  = (BiasIndex % 8) + 1;
     #ifdef _LTC1665_
          LTC1665_Flag = 1;
     #endif
@@ -623,14 +652,21 @@ void user_write(unsigned char index) reentrant
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void user_loop(void) {
-  float xdata volt, temperature, *pfData, adc_value, *eep_address;
+  float xdata volt, temperature, adc_value;
+  //NW make sure pointers are stored in xdata
+  float* xdata pfData;
+  float* xdata eep_address;
   unsigned long xdata mask;
-  signed long result;
+  signed long xdata result;
   unsigned int xdata eeptemp_addr,*rpfData,rvolt;
-  unsigned char xdata swConversion,*eeptemp_source;
+  //NW make sure eeptemp_source is stored in xdata
+  unsigned char* xdata eeptemp_source;
+  unsigned char xdata swConversion;
   unsigned char xdata eep_request;
-  static  unsigned char eeprom_flag =CLEAR;
-  static char adcChannel = N_RB_CHANNEL; // special start value
+  static  unsigned char xdata eeprom_flag =CLEAR;
+  static xdata char adcChannel = N_RB_CHANNEL; // special start value
+  //ltc1665
+  char xdata ltc1665_index, ltc1665_chipChan, ltc1665_chipAdd; 
 
   //
   //-----------------------------------------------------------------------------
@@ -670,32 +706,42 @@ void user_loop(void) {
   //
   //-----------------------------------------------------------------------------
   //Checking the eeprom control flag
-  if (EEP_CTR_FLAG){
+  if (EEP_CTR_FLAG)
+  {
       //Checking for the special instruction
-      if (user_data.eeCtrSet & EEP_CTRL_KEY){
+      if (user_data.eeCtrSet & EEP_CTRL_KEY)
+		{
 	   	eep_address = (float*)&eepage + (user_data.eeCtrSet & 0x000000ff);
    	   //Checking for the write request
-			if (user_data.eeCtrSet & EEP_CTRL_WRITE){
-      		if ((user_data.eeCtrSet & 0x000000ff) < (SERIALN_ADD - WP_START_ADDR))
-					*eep_address = user_data.eepValue;
+		if (user_data.eeCtrSet & EEP_CTRL_WRITE){
+			//NW added (SERIALN_ADD - WP_START_ADDR) is divided by 4 because the pointer
+			// moves by 4 bytes for every increment
+      	if ((user_data.eeCtrSet & 0x000000ff) <= ((SERIALN_ADD - WP_START_ADDR)/4))
+				*eep_address = user_data.eepValue;
         	  //Checking for the read request
-        	  } else if (user_data.eeCtrSet & EEP_CTRL_READ){
-           	 	user_data.eepValue = *eep_address;
-        	  } else {
-
-          	   // Tell the user that inappropriate task has been requested
-           	   DISABLE_INTERRUPTS;
-          	   user_data.eepValue = EEP_CTRL_INVAL_REQ;
-          	   ENABLE_INTERRUPTS;
-          }
-	
-     	} else {
-
-        	// Tell the user that invalid key has been provided
+      } 
+		else if (user_data.eeCtrSet & EEP_CTRL_READ)
+		{
+			DISABLE_INTERRUPTS;
+         user_data.eepValue = *eep_address;
+			ENABLE_INTERRUPTS;
+      } 
+		else 
+		{
+         // Tell the user that inappropriate task has been requested
          DISABLE_INTERRUPTS;
-         user_data.eepValue = EEP_CTRL_INVAL_KEY;
+         user_data.eepValue = EEP_CTRL_INVAL_REQ;
          ENABLE_INTERRUPTS;
       }
+	
+  } 
+  else 
+  {
+      // Tell the user that invalid key has been provided
+      DISABLE_INTERRUPTS;
+      user_data.eepValue = EEP_CTRL_INVAL_KEY;
+      ENABLE_INTERRUPTS;
+  }
 
       EEP_CTR_FLAG = CLEAR;
   }
@@ -721,7 +767,16 @@ void user_loop(void) {
 
   #ifdef _LTC1665_
      if(LTC1665_Flag) {
-        LTC1665_Cmd(chipAdd,user_data.rBias[BiasIndex] ,chipChan);
+	  	  for(ltc1665_index=0; ltc1665_index<64; ltc1665_index++){
+		     if(ltc1665mirror[ltc1665_index] != user_data.rBias[ltc1665_index]){
+     			  ltc1665_chipChan = (ltc1665_index / 8) + 1;
+     			  ltc1665_chipAdd  = (ltc1665_index % 8) + 1;
+			     LTC1665_Cmd(ltc1665_chipAdd,user_data.rBias[ltc1665_index] , ltc1665_chipChan);
+				  ltc1665mirror[ltc1665_index]=user_data.rBias[ltc1665_index];
+			  }
+		      		
+		  }	
+        //LTC1665_Cmd(chipAdd,user_data.rBias[BiasIndex] ,chipChan);
         LTC1665_Flag = CLEAR;
       }
   #endif
@@ -769,7 +824,7 @@ void user_loop(void) {
     pfData = &(user_data.VBias);
    rpfData = &(user_data.rVBias);
     rCSR = user_data.status;
-    rESR = user_data.error;
+    rESR = user_data.error; //NW
     for (channel=0, mask=0 ; channel<INTERNAL_N_CHN ; channel++, mask++) {
       volt = read_voltage(channel,&rvolt);
       DISABLE_INTERRUPTS;
@@ -805,7 +860,7 @@ void user_loop(void) {
     // Publish Registers
     DISABLE_INTERRUPTS;
     user_data.control = rCTL;
-    user_data.error   = rESR;
+    user_data.error   = rESR; //NW
     user_data.status  = rCSR;
     ENABLE_INTERRUPTS;
 
@@ -813,7 +868,7 @@ void user_loop(void) {
     //
     // uC Temperature reading/monitoring based on time
     rCSR = user_data.status;
-    rESR = user_data.error;
+    rESR = user_data.error; //NW
     // Read uC temperature
     volt = read_voltage(TCHANNEL,&rvolt);
     /* convert to deg. C */
@@ -823,6 +878,7 @@ void user_loop(void) {
     DISABLE_INTERRUPTS;
     user_data.uCTemp = (float) temperature;
     ENABLE_INTERRUPTS;
+	 //NW temperature instead of volt?
     if ((volt >= eepage.luCTlimit) && (volt <= eepage.uuCTlimit)) {
       uCT = OFF; // in range
     } else {
@@ -841,7 +897,7 @@ void user_loop(void) {
     // Publish Registers state
     DISABLE_INTERRUPTS;
     user_data.control = rCTL;
-    user_data.error   = rESR;
+    user_data.error   = rESR; //NW
     user_data.status  = rCSR;
     ENABLE_INTERRUPTS;
 
@@ -907,36 +963,36 @@ void user_loop(void) {
   // Temperature reading/monitoring based on time for external temperature
   if (uptime() - sstExtTime > SST_TIME){
     for (channel=0;channel < NCHANNEL_ADT7486A; channel++){
-        if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt1Temp, &temperature))
+        if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt1Temp, SST_LINE1, &temperature)) //NW
       {
         ExtssTT = CLEAR;
          DISABLE_INTERRUPTS;
          user_data.Temp[channel*2] = temperature;
-         user_data.error   = rESR;
+         user_data.error   = rESR;  //NW
          ENABLE_INTERRUPTS;
       }
       else
       {
         DISABLE_INTERRUPTS;
         ExtssTT = SET;
-        user_data.error   = rESR;
+        user_data.error   = rESR;  //NW
         ENABLE_INTERRUPTS;
       }
      }
     for (channel=0;channel < NCHANNEL_ADT7486A; channel++){
-        if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt2Temp, &temperature))
+        if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt2Temp, SST_LINE1, &temperature)) //NW
       {
         ExtssTT = CLEAR;
          DISABLE_INTERRUPTS;
          user_data.Temp[(channel*2)+1] = temperature;
-         user_data.error   = rESR;
+         user_data.error   = rESR;  //NW
          ENABLE_INTERRUPTS;
       }
       else
       {
         DISABLE_INTERRUPTS;
         ExtssTT = SET;
-        user_data.error   = rESR;
+        user_data.error   = rESR; //NW
         ENABLE_INTERRUPTS;
       }
      }
@@ -949,19 +1005,19 @@ void user_loop(void) {
   // Temperature reading/monitoring based on time for internal temperature
   if (uptime() - sstTime > SST_TIME) {
     for (channel=0;channel < NCHANNEL_ADT7486A; channel++) {
-    if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetIntTemp, &temperature))
+    if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetIntTemp, SST_LINE1, &temperature)) //NW
     {
        IntssTT = 0;
        DISABLE_INTERRUPTS;
        user_data.ssTemp[channel] = temperature;
-       user_data.error   = rESR;
+       user_data.error   = rESR;  //NW
        ENABLE_INTERRUPTS;
     }
     else
     {
       DISABLE_INTERRUPTS;
       IntssTT = 1;
-      user_data.error   = rESR;
+      user_data.error   = rESR; //NW
       ENABLE_INTERRUPTS;
     }
     }
@@ -994,7 +1050,7 @@ void user_loop(void) {
 
        if (eeprom_channel == DONE) {
         SeeS = DONE;
-      eeprom_flag = CLEAR;
+        eeprom_flag = CLEAR;
        CeeS = CLEAR;
        //Set the active page
       user_data.eepage |= ((user_data.eepage & 0x07) <<5);
@@ -1037,8 +1093,9 @@ void user_loop(void) {
   //-----------------------------------------------------------------------------
   //
   // General loop delay
-  // delay_ms(10);
-  //	ASUM_TESTN = ~ASUM_TESTN;
+
+  delay_ms(10);
+
   //
   // General loop delay
 } // End of User loop
