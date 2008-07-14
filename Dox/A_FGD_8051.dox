@@ -1,7 +1,7 @@
 /*! @mainpage MainFGD8051 T2K-FGD Slow control documentation
 
-Online documentation for the all the slow control firmware code based
-on the 8051 micro-controller Silabs series 133 run under the MSCB OS.
+Online documentation for the slow control firmware code based
+on the 8051 micro-controller Silabs series 133 running under the MSCB OS.
 Describe the functionality and implementation of the slow control (SC)
 used in the different sub-projects of the FGD electronics.
 
