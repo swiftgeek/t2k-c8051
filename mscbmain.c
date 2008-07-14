@@ -143,11 +143,25 @@ void setup(void)
    XBR1 = 0x00;
    XBR2 = 0x44;
 #endif
-
+#ifdef LOADER
+   XBR0 = 0x04;                 // Enable XBar,UART0
+   XBR1 = 0x00;
+   XBR2 = 0x40;
+#endif
+#ifdef CMB
+   XBR0 = 0x04;                 // Enable XBar,UART0
+   XBR1 = 0x00;
+   XBR2 = 0x40;
+#endif
 #ifdef TEMP36
    XBR0 = 0x04;                 // Enable XBar,UART0
    XBR1 = 0x00;
    XBR2 = 0x40;
+
+	// run TEMP36 at 6.1 MHz
+   SFRPAGE   = CONFIG_PAGE;
+   OSCICN    = 0x81;            // divide by 4
+   CLKSEL    = 0x00;            // select internal oscillator
 #endif
 
 #ifdef TREVAL_12X
@@ -1466,7 +1480,6 @@ void yield(void)
 #if defined(UART1_DEVICE)
    rs232_output();
 #endif
-
    /* blink LED if not configured */
    if (!configured_addr)
       led_blink(0, 1, 50);
