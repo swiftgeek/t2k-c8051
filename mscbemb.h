@@ -484,10 +484,11 @@ sbit RS485_ENABLE = P0 ^ 3; //MSCB communication enable port
 #if defined(LED_1) 
 #undef LED_1
 #endif
- 
+
+ // SST
 //The pins that are used for Threshold voltages for comparator 0 and comparator 1
 #define MSCB_SST1 P1 ^ 0 //SST1 line  SST_IO (Write/Push-Pull)
-#define SST_ClientResponse (char) ((CPT1CN & 0x40) >> 6) //Comparator1 overflow bit
+#define SST_ClientResponse1 (char) ((CPT1CN & 0x40) >> 6) //Comparator1 overflow bit
 
 #define LED_ON 0 //defines LED "ON" as forcing the specified pin to low
 
@@ -499,8 +500,6 @@ sbit RS485_ENABLE = P0 ^ 3; //MSCB communication enable port
 #define MSCB_SPI_SCK  P2 ^ 3
 #define MSCB_SPI_MISO P2 ^ 1
 #define MSCB_SPI_MOSI P2 ^ 4
-
-// SST
 
 sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
 /*--------------------------------*/
@@ -525,12 +524,17 @@ sbit RS485_ENABLE = P0 ^ 2; //MSCB communication enable port
 #define MSCB_SPI_MOSI P2 ^ 5 
 
 #define HAVE_RTC
+
+//SHT
+#define SHT_DATA1 P1^2
+#define SHT_SCK1  P1^0
+#define SHT_DATA2 P1^6
+#define SHT_SCK2  P1^4
 /*--------------------------------*/
 #elif defined(LOADER)
 #include <c8051F120.h>
 #define CPU_C8051F120
 
-#define LED_0 P2 ^ 7 
 #if defined(LED_1) 
 #undef LED_1
 #endif
@@ -538,13 +542,43 @@ sbit RS485_ENABLE = P0 ^ 2; //MSCB communication enable port
 #define LED_ON 0 //defines LED "ON" as forcing the specified pin to low
 
 // SPI
+#ifdef L_TEMP36
+#define MSCB_SPI_SCK  P2 ^ 4
+#define MSCB_SPI_MISO P2 ^ 1
+#define MSCB_SPI_MOSI P2 ^ 5
+#define RAM_CHIP_SELECT    P2 ^ 0
+#define RAM_HOLD_DOWN      P2 ^ 3
+#define RAM_WRITE_PROTECT  P2 ^ 2
+#define LED_0 P2 ^ 7 
+sbit RS485_ENABLE = P0 ^ 2; //MSCB communication enable port
+#elif L_FEB64
 #define MSCB_SPI_SCK  P2 ^ 3
 #define MSCB_SPI_MISO P2 ^ 1
 #define MSCB_SPI_MOSI P2 ^ 4
-
-
+#define RAM_CHIP_SELECT    P3 ^ 7
+#define RAM_HOLD_DOWN      P2 ^ 2
+#define RAM_WRITE_PROTECT  P2 ^ 0
+#define LED_0 P2 ^ 7 
 sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
-
+#elif L_CMB
+#define MSCB_SPI_SCK  P2 ^ 3
+#define MSCB_SPI_MISO P2 ^ 1
+#define MSCB_SPI_MOSI P2 ^ 4
+#define RAM_CHIP_SELECT    P3 ^ 7
+#define RAM_HOLD_DOWN      P2 ^ 2
+#define RAM_WRITE_PROTECT  P2 ^ 0
+#define LED_0 P2 ^ 7 
+sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
+#elif L_LPB
+#define MSCB_SPI_SCK  P2 ^ 3
+#define MSCB_SPI_MISO P2 ^ 1
+#define MSCB_SPI_MOSI P2 ^ 4
+#define RAM_CHIP_SELECT    P3 ^ 7
+#define RAM_HOLD_DOWN      P2 ^ 2
+#define RAM_WRITE_PROTECT  P2 ^ 0
+#define LED_0 P2 ^ 7 
+sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
+#endif
 
 /*--------------------------------*/
 #elif defined(CMB)
@@ -560,9 +594,8 @@ sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
 
 
 //The pins that are used for Threshold voltages for comparator 0 and comparator 1
-#define MSCB_SST1 P0 ^ 3 //SST1 line  SST_IO (Write/Push-Pull)
-#define MSCB_SST2 P0 ^ 4 
-#define SST_ClientResponse (char) ((CPT1CN & 0x40) >> 6) //Comparator1 overflow bit
+#define MSCB_SST1 P1 ^ 0 //SST1 line  SST_IO (Write/Push-Pull)
+#define SST_ClientResponse1 (char) ((CPT1CN & 0x40) >> 6) //Comparator1 overflow bit
 
 sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
 
