@@ -112,7 +112,8 @@ unsigned char page_size, unsigned char clear)
 	blockSize = page_size / AT2516_MAX_BYTE;
 
 	for (i = 0; i <= blockSize; i++) {  
-		write_addr = write_addr + (i * AT2516_MAX_BYTE);					//Updating the address of mempry 
+		//NW
+		write_addr = i * AT2516_MAX_BYTE;					//Updating the address of mempry 
 		if (i == blockSize) {	
 			counter = (page_size % AT2516_MAX_BYTE);
       }
@@ -176,7 +177,7 @@ unsigned char ExtEEPROM_Status(void)
 	status=SPI_ReadByteRising();
 	delay_us(25);
 	RAM_CSn = 1;
-	delay_us(10);		
+	delay_us(25);		
 
 	return status;
 }
