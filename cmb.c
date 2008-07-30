@@ -39,6 +39,7 @@
  //-----------------------------------------------------------------------------
  MSCB_INFO_VAR code vars[] = {
 	1, UNIT_BYTE,            0, 0, 			  0, "Error",      &user_data.error,      // 0
+	//2, UNIT_BYTE,          0, 0,           0, "Control",    &user_data.control,
 	4, UNIT_BYTE,            0, 0, 			  0, "SerialN",    &user_data.SerianN,    // 1
 	4, UNIT_AMPERE,          0, 0, MSCBF_FLOAT, "pIs4V",      &user_data.pIs4V,      // 2
    4, UNIT_AMPERE, 			 0, 0, MSCBF_FLOAT, "IsSC",       &user_data.IsSC,       // 3
@@ -149,7 +150,7 @@ float read_voltage(unsigned char channel,unsigned int *rvalue)
 	user_data.error = 0;
 	
 	//Configure and read the address
-   //C C C C C C 0 B B is the MSCB Addr[8..0], 9 bits
+   //C C C C C C 1 0 0 is the MSCB Addr[8..0], 9 bits
    //Modifying what the board reads from the PCA 
    SFRPAGE = CONFIG_PAGE;
    //change p3 to digital input
