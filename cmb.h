@@ -12,7 +12,7 @@
 #define _CMB_H_
 
 // External Vrefa 
-#define VREF       2.44f
+#define VREF       2.455f
 
 // ADT7486A temperature addresses
 #define ADT7486A_address 0x48	
@@ -41,7 +41,7 @@ sbit Ext2ssTT  = rESR ^ 2;
 // I		  R1	  R2	  (R1+R2)/R2	Rsense 	Isense/Vout
 //	Is4     2K	  4.7K	6.7/4.7     0.015    10/(100*0.015)= 3.33     
 // IsSC	  2K	  4.7K   6.7/4.7	   0.47		10/(100*4.7) = 0.0106
-float code coeff[8] = {9.5,0.304,1.426,1.426,1.0,1.0,1.426,1.426};
+float code coeff[8] = {1.9,0.304,1.426,1.426,1.0,1.0,1.426,1.426};
 float code offset[8] = {0,0,0,0,0,0,0,0}; 
 
 
