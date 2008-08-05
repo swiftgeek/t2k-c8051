@@ -333,6 +333,7 @@ void user_init(unsigned char init)
    P2MDOUT |= 0x30; // Setting the SPI_MOSI and SPI_SCK to push pull
    LTC2600_Init();
 #endif
+
 }
 
 /*---- User write function -----------------------------------------*/
@@ -585,7 +586,7 @@ void user_loop(void)
    if (CeeR) {
       rCSR = user_data.status;
       eeprom_rstatus = ExtEEPROM_Read  (eeptemp_addr,
-      (unsigned char*)&eepage2, PAGE_SIZE);
+      (unsigned char*)&eepage, PAGE_SIZE);
       if (eeprom_rstatus == DONE){
          CeeR = CLEAR;
          SeeR = DONE;
@@ -643,6 +644,5 @@ void user_loop(void)
       LTC2600_FLAG = CLEAR;
    }
 #endif
-
  	led_blink(1, 1, 250);
 }
