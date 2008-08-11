@@ -44,11 +44,18 @@
 #define N_RB_CHANNEL	 16
 #define EXT_VREF      1.25f //2.4989f
 #define CURR_MEASURE  0x04
+#define V_A2MTABLE       0
+#define I_A2MTABLE       1
 #define VOLT_MEASURE  0x04
-#define GAIN1			 0
-// External ADC channel conversion table
-char code adc_convert[] = { 1, 3, 5, 7, 1, 3, 5, 7, 0, 2, 4, 6, 0, 2, 4, 6 };
+#define GAIN1			 0 // actually x1
+#define GAIN4            1 // actually x4
+#define GAIN8            2 // actually x8
+#define GAIN16           3 // actually x16
+#define GAIN32           4 // actually x32
+#define GAIN64           5 // actually x64
+
 #define CONVER_FAC2 65536.0f
+// External ADC channel conversion table
 // #define CONVER_FAC2	131072.0f	// 65536 x 2
 //Fix  conversion coeff for V/I external ADC
 						 // VBMon1,VBMon3,VBMon5,VBMon7,
@@ -57,6 +64,25 @@ char code adc_convert[] = { 1, 3, 5, 7, 1, 3, 5, 7, 0, 2, 4, 6, 0, 2, 4, 6 };
 						 // IBMon0,VBMon2,IBMon4,IBMon6,
 
 #ifdef FEB64REV0
+//2 of the 3 cards use LTC2497 instead of LTC2495
+char code adc_convert[] = { 1, 3, 5, 7, 1, 3, 5, 7, 0, 2, 4, 6, 0, 2, 4, 6 };
+// External ADC channel conversion table
+struct ADC2MSCB_TABLE {
+char mscbIdx;
+char current;
+float Coef;
+unsigned int Offst;
+};
+struct ADC2MSCB_TABLE xdata adc2mscb_table[16] = {
+  {1, V_A2MTABLE, 100, 0.2278}, {3, V_A2MTABLE, 100, 0.2278}
+, {5, V_A2MTABLE, 100, 0.2278}, {7, V_A2MTABLE, 100, 0.2278}
+, {7, I_A2MTABLE, 1000, 0}, {5, I_A2MTABLE, 1000, 0}
+, {3, I_A2MTABLE, 1000, 0}, {1, I_A2MTABLE, 1000, 0}
+, {0, V_A2MTABLE, 100, 0.2278}, {2, V_A2MTABLE, 100, 0.2278}
+, {4, V_A2MTABLE, 100, 0.2278}, {6, V_A2MTABLE, 100, 0.2278}
+, {6, I_A2MTABLE, 1000, 0}, {4, I_A2MTABLE, 1000, 0}
+, {2, I_A2MTABLE, 1000, 0}, {0, I_A2MTABLE, 1000, 0}
+};
 #define CONVER_FAC1  65536.0f
 float code Mon_Coef[]={  100, 100, 100, 100
                        , 1000, 1000, 1000, 1000
@@ -68,29 +94,38 @@ float code Mon_Offst[]={  0.2278, 0.2278, 0.2278, 0.2278
 								, 0, 0, 0, 0
 								, 0.2278, 0.2278, 0.2278, 0.2278
 								, 0, 0, 0, 0};
-#else
-#define CONVER_FAC1 0.0f
-float code Mon_Coef[]={  101, 101, 101, 101
-                       , 0.01, 0.01, 0.01, 0.01
-							  , 101, 101, 101, 101
-							  , 0.01, 0.01, 0.01, 0.01};
-
+#elif defined(FEB64REV1)
+// External ADC channel conversion table
+struct ADC2MSCB_TABLE {
+char gain;
+char mscbIdx;
+char current;
+float Coef;
+unsigned int Offst;
+};
+struct ADC2MSCB_TABLE xdata adc2mscb_table[16] = {
+  {GAIN64, 1, I_A2MTABLE, 10000, 9350}, {GAIN64, 3, I_A2MTABLE, 10000, 0}
+, {GAIN64, 5, I_A2MTABLE, 10000, 0}, {GAIN64, 7, I_A2MTABLE, 10000, 0}
+, {GAIN1 , 7, V_A2MTABLE, 100, 0}, {GAIN1 , 5, V_A2MTABLE, 100, 0}
+, {GAIN1 , 3, V_A2MTABLE, 100, 0}, {GAIN1 , 1, V_A2MTABLE, 100, 0}
+, {GAIN64, 0, I_A2MTABLE, 10000, 0}, {GAIN64, 2, I_A2MTABLE, 10000, 0}
+, {GAIN64, 4, I_A2MTABLE, 10000, 0}, {GAIN64, 6, I_A2MTABLE, 10000, 0}
+, {GAIN1 , 6, V_A2MTABLE, 100, 0}, {GAIN1 , 4, V_A2MTABLE, 100, 0}
+, {GAIN1 , 2, V_A2MTABLE, 100, 0}, {GAIN1 , 0, V_A2MTABLE, 100, 0}
+};
+#define CONVER_FAC1 0
+/*
+float code Mon_Coef[]={ 10, 10, 10, 10
+                       , 101, 101, 101, 101
+                	   , 10, 10, 10, 10
+				       , 101, 101, 101, 101};
 
 float code Mon_Offst[]={  0.2278, 0.2278, 0.2278, 0.2278
 								, 0, 0, 0, 0
 								, 0.2278, 0.2278, 0.2278, 0.2278
 								, 0, 0, 0, 0};
-#endif
-/*
-float code Mon_Coef[]={41.249, 41.286, 41.231, 40.263,
-                       62.5   ,62.5,	62.5,	  62.5,
-                       41.27 , 41.269, 41.263, 40.278,
-							  62.5,	 62.5,	62.5,	  62.5};
-float code Mon_Offst[]={0.0107, 0.0019, 0.0147,-0.0009,
-								0,		  0,	    0,		0,
-							  -0.0086,-0.0082,-0.0125, 0.0003,
-							   0,		  0,		 0,		0};
 */
+#endif
 /*************************************/
 /*************************************/
 
@@ -103,21 +138,48 @@ float code Mon_Offst[]={0.0107, 0.0019, 0.0147,-0.0009,
 
 /**********Internal ADC**************/
 /************************************/
+#define IGAIN1  0
+#define IGAIN2  1
+#define IGAIN4  2
+#define IGAIN8  3
+#define IGAIN16 4
+
+struct IADC_TABLE {
+    char gain;
+    float coeff;
+    float offset;
+};
+
 //+6Va,+6Vd are off roughly by 5mV, -6Va is off roughly by -30mV
 // Fix conversion coeef for V/I internal ADC
 							 // Vb        Vbi   		+6Vd     +6Va     -6Va  	 -6Ia   +6Ia  	  +6Id 
 //float code  coeff[8]  = {41.448   ,2.496587   ,4.025   ,4.025   ,8.4534   ,0.237  ,0.475  ,0.237};
 //float code  offset[8] = {-0.2813  ,0.         ,-0.06   ,-0.054  ,-18.622  ,0     ,0.     ,0.  };
 #ifdef FEB64REV0
+struct IADC_TABLE xdata iadc_table[8] = {
+  {IGAIN1, 41.448, -0.3464}, {IGAIN1, 2.496587, 0}
+, {IGAIN1, 4.025, -0.06}, {IGAIN1, 4.025, -0.054}
+, {IGAIN1 , 8.4534, -18.622}, {IGAIN1 , 0.237, 0}
+, {IGAIN1 , 0.475, 0}, {IGAIN1 , 0.237, 0}
+};
 float code  coeff[8]  = {41.448   ,2.496587   ,4.025   ,4.025   ,8.4534   ,0.237  ,0.475  ,0.237};
 float code  offset[8] = {-0.3464 ,0.         ,-0.06   ,-0.054  ,-18.622  ,0     ,0.     ,0.  };
-#else
-//offset still needs to be calibrated
-float code  coeff[8]  = {1000   ,10   ,3.980132, 3.980132   ,8.5   ,0.1  ,0.4  ,0.1};
-float code  offset[8] = {0 ,0.         , 0   , 0  ,-18.75  ,0     ,0.     ,0.  };
-#endif
 // External Vref
 #define VREF       2.432f
+#elif defined(FEB64REV1)
+struct IADC_TABLE xdata iadc_table[8] = {
+  {IGAIN1, 100, -0.01}, {IGAIN1, 10, 0}
+, {IGAIN1, 3.980132, 0}, {IGAIN1, 3.980132, 0}
+, {IGAIN1 , 8.5, -18.75}, {IGAIN1 , 0.1, 0}
+, {IGAIN1 , 0.4, 0}, {IGAIN1 , 0.1, 0}
+};
+//offset still needs to be calibrated
+float code  coeff[8]  = {100   ,10   ,3.980132, 3.980132   ,8.5   ,0.1  ,0.4  ,0.1};
+float code  offset[8] = {0 ,0         , 0   , 0  ,-18.75  ,0     ,0     ,0  };
+// External Vref
+#define VREF       2.45f
+#endif
+
 /*************************************/
 /*************************************/
 
@@ -247,9 +309,13 @@ unsigned char xdata ltc1665mirror [64];
 #define SHUTDOWN_MASK   0xFC
 
 // Vreg Enable port assignment
+#ifdef FEB64REV0
 sbit EN_pD5V = P3 ^ 4;
 sbit EN_pA5V = P3 ^ 3;
 sbit EN_nA5V = P3 ^ 2;
+#elif defined(FEB64REV1)
+sbit REG_EN = P3 ^ 2;
+#endif
 
 // CTL register
 unsigned char bdata rCTL;
@@ -342,6 +408,6 @@ void user_loop(void);
 void user_write(unsigned char index) reentrant;
 unsigned char user_read(unsigned char index);
 unsigned char user_func(unsigned char *data_in, unsigned char *data_out);
-float read_voltage(unsigned char channel,unsigned int *rvalue);
-int switchlowhigh(int number);
+float read_voltage(unsigned char channel,unsigned int *rvalue, float coeff, float offset, unsigned char gain);
+void switchonoff(unsigned char command);
 #endif

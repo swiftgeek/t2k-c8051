@@ -16,7 +16,7 @@
  Memory usage:
  define(FEB64) define(_SPI_PROTOCOL_) define(_LTC1665_)
  define(_SMB_PROTOCOL_) define (_LTC1669_)  define(_LTC2600_)
- define(_SST_PROTOCOL_) define(_ADT7486A_)
+ define(_SST_PROTOCOL_) define(_ADT7486A_) 
 
  Program Size: data=139.6 xdata=274 code=13497
  Program Size: data=150.2 xdata=711 code=15134
@@ -115,9 +115,9 @@
    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pDVMon",     &user_data.pDVMon,       //9  
    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pAVMon",     &user_data.pAVMon,       //10 
    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "nAVMon",     &user_data.nAVMon,       //11 
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "nAIMon",     &user_data.nAIMon,       //12 
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "pAIMon",     &user_data.pAIMon,       //13 
-   4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "pDIMon",     &user_data.pDIMon,       //14 
+   4, UNIT_AMPERE,          0, 0, MSCBF_FLOAT, "nAIMon",     &user_data.nAIMon,       //12 
+   4, UNIT_AMPERE,          0, 0, MSCBF_FLOAT, "pAIMon",     &user_data.pAIMon,       //13 
+   4, UNIT_AMPERE,          0, 0, MSCBF_FLOAT, "pDIMon",     &user_data.pDIMon,       //14 
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "uCTemp",     &user_data.uCTemp,       //15 
 
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp0",      &user_data.Temp[0],      //16 
@@ -280,7 +280,7 @@
  //
  // 
  //-----------------------------------------------------------------------------
-float read_voltage(unsigned char channel,unsigned int *rvalue)
+float read_voltage(unsigned char channel,unsigned int *rvalue,  float coeff, float offset, unsigned char gain)
 {
   unsigned int  xdata i;
   float         xdata voltage;
@@ -289,7 +289,7 @@ float read_voltage(unsigned char channel,unsigned int *rvalue)
 
 // Averaging on 10 measurements for now.
   for (i=0 ; i<10 ; i++) {
-    rawbin = adc_read(channel);
+    rawbin = adc_read(channel, gain);
     rawsum += rawbin;
     yield();
   }
@@ -299,13 +299,37 @@ float read_voltage(unsigned char channel,unsigned int *rvalue)
   voltage = (float)  *rvalue;                  // averaging
   voltage = (float)  voltage / 1024.0 * VREF;  // conversion
   if ( channel != TCHANNEL)
-	  voltage = voltage * coeff[channel] + offset[channel];
+	  voltage = voltage * coeff + offset;
 
   return voltage;
 }
-
-
-
+//
+//
+//-----------------------------------------------------------------------------
+/*
+void switchonoff(unsigned char command)
+{
+    if(command==ON)
+    {
+        REG_EN=ON;
+        user_init(0);
+    }
+    else if(command==OFF)
+    {       
+        REG_EN=OFF;
+        SFRPAGE  = CONFIG_PAGE;
+        //Switch all the ports to high impedance state except for mscb communication 
+        P0MDOUT &= 0x23;
+        P0      | =0xDC;
+        P1MDOUT = 0;
+        P1=0xFF;
+        P2MDOUT=0;
+        P2=0xFF;
+        P3MDOUT=0;
+        P3=0xFF;
+    }
+}
+*/
 
  /********************************************************************\
  Application specific init and in/output routines
@@ -380,7 +404,10 @@ float read_voltage(unsigned char channel,unsigned int *rvalue)
  // uC Miscellaneous ADCs (V/I Monitoring)
  //-----------------------------------------------------------------------------
    SFRPAGE  = CONFIG_PAGE;
-   P3MDOUT |= 0x1C; //Setting the Regulators control pins to push pull (3 Vreg)
+   // P3.2 OpenDrain for the 3 Vreg enable
+   // P3.3,4 Spares on Push-pull
+//   P3MDOUT |= 0x18;
+   P3MDOUT &= 0xFB;  // Set Vreg enable to Open drain
    adc_internal_init();
 
 
@@ -543,10 +570,13 @@ float read_voltage(unsigned char channel,unsigned int *rvalue)
      user_data.eepValue = 0.0;
      user_data.eeCtrSet = 0;
   }
-
+#ifdef FEB64REV0
   EN_pD5V  = ON;                  // Needed for debug
   EN_pA5V  = ON;                  //-PAA- needed for ASUM test
   EN_nA5V  = ON;                  //-PAA- needed for ASUM test
+#elif defined(FEB64REV1)
+  //REG_EN = ON;       //to be determined...
+#endif
 }
 
 //
@@ -681,7 +711,7 @@ void user_loop(void) {
   unsigned char xdata swConversion;
   unsigned char xdata eep_request;
   static  unsigned char xdata eeprom_flag =CLEAR;
-  static xdata char adcChannel = N_RB_CHANNEL; // special start value
+  static xdata char adcChannel = 0; // -PAA was 16 ... special start value
   //ltc1665
   char xdata ltc1665_index, ltc1665_chipChan, ltc1665_chipAdd; 
 
@@ -689,67 +719,60 @@ void user_loop(void) {
   //-----------------------------------------------------------------------------
   
   #ifdef _LTC2497_
-    if(adcChannel == N_RB_CHANNEL) {
-      adcChannel = CLEAR;
       LTC2497_StartConversion(ADDR_LTC2497, adcChannel);
-    } else {
+		// Make sure the result is valid!
+      if(!LTC2497_ReadConversion(ADDR_LTC2497, adcChannel, &result)) {
+      	result = -CONVER_FAC1;
+      }
+      adc_value = ((float)((result) 
+                    + CONVER_FAC1) * (float)(EXT_VREF / CONVER_FAC2));
+      adc_value = (adc_value * adc2mscb_table[adcChannel].Coef + adc2mscb_table[adcChannel].Offst);
+
+
+      DISABLE_INTERRUPTS;
+      if(adc2mscb_table[adcChannel].current) {
+        user_data.IBMon[adc2mscb_table[adcChannel].mscbIdx] = adc_value;
+        user_data.rIBMon[adc2mscb_table[adcChannel].mscbIdx] = result;
+      } else {
+        user_data.VBMon[adc2mscb_table[adcChannel].mscbIdx] = adc_value;
+        user_data.rVBMon[adc2mscb_table[adcChannel].mscbIdx] = result;
+      }
+      ENABLE_INTERRUPTS;
+     
       adcChannel++;
       adcChannel %= N_RB_CHANNEL;
 	 
-		// Make sure the result is valid!
-		if(!LTC2497_ReadConversion(ADDR_LTC2497, adcChannel, &result)) {
-      	result = -CONVER_FAC1;
-      }
-
-      channel = (adcChannel + (N_RB_CHANNEL-1)) % N_RB_CHANNEL;
-      adc_value = ((float)(result + CONVER_FAC1) * (float)(EXT_VREF / CONVER_FAC2));
-      adc_value = (adc_value * Mon_Coef[channel]) + Mon_Offst[channel];
-
-      //BS we have to decide what would be the cut off
-//      if (adc_value < 0.001)
-//        adc_value =0;
-
-      DISABLE_INTERRUPTS;
-      if(channel & CURR_MEASURE) {
-        user_data.IBMon[adc_convert [channel]] = adc_value;
-        user_data.rIBMon[adc_convert[channel]] = result;
-      } else {
-        user_data.VBMon[adc_convert [channel]] = adc_value;
-        user_data.rVBMon[adc_convert[channel]] = result;
-      }
-      ENABLE_INTERRUPTS;
-    }
   #endif
   
   #ifdef _LTC2495_
-    if(adcChannel == N_RB_CHANNEL) {
-      adcChannel = CLEAR;
-      LTC2495_StartConversion(ADDR_LTC2495, adcChannel, GAIN1);
-    } else {
-      adcChannel++;
-      adcChannel %= N_RB_CHANNEL;
-	 
-		// Make sure the result is valid!
-		if(!LTC2495_ReadConversion(ADDR_LTC2495, adcChannel, &result, GAIN1)) {
-      	result = -CONVER_FAC1;
+      
+      LTC2495_StartConversion(ADDR_LTC2495, adcChannel, adc2mscb_table[adcChannel].gain);
+
+      if(!LTC2495_ReadConversion(ADDR_LTC2495, adcChannel, &result, adc2mscb_table[adcChannel].gain)) {
+   	    result = -CONVER_FAC1;
       }
 
-      channel = (adcChannel + (N_RB_CHANNEL-1)) % N_RB_CHANNEL;
-      adc_value = ((float)(result + CONVER_FAC1) * (float)(EXT_VREF / CONVER_FAC2));
-      adc_value = (adc_value * Mon_Coef[channel]) + Mon_Offst[channel];
-
-
+      adc_value = ((float)((result - adc2mscb_table[adcChannel].Offst) 
+                    + CONVER_FAC1) * (float)(EXT_VREF / CONVER_FAC2));
+      adc_value = (adc_value * adc2mscb_table[adcChannel].Coef) ;
+      //dividing by the gain
+      adc_value /= pow(2, (adc2mscb_table[adcChannel].gain + adc2mscb_table[adcChannel].current));
       DISABLE_INTERRUPTS;
-      if(channel & CURR_MEASURE) {
-        user_data.IBMon[adc_convert [channel]] = adc_value;
-        user_data.rIBMon[adc_convert[channel]] = result;
+      if(adc2mscb_table[adcChannel].current) {
+        user_data.IBMon[adc2mscb_table[adcChannel].mscbIdx] = adc_value;
+        user_data.rIBMon[adc2mscb_table[adcChannel].mscbIdx] = result;
       } else {
-        user_data.VBMon[adc_convert [channel]] = adc_value;
-        user_data.rVBMon[adc_convert[channel]] = result;
+        user_data.VBMon[adc2mscb_table[adcChannel].mscbIdx] = adc_value;
+        user_data.rVBMon[adc2mscb_table[adcChannel].mscbIdx] = result;
       }
       ENABLE_INTERRUPTS;
-    }
+    
+
+      adcChannel++;                 // increment channel
+      adcChannel %= N_RB_CHANNEL;   // modulus 16
+
   #endif
+
   //
   //-----------------------------------------------------------------------------
   //Checking the eeprom control flag
@@ -847,9 +870,13 @@ void user_loop(void) {
     ENABLE_INTERRUPTS;
     // Power up Card
       // Vreg ON
+#ifdef FEB64REV0
       EN_pD5V = ON;
       EN_pA5V = ON;
       EN_nA5V = ON;
+#elif defined(FEB64REV1)
+      REG_EN  = ON;
+#endif
       delay_ms(10);
      // Force Check on Voltage
       bdoitNOW = ON;
@@ -873,7 +900,11 @@ void user_loop(void) {
     rCSR = user_data.status;
     rESR = user_data.error; //NW
     for (channel=0, mask=0 ; channel<INTERNAL_N_CHN ; channel++, mask++) {
-      volt = read_voltage(channel,&rvolt);
+      volt = read_voltage(channel
+                          ,&rvolt
+                          ,iadc_table[channel].coeff
+                          ,iadc_table[channel].offset
+                          ,iadc_table[channel].gain );
       DISABLE_INTERRUPTS;
       pfData[channel] = volt;
       rpfData[channel] = rvolt;
@@ -917,7 +948,7 @@ void user_loop(void) {
     rCSR = user_data.status;
     rESR = user_data.error; //NW
     // Read uC temperature
-    volt = read_voltage(TCHANNEL,&rvolt);
+    volt = read_voltage(TCHANNEL,&rvolt, 0, 0, IGAIN1 );
     /* convert to deg. C */
     temperature = 1000 * (volt - 0.776) / 2.86;   // Needs calibration
     /* strip to 0.1 digits */
@@ -959,9 +990,13 @@ void user_loop(void) {
     if (!SsS) {
       SmSd = ON;  // Set Manual Shutdown
       pca_operation(Q_PUMP_OFF);
+#ifdef FEB64REV0
       EN_pD5V  = ON;  // For debugging
       EN_pA5V  = OFF;
       EN_nA5V  = OFF;
+#elif defined(FEB64REV1)
+      REG_EN   = ON;
+#endif
       SqPump   = OFF;
       SPup     = OFF;
     } // Manula Shutdown
