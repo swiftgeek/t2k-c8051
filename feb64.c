@@ -306,30 +306,114 @@ float read_voltage(unsigned char channel,unsigned int *rvalue,  float coeff, flo
 //
 //
 //-----------------------------------------------------------------------------
-/*
 void switchonoff(unsigned char command)
 {
     if(command==ON)
     {
+        //
+        // Initial setting for communication and overall ports (if needed).
+        //-----------------------------------------------------------------------------
+        SFRPAGE  = CONFIG_PAGE;
+        // P0MDOUT contains Tx in push-pull
+        P0MDOUT |= 0x20;   // add RS485_ENABLE in push-pull
+        //
+        // Setup the ASUM ports (P1.7,6,5)
+        //-----------------------------------------------------------------------------
+        P1MDOUT |= 0xE0;  // Sync, TestN, PowerDwnN 
+        delay_us(1000);
+        ASUM_SYNC  = 0;
+        ASUM_TESTN = 0;
+        ASUM_PWDN  = 1;
+
+        //
+        // uC Miscellaneous ADCs (V/I Monitoring)
+        //-----------------------------------------------------------------------------
+        SFRPAGE  = CONFIG_PAGE;
+        // P3.2 OpenDrain for the 3 Vreg enable
+        // P3.3,4 Spares on Push-pull
+        // P3MDOUT |= 0x18;
+        P3MDOUT &= 0xFB;  // Set Vreg enable to Open drain
+        adc_internal_init();
+        //
+        // SPI Dac (Bias voltages, 64 channels)
+        //-----------------------------------------------------------------------------
+        #ifdef _LTC1665_
+        SFRPAGE  = CONFIG_PAGE;
+        P2MDOUT |= 0x18; // Setting the SPI_MOSI and SPI_SCK to push pull
+        P0MDOUT |= 0xC0; // Setting the BIAS_DAC_CSn1 and BIAS_DAC_CSn2 to push pull
+        P3MDOUT |= 0x63; // Setting the BIAS_DAC_CSn3,4,5,6 to push pull
+        P0MDOUT |= 0x60; // Setting the BIAS_DAC_CSn7,8 to push pull
+        LTC1665_Init();
+        #endif
+        //
+        // SPI ASUM DAC (8 channels)
+        //-----------------------------------------------------------------------------
+        #ifdef _LTC2600_
+        SFRPAGE  = CONFIG_PAGE;
+        P1MDOUT |= 0x10; // Setting the SUM_DAC_CSn to push pull
+        P2MDOUT |= 0x18; // Setting the SPI_MOSI and SPI_SCK to push pull
+        LTC2600_Init();
+        #endif
+        //
+        //SPI ExtEEPROM
+        //-----------------------------------------------------------------------------
+        #ifdef _ExtEEPROM_
+        SFRPAGE  = CONFIG_PAGE;
+        P3MDOUT |= 0x80; // Setting the RAM_CSn to push pull
+        P2MDOUT |= 0x18; // Setting the SPI_MOSI and SPI_SCK to push pull
+        P2MDOUT &= 0xFE; // Setting the RAM_WPn to open drain
+        ExtEEPROM_Init();
+        #endif
+        //
+        // SMB Charge Pump DAC
+        //-----------------------------------------------------------------------------
+        #ifdef _LTC1669_
+        LTC1669_Init(); //I2C DAC initialization (D_CH_PUMP)
+        #endif
+
+        #ifdef _LTC2497_
+        LTC2497_Init();
+        #endif
+
+        #ifdef _LTC2495_
+        LTC2495_Init();
+        #endif
+        //
+        // SMB Bias Voltage switches
+        //-----------------------------------------------------------------------------
+        #ifdef _PCA9539_
+		  SFRPAGE = CONFIG_PAGE;
+		  P1MDOUT |= 0x08;
+
+        PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
+
+        PCA9539_WriteByte(BIAS_OUTPUT_ENABLE);
+        PCA9539_WriteByte(BACKPLANE_INPUT_ENABLE);
+        #endif
+        //
+        // SST Temperatures
+        //-----------------------------------------------------------------------------_
+        #ifdef ADT7486A     
+        SFRPAGE  = CONFIG_PAGE;
+        P1MDOUT |= 0x01; // Setting the SST_DRV (SST) to push pull
+        #endif   
+
         REG_EN=ON;
-        user_init(0);
     }
     else if(command==OFF)
     {       
-        REG_EN=OFF;
         SFRPAGE  = CONFIG_PAGE;
-        //Switch all the ports to high impedance state except for mscb communication 
+        //Switch all the ports to open drain except for mscb communication 
         P0MDOUT &= 0x23;
-        P0      | =0xDC;
+        P0 &= 0x23;
         P1MDOUT = 0;
-        P1=0xFF;
+        P1=0;
         P2MDOUT=0;
-        P2=0xFF;
+        P2=0;
         P3MDOUT=0;
-        P3=0xFF;
+        P3=0;
     }
 }
-*/
 
  /********************************************************************\
  Application specific init and in/output routines
@@ -575,7 +659,7 @@ void switchonoff(unsigned char command)
   EN_pA5V  = ON;                  //-PAA- needed for ASUM test
   EN_nA5V  = ON;                  //-PAA- needed for ASUM test
 #elif defined(FEB64REV1)
-  //REG_EN = ON;       //to be determined...
+  REG_EN = ON;       //to be determined...
 #endif
 }
 
@@ -714,7 +798,11 @@ void user_loop(void) {
   static xdata char adcChannel = 0; // -PAA was 16 ... special start value
   //ltc1665
   char xdata ltc1665_index, ltc1665_chipChan, ltc1665_chipAdd; 
-
+ 
+  char chartemporary;
+  int inttemporary;   
+  chartemporary=0x89;
+  inttemporary= chartemporary & 0x1F8;
   //
   //-----------------------------------------------------------------------------
   
@@ -764,7 +852,7 @@ void user_loop(void) {
       } else {
         user_data.VBMon[adc2mscb_table[adcChannel].mscbIdx] = adc_value;
         user_data.rVBMon[adc2mscb_table[adcChannel].mscbIdx] = result;
-      }
+      }                                 
       ENABLE_INTERRUPTS;
     
 
@@ -875,7 +963,8 @@ void user_loop(void) {
       EN_pA5V = ON;
       EN_nA5V = ON;
 #elif defined(FEB64REV1)
-      REG_EN  = ON;
+      //switchonoff(ON);
+		REG_EN = ON;
 #endif
       delay_ms(10);
      // Force Check on Voltage
@@ -995,7 +1084,8 @@ void user_loop(void) {
       EN_pA5V  = OFF;
       EN_nA5V  = OFF;
 #elif defined(FEB64REV1)
-      REG_EN   = ON;
+      //switchonoff(OFF);
+		REG_EN = OFF;
 #endif
       SqPump   = OFF;
       SPup     = OFF;
