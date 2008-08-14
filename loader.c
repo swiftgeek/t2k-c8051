@@ -19,7 +19,6 @@
  #include "mscbemb.h"
  #include "loader.h"
  #include "Devices/AT25160A.h"
-
 #ifdef _PCA9539_
  #include "Devices/PCA9539_io.h"
 #endif
@@ -37,18 +36,16 @@
  // User Data structure declaration
  //-----------------------------------------------------------------------------
  MSCB_INFO_VAR code vars[] = {
-   1, UNIT_BYTE,            0, 0,           0, "Control",    &user_data.control,      // 0
-   1, UNIT_BYTE,            0, 0,           0, "EEPage",     &user_data.eepage,       // 1
-	1, UNIT_BYTE,            0, 0,           0, "Status",     &user_data.status,       // 0   
+ 	4, UNIT_BYTE,            0, 0,           0, "SerialN",    &user_data.serialN,  	  // 0
+   1, UNIT_BYTE,            0, 0,           0, "Control",    &user_data.control,      // 1
+   1, UNIT_BYTE,            0, 0,           0, "EEPage",     &user_data.eepage,       // 2
+	1, UNIT_BYTE,            0, 0,           0, "Status",     &user_data.status,       // 3 
    0
  };
 
  MSCB_INFO_VAR *variables = vars;   // Structure mapping
  // Get sysinfo if necessary
  extern SYS_INFO sys_info;          // For address setting
- 
-
- 
  
  /********************************************************************\
  Application specific init and in/output routines
@@ -59,29 +56,38 @@
  {
  	char xdata add;
 
- 	if (init)
-	{
-	 	// Initialize control and status
-   	user_data.control = 0;
-		user_data.status = 0;
-	}
+	// Initialize control and status
+  	user_data.control = 0;
+	user_data.status = 0;
  	add = cur_sub_addr();
-
+	EEPROM_FLAG=0;
  //
  // Initial setting for communication and overall ports (if needed).
  //-----------------------------------------------------------------------------
    SFRPAGE  = CONFIG_PAGE;
    // P0MDOUT contains Tx in push-pull
-   P0MDOUT |= 0x20;   // add RS485_ENABLE in push-pull
- 
+   P0MDOUT |= 0x04;   // add RS485_ENABLE in push-pull
+
  //
  // SPI Setting
  //-----------------------------------------------------------------------------
    SFRPAGE  = CONFIG_PAGE;
+#ifdef L_TEMP36
+   P2MDOUT |= 0x31; // Setting the RAM_CSn. SPI_MOSI, SPI_SCK to push pull
+   P2MDOUT &= 0xFB; // Setting the RAM_WPn to open drain
+#elif defined(L_FEB64)
    P3MDOUT |= 0x80; // Setting the RAM_CSn to push pull
    P2MDOUT |= 0x18; // Setting the SPI_MOSI and SPI_SCK to push pull
 	P2MDOUT &= 0xFE; // Setting the RAM_WPn to open drain
-	
+#elif defined(L_CMB)
+   P3MDOUT |= 0x80; // Setting the RAM_CSn to push pull
+   P2MDOUT |= 0x18; // Setting the SPI_MOSI and SPI_SCK to push pull
+	P2MDOUT &= 0xFE; // Setting the RAM_WPn to open drain
+#else defined(L_LPB)
+   P3MDOUT |= 0x80; // Setting the RAM_CSn to push pull
+   P2MDOUT |= 0x18; // Setting the SPI_MOSI and SPI_SCK to push pull
+	P2MDOUT &= 0xFE; // Setting the RAM_WPn to open drain
+#endif	
 #ifdef _PCA9539_
    PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
 	PCA9539_WriteByte(BACKPLANE_INPUT_ENABLE);
@@ -106,7 +112,10 @@
 
 void user_write(unsigned char index) reentrant
 {
-	if(index);
+	if(index==IDXCTL)
+	{
+		EEPROM_FLAG=1;
+	}
 }
  
  /*---- User read function ------------------------------------------*/
@@ -128,13 +137,50 @@ void user_write(unsigned char index) reentrant
 //-----------------------------------------------------------------------------
 void user_loop(void) 
 {
-		signed char check=0;
+	unsigned char FAILED=0;
 
-		check=ExtEEPROM_WriteProtect ((unsigned char*)&eepage, PAGE_SIZE);
-//		check=ExtEEPROM_Read  (WP_START_ADDR,(unsigned char*)&eepage2, PAGE_SIZE);
-		check=ExtEEPROM_Write_Clear (0x0000,(unsigned char*)&eepage, 
-		PAGE_SIZE,WRITE);
-//		check=ExtEEPROM_Read  (0x0000,(unsigned char*)&test2, PAGE_SIZE);
-									
-	yield();
+	//Wait for the EEPROM_FLAG to be set
+	if(EEPROM_FLAG)
+	{
+		//Write to the Protected Memory
+		eepage.SerialN=user_data.serialN;
+		FAILED=ExtEEPROM_WriteProtect ((unsigned char*)&eepage, PAGE_SIZE);
+		if(!FAILED)
+		{
+			DISABLE_INTERRUPTS;
+			user_data.status=1;
+			ENABLE_INTERRUPTS;
+		}
+		//For testing purpose..
+      FAILED=ExtEEPROM_Read  (WP_START_ADDR,(unsigned char*)&eepage2, PAGE_SIZE);
+		if(!FAILED)
+		{
+			DISABLE_INTERRUPTS;
+			user_data.status |= (1<<1);
+			ENABLE_INTERRUPTS;
+		}
+		//Write to Page 0
+	   FAILED =ExtEEPROM_Write_Clear (0x0000,(unsigned char*)&eepage, PAGE_SIZE,WRITE);
+		if(!FAILED)
+		{
+			DISABLE_INTERRUPTS;
+			user_data.status |= (1<<2);
+			ENABLE_INTERRUPTS;
+		}
+		//For testing purpose...
+      FAILED=ExtEEPROM_Read  (0x0000,(unsigned char*)&eepage2, PAGE_SIZE);
+		if(!FAILED)
+		{
+			DISABLE_INTERRUPTS;
+			user_data.status |= (1<<3);
+			ENABLE_INTERRUPTS;
+		}
+		if(user_data.status==15)
+		{
+			DISABLE_INTERRUPTS;
+			user_data.control = 0;
+			EEPROM_FLAG=0;
+			ENABLE_INTERRUPTS;
+		}
+	}
 } 
