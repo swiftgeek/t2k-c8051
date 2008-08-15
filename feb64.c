@@ -308,6 +308,7 @@ float read_voltage(unsigned char channel,unsigned int *rvalue,  float coeff, flo
 //-----------------------------------------------------------------------------
 void switchonoff(unsigned char command)
 {
+    char xdata swConversion;
     if(command==ON)
     {
         //
@@ -324,7 +325,11 @@ void switchonoff(unsigned char command)
         ASUM_SYNC  = 0;
         ASUM_TESTN = 0;
         ASUM_PWDN  = 1;
-
+        //
+        // uC Charge Pump frequency setup
+    //-----------------------------------------------------------------------------
+        pca_operation(Q_PUMP_INIT); //Charge Pump initialization (crossbar settings)
+        pca_operation(Q_PUMP_OFF);   //Initially turn it off
         //
         // uC Miscellaneous ADCs (V/I Monitoring)
         //-----------------------------------------------------------------------------
@@ -382,13 +387,18 @@ void switchonoff(unsigned char command)
         // SMB Bias Voltage switches
         //-----------------------------------------------------------------------------
         #ifdef _PCA9539_
-		  SFRPAGE = CONFIG_PAGE;
-		  P1MDOUT |= 0x08;
-
+        SFRPAGE = CONFIG_PAGE;
+        P1MDOUT |= 0x08;
         PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
-
+        delay_us(10);
         PCA9539_WriteByte(BIAS_OUTPUT_ENABLE);
+        delay_us(10);
+        swConversion = user_data.swBias;
+        PCA9539_Conversion(&swConversion);
+        PCA9539_WriteByte(BIAS_WRITE, ~swConversion);
+        delay_us(10);
         PCA9539_WriteByte(BACKPLANE_INPUT_ENABLE);
+        delay_us(10);
         #endif
         //
         // SST Temperatures
@@ -425,6 +435,7 @@ void switchonoff(unsigned char command)
    char xdata i, pca_add=0;
 	unsigned int xdata crate_add=0, board_address=0;
 	float xdata temperature;
+   unsigned char xdata swConversion=0;
  // Inititialize local variables
 
    /* Format the SVN and store this code SVN revision into the system */
@@ -548,15 +559,20 @@ void switchonoff(unsigned char command)
  // SMB Bias Voltage switches
  //-----------------------------------------------------------------------------
  #ifdef _PCA9539_
-  PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
-
-  PCA9539_WriteByte(BIAS_OUTPUT_ENABLE);
-  PCA9539_WriteByte(BACKPLANE_INPUT_ENABLE);
-
+    SFRPAGE = CONFIG_PAGE;
+    P1MDOUT |= 0x08;
+    PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
+    delay_us(10);
+    PCA9539_WriteByte(BIAS_OUTPUT_ENABLE);
+    delay_us(10);
+    PCA9539_WriteByte(BIAS_ENABLE);
+    delay_us(10);
+    PCA9539_WriteByte(BACKPLANE_INPUT_ENABLE);
+    delay_us(10);
  //
  // Physical backplane address retrieval
  //-----------------------------------------------------------------------------
-  PCA9539_Read(BACKPLANE_READ, &pca_add, 1);
+   PCA9539_Read(BACKPLANE_READ, &pca_add, 1);
   //C C C C C C 0 B B is the MSCB Addr[8..0], 9 bits
   //Modifying what the board reads from the PCA
   //Externally, the crate address are reversed 
@@ -659,7 +675,7 @@ void switchonoff(unsigned char command)
   EN_pA5V  = ON;                  //-PAA- needed for ASUM test
   EN_nA5V  = ON;                  //-PAA- needed for ASUM test
 #elif defined(FEB64REV1)
-  REG_EN = ON;       //to be determined...
+  REG_EN = OFF;       //to be determined...
 #endif
 }
 
@@ -833,7 +849,7 @@ void user_loop(void) {
   #endif
   
   #ifdef _LTC2495_
-      
+  
       LTC2495_StartConversion(ADDR_LTC2495, adcChannel, adc2mscb_table[adcChannel].gain);
 
       if(!LTC2495_ReadConversion(ADDR_LTC2495, adcChannel, &result, adc2mscb_table[adcChannel].gain)) {
@@ -908,7 +924,7 @@ void user_loop(void) {
   //-----------------------------------------------------------------------------
   //Checking the flags
   #ifdef _PCA9539_
-    if(PCA_Flag){
+    if(PCA_Flag & !SsS & !SmSd){
       swConversion = user_data.swBias;
       PCA9539_Conversion(&swConversion);
       PCA9539_WriteByte(BIAS_WRITE, ~swConversion);
@@ -917,14 +933,14 @@ void user_loop(void) {
   #endif
 
   #ifdef _LTC2600_
-    if(LTC2600_Flag) {
+    if(LTC2600_Flag  & !SsS & !SmSd) {
         LTC2600_Cmd(WriteTo_Update,LTC2600_LOAD[AsumIndex], user_data.rAsum[AsumIndex]);
         LTC2600_Flag = CLEAR;
     }
   #endif
 
   #ifdef _LTC1665_
-     if(LTC1665_Flag) {
+     if(LTC1665_Flag  & !SsS & !SmSd) {
 	  	  for(ltc1665_index=0; ltc1665_index<64; ltc1665_index++){
 		     if(ltc1665mirror[ltc1665_index] != user_data.rBias[ltc1665_index]){
      			  ltc1665_chipChan = (ltc1665_index / 8) + 1;
@@ -940,7 +956,7 @@ void user_loop(void) {
   #endif
 
   #ifdef _LTC1669_
-    if(LTC1669_Flag) {
+    if(LTC1669_Flag  & !SsS & !SmSd) {
         LTC1669_SetDAC(ADDR_LTC1669, LTC1669_INT_BG_REF, user_data.rQpump);
         LTC1669_Flag = CLEAR;
       }
@@ -963,8 +979,8 @@ void user_loop(void) {
       EN_pA5V = ON;
       EN_nA5V = ON;
 #elif defined(FEB64REV1)
-      //switchonoff(ON);
-		REG_EN = ON;
+      switchonoff(ON);
+		//REG_EN = ON;
 #endif
       delay_ms(10);
      // Force Check on Voltage
@@ -1084,8 +1100,8 @@ void user_loop(void) {
       EN_pA5V  = OFF;
       EN_nA5V  = OFF;
 #elif defined(FEB64REV1)
-      //switchonoff(OFF);
-		REG_EN = OFF;
+      switchonoff(OFF);
+		//REG_EN = OFF;
 #endif
       SqPump   = OFF;
       SPup     = OFF;
@@ -1102,7 +1118,7 @@ void user_loop(void) {
 
   //-----------------------------------------------------------------------------
   // Toggle Qpump ON/OFF based on Index
-  if (CqPump) {
+  if (CqPump  & !SsS & !SmSd) {
     rCSR = user_data.status;
     if (!SsS) {
       if (SqPump) {
@@ -1201,7 +1217,7 @@ void user_loop(void) {
   //-----------------------------------------------------------------------------
   // EEPROM Save procedure based on CTL bit
   #ifdef _ExtEEPROM_
-    if (CeeS) {
+    if (CeeS  & !SsS & !SmSd) {
        //Check if we are here for the first time
       if (!eeprom_flag){
         rCSR = user_data.status;
@@ -1243,7 +1259,7 @@ void user_loop(void) {
 #endif
   //-----------------------------------------------------------------------------
   // EEPROM Restore procedure based on CTL bit
-  if (CeeR) {
+  if (CeeR  & !SsS & !SmSd) {
     rCSR = user_data.status;
 
 #ifdef _ExtEEPROM_
