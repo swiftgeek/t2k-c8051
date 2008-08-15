@@ -538,7 +538,7 @@ sbit RS485_ENABLE = P0 ^ 2; //MSCB communication enable port
 #if defined(LED_1) 
 #undef LED_1
 #endif
- 
+
 #define LED_ON 0 //defines LED "ON" as forcing the specified pin to low
 
 // SPI
@@ -551,7 +551,7 @@ sbit RS485_ENABLE = P0 ^ 2; //MSCB communication enable port
 #define RAM_WRITE_PROTECT  P2 ^ 2
 #define LED_0 P2 ^ 7 
 sbit RS485_ENABLE = P0 ^ 2; //MSCB communication enable port
-#elif L_FEB64
+#elif defined(L_FEB64)
 #define MSCB_SPI_SCK  P2 ^ 3
 #define MSCB_SPI_MISO P2 ^ 1
 #define MSCB_SPI_MOSI P2 ^ 4
@@ -560,7 +560,7 @@ sbit RS485_ENABLE = P0 ^ 2; //MSCB communication enable port
 #define RAM_WRITE_PROTECT  P2 ^ 0
 #define LED_0 P2 ^ 7 
 sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
-#elif L_CMB
+#elif defined(L_CMB)
 #define MSCB_SPI_SCK  P2 ^ 3
 #define MSCB_SPI_MISO P2 ^ 1
 #define MSCB_SPI_MOSI P2 ^ 4
@@ -569,7 +569,7 @@ sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
 #define RAM_WRITE_PROTECT  P2 ^ 0
 #define LED_0 P2 ^ 7 
 sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
-#elif L_LPB
+#elif defined(L_LPB)
 #define MSCB_SPI_SCK  P2 ^ 3
 #define MSCB_SPI_MISO P2 ^ 1
 #define MSCB_SPI_MOSI P2 ^ 4
@@ -599,6 +599,29 @@ sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
 
 sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
 
+/*--------------------------------*/
+#elif defined(LPB)
+#include <c8051F120.h>
+#define CPU_C8051F120
+
+#define LED_0 P2 ^ 7 
+#if defined(LED_1) 
+#undef LED_1
+#endif
+ 
+#define LED_ON 0 //defines LED "ON" as forcing the specified pin to low
+
+//The pins that are used for Threshold voltages for comparator 0 and comparator 1
+#define MSCB_SST1 P1 ^ 3 //SST1 line  SST_IO (Write/Push-Pull)
+#define SST_ClientResponse1 (char) ((CPT1CN & 0x40) >> 6) //Comparator1 overflow bit
+
+// SPI
+#define MSCB_SPI_SCK  P2 ^ 2
+#define MSCB_SPI_MOSI P2 ^ 3
+#define MSCB_SYNC     P2 ^ 1
+#define MSCB_SPI_MISO P2 ^ 0
+
+sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
 /*--------------------------------*/
 #elif defined(GPIB_TEST)
 #include <c8051F020.h>
