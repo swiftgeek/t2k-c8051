@@ -180,6 +180,18 @@
  
  MSCB_INFO_VAR *variables = vars;   // Structure mapping
 
+//converts channel index to eepage structure offset address
+int eepage_add_conver(unsigned int index)
+{
+	int add;
+	//if index is even
+	if(!(index%2))
+		add=index/2+18;
+		//if index is odd
+	else
+		add=index/2;
+	return add;
+}
 /*---- User init function ------------------------------------------*/
 void user_init(unsigned char init)
 {
@@ -518,7 +530,7 @@ void user_loop(void)
    if (EEP_CTR_FLAG){
       //Checking for the special instruction
       if (user_data.eeCtrSet & EEP_CTRL_KEY){
-	   	eep_address = (int*)(&eepage) + (int)(user_data.eeCtrSet & 0x000000ff);
+	   	eep_address = (int*)(&eepage) + eepage_add_conver((int)(user_data.eeCtrSet & 0x000000ff));
    	   //Checking for the write request
 			if (user_data.eeCtrSet & EEP_CTRL_WRITE){
       		if ((user_data.eeCtrSet & 0x000000ff) <= ((SERIALN_ADD - WP_START_ADDR)/2))
