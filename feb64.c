@@ -475,9 +475,8 @@ void switchonoff(unsigned char command)
 	   	 //NW mirror of the rBias values
 		  ltc1665mirror[i]      = 0xFF;
 	  }
-     sys_info.group_addr  = 400;
    }
-
+   sys_info.group_addr  = 100;
  //
  // Initial setting for communication and overall ports (if needed).
  //-----------------------------------------------------------------------------
