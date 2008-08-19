@@ -72,8 +72,7 @@ struct EEPAGE xdata eepage={
 #define EEP_CTRL_INVAL_REQ -100	
 #define EEP_CTRL_INVAL_KEY -10	
 #define SERIALN_ADD  0x64A  
-//Reading from the eeprom
-struct EEPAGE xdata eepage2;
+#define TEMPOFF_LAST_INDX 36
 
 
 /*****HUMIDITY SENSOR VARIABLES*****/

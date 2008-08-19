@@ -220,19 +220,19 @@ void user_init(unsigned char init)
 
 	//Get serial number from write protected area 
    ExtEEPROM_Read  (WP_START_ADDR
-	                ,(unsigned char*)&eepage2
+	                ,(unsigned char*)&eepage
 						 ,PAGE_SIZE);
    DISABLE_INTERRUPTS;
-	user_data.SerialN = (float)eepage2.SerialN;
+	user_data.SerialN = (float)eepage.SerialN;
    ENABLE_INTERRUPTS;
 
 	//Refer to the first Page of the non_protected area
    ExtEEPROM_Read  (PageAddr[0]
-	                ,(unsigned char*)&eepage2
+	                ,(unsigned char*)&eepage
 						 ,PAGE_SIZE);
 	DISABLE_INTERRUPTS;
-	user_data.control = (char)eepage2.control;
-	rCTL=eepage2.control;
+	user_data.control = (char)eepage.control;
+	rCTL=eepage.control;
 	ENABLE_INTERRUPTS;
 
 #endif
@@ -255,8 +255,8 @@ void user_init(unsigned char init)
 		//Set the offset for the temp01,03...17 sensors 
       ADT7486A_Cmd(ADT7486A_addrArray[channel]
 		           , SetExt2Offset
-					  , (eepage2.ext2offset[channel]>>8)
-					  , eepage2.ext2offset[channel]
+					  , (eepage.ext2offset[channel]>>8)
+					  , eepage.ext2offset[channel]
 					  , SST_LINE1
 					  , &temperature);
       delay_us(100); //wait for ADT7486A
@@ -266,8 +266,8 @@ void user_init(unsigned char init)
 		//Set the offset for the temp19,21...35 sensors
 	   ADT7486A_Cmd(ADT7486A_addrArray[channel-9]
 		           , SetExt2Offset
-					  , (eepage2.ext2offset[channel]>>8)
-					  , eepage2.ext2offset[channel]
+					  , (eepage.ext2offset[channel]>>8)
+					  , eepage.ext2offset[channel]
 					  , SST_LINE2
 					  , &temperature);      
       delay_us(100); //wait for ADT7486A
@@ -277,8 +277,8 @@ void user_init(unsigned char init)
 		//Set the offset for the temp02,04...18 sensors
       ADT7486A_Cmd(ADT7486A_addrArray[channel]
 		           , SetExt1Offset
-					  , (eepage2.ext1offset[channel]>>8)
-					  , eepage2.ext1offset[channel]
+					  , (eepage.ext1offset[channel]>>8)
+					  , eepage.ext1offset[channel]
 					  , SST_LINE1
 					  , &temperature);
       delay_us(100); //wait for ADT7486A
@@ -288,8 +288,8 @@ void user_init(unsigned char init)
 		//Set the offset for the temp20,22...36 sensors
       ADT7486A_Cmd(ADT7486A_addrArray[channel-9]
 		           , SetExt1Offset
-					  , (eepage2.ext1offset[channel]>>8)
-					  , eepage2.ext1offset[channel]
+					  , (eepage.ext1offset[channel]>>8)
+					  , eepage.ext1offset[channel]
 					  , SST_LINE2
 					  , &temperature);
 		delay_us(100); //wait for ADT7486A
@@ -530,8 +530,12 @@ void user_loop(void)
    if (EEP_CTR_FLAG){
       //Checking for the special instruction
       if (user_data.eeCtrSet & EEP_CTRL_KEY){
-	   	eep_address = (int*)(&eepage) + eepage_add_conver((int)(user_data.eeCtrSet & 0x000000ff));
-   	   //Checking for the write request
+			//convert the index value to fit the address of the eepage structure, temp offset only
+			if((user_data.eeCtrSet & 0x000000ff)<TEMPOFF_LAST_INDX)
+	   		eep_address = (int*)(&eepage) + eepage_add_conver((int)(user_data.eeCtrSet & 0x000000ff));
+   	   else
+				eep_address = (int*)(&eepage) + (int)(user_data.eeCtrSet & 0x000000ff);
+			//Checking for the write request
 			if (user_data.eeCtrSet & EEP_CTRL_WRITE){
       		if ((user_data.eeCtrSet & 0x000000ff) <= ((SERIALN_ADD - WP_START_ADDR)/2))
 					*eep_address = user_data.eepValue;
