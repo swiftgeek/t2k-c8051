@@ -1,21 +1,19 @@
 /********************************************************************\
-
   Name:         feb64.h
-  Created by:   Bahman Sotoodian				
-
+  Created by:   Bahman Sotoodian
+   Modified by: Noel Wu, Pierre Amaudruz
+ 
   Contents:     Application specific (user) part of
                 Midas Slow Control Bus protocol
                 for T2K-FEB64 test board
 
   $Id$
-
 \********************************************************************/
 #ifndef  _FEB64_H
 #define  _FEB64_H
 
-
-/*************ADT7486A***************/
-/************************************/
+/**********************************************************************************/
+// ADT7486A
 #define ADT7486A_ADDR0 0x49   
 #define ADT7486A_ADDR1 0x48	
 #define ADT7486A_ADDR2 0x4B
@@ -23,24 +21,20 @@
 //BS Temperature testing
 #define TEMP_ThRESHOLD  27
 #define SST_TIME			5 //In us
-/*************************************/
-/*************************************/
 
-/*************PCA9539****************/
-/************************************/
-#define BIAS_OUTPUT_ENABLE      ADDR_PCA9539, PCA9539_CONFIG0, PCA9539_ALL_OUTPUT
-#define BIAS_DISABLE            ADDR_PCA9539, PCA9539_OUTPUT0, 0xFF
-#define BIAS_ENABLE             ADDR_PCA9539, PCA9539_OUTPUT0, 0x00
-#define BIAS_READ			        ADDR_PCA9539, PCA9539_INPUT0
-#define BIAS_WRITE				  ADDR_PCA9539, PCA9539_OUTPUT0
+/**********************************************************************************/
+// PCA9539
+#define BIAS_OUTPUT_ENABLE ADDR_PCA9539, PCA9539_CONFIG0, PCA9539_ALL_OUTPUT
+#define BIAS_DISABLE       ADDR_PCA9539, PCA9539_OUTPUT0, 0xFF
+#define BIAS_ENABLE        ADDR_PCA9539, PCA9539_OUTPUT0, 0x00
+#define BIAS_READ			     ADDR_PCA9539, PCA9539_INPUT0
+#define BIAS_WRITE				 ADDR_PCA9539, PCA9539_OUTPUT0
 
 #define BACKPLANE_INPUT_ENABLE  ADDR_PCA9539, PCA9539_CONFIG1, PCA9539_ALL_INPUT
-#define BACKPLANE_READ			  ADDR_PCA9539, PCA9539_INPUT1	 
-/*************************************/
-/*************************************/
+#define BACKPLANE_READ			    ADDR_PCA9539, PCA9539_INPUT1	 
 
-/**********External ADC**************/
-/************************************/
+/**********************************************************************************/
+// External ADC
 #define N_RB_CHANNEL	 16
 #define EXT_VREF      1.25f //2.4989f
 #define CURR_MEASURE  0x04
@@ -95,7 +89,9 @@ float code Mon_Offst[]={  0.2278, 0.2278, 0.2278, 0.2278
 								, 0.2278, 0.2278, 0.2278, 0.2278
 								, 0, 0, 0, 0};
 #elif defined(FEB64REV1)
-// External ADC channel conversion table
+
+/**********************************************************************************/
+// External ADC channel, gain conversion table
 struct ADC2MSCB_TABLE {
 char gain;
 char mscbIdx;
@@ -103,15 +99,16 @@ char current;
 float Coef;
 unsigned int Offst;
 };
+
 struct ADC2MSCB_TABLE xdata adc2mscb_table[16] = {
   {GAIN64, 1, I_A2MTABLE, 10000, 9350}, {GAIN64, 3, I_A2MTABLE, 10000, 0}
 , {GAIN64, 5, I_A2MTABLE, 10000, 0}, {GAIN64, 7, I_A2MTABLE, 10000, 0}
-, {GAIN1 , 7, V_A2MTABLE, 100, 0}, {GAIN1 , 5, V_A2MTABLE, 100, 0}
-, {GAIN1 , 3, V_A2MTABLE, 100, 0}, {GAIN1 , 1, V_A2MTABLE, 100, 0}
+, {GAIN1 , 7, V_A2MTABLE,   100, 0}, {GAIN1 , 5, V_A2MTABLE, 100, 0}
+, {GAIN1 , 3, V_A2MTABLE,   100, 0}, {GAIN1 , 1, V_A2MTABLE, 100, 0}
 , {GAIN64, 0, I_A2MTABLE, 10000, 0}, {GAIN64, 2, I_A2MTABLE, 10000, 0}
 , {GAIN64, 4, I_A2MTABLE, 10000, 0}, {GAIN64, 6, I_A2MTABLE, 10000, 0}
-, {GAIN1 , 6, V_A2MTABLE, 100, 0}, {GAIN1 , 4, V_A2MTABLE, 100, 0}
-, {GAIN1 , 2, V_A2MTABLE, 100, 0}, {GAIN1 , 0, V_A2MTABLE, 100, 0}
+, {GAIN1 , 6, V_A2MTABLE,   100, 0}, {GAIN1 , 4, V_A2MTABLE, 100, 0}
+, {GAIN1 , 2, V_A2MTABLE,   100, 0}, {GAIN1 , 0, V_A2MTABLE, 100, 0}
 };
 #define CONVER_FAC1 0
 /*
@@ -126,18 +123,15 @@ float code Mon_Offst[]={  0.2278, 0.2278, 0.2278, 0.2278
 								, 0, 0, 0, 0};
 */
 #endif
-/*************************************/
-/*************************************/
 
-
+/**********************************************************************************/
 // charge pump state for PCA control
 #define Q_PUMP_INIT          1           
 #define Q_PUMP_OFF           2           
-#define Q_PUMP_ON            3           
+#define Q_PUMP_ON            3
 
-
-/**********Internal ADC**************/
-/************************************/
+/**********************************************************************************/
+// Internal ADC channel/gain assignment
 #define IGAIN1  0
 #define IGAIN2  1
 #define IGAIN4  2
@@ -145,14 +139,14 @@ float code Mon_Offst[]={  0.2278, 0.2278, 0.2278, 0.2278
 #define IGAIN16 4
 
 struct IADC_TABLE {
-    char gain;
-    float coeff;
-    float offset;
+  char gain;
+  float coeff;
+  float offset;
 };
 
 //+6Va,+6Vd are off roughly by 5mV, -6Va is off roughly by -30mV
 // Fix conversion coeef for V/I internal ADC
-							 // Vb        Vbi   		+6Vd     +6Va     -6Va  	 -6Ia   +6Ia  	  +6Id 
+// Vb        Vbi   		+6Vd     +6Va     -6Va  	 -6Ia   +6Ia  	  +6Id 
 //float code  coeff[8]  = {41.448   ,2.496587   ,4.025   ,4.025   ,8.4534   ,0.237  ,0.475  ,0.237};
 //float code  offset[8] = {-0.2813  ,0.         ,-0.06   ,-0.054  ,-18.622  ,0     ,0.     ,0.  };
 #ifdef FEB64REV0
@@ -162,55 +156,51 @@ struct IADC_TABLE xdata iadc_table[8] = {
 , {IGAIN1 , 8.4534, -18.622}, {IGAIN1 , 0.237, 0}
 , {IGAIN1 , 0.475, 0}, {IGAIN1 , 0.237, 0}
 };
-float code  coeff[8]  = {41.448   ,2.496587   ,4.025   ,4.025   ,8.4534   ,0.237  ,0.475  ,0.237};
+float code  coeff[8]  = {41.448  ,2.496587   ,4.025   ,4.025   ,8.4534   ,0.237 ,0.475  ,0.237};
 float code  offset[8] = {-0.3464 ,0.         ,-0.06   ,-0.054  ,-18.622  ,0     ,0.     ,0.  };
 // External Vref
 #define VREF       2.432f
+
 #elif defined(FEB64REV1)
 struct IADC_TABLE xdata iadc_table[8] = {
   {IGAIN1, 100,      -0.01}, {IGAIN1, 10, 0}
-, {IGAIN1, 3.980132, 0}, {IGAIN1, 3.980132, 0}
-, {IGAIN1 , 8.5, -18.75}, {IGAIN1 , 0.1, 0}
-, {IGAIN1 , 0.4, 0}, {IGAIN1 , 0.1, 0}
+, {IGAIN1, 3.980132,     0}, {IGAIN1, 3.980132, 0}
+, {IGAIN1, 8.5,     -18.75}, {IGAIN1, 0.1, 0}
+, {IGAIN1, 0.4,          0}, {IGAIN1, 0.1, 0}
 };
-//offset still needs to be calibrated
-float code  coeff[8]  = {100   ,10   ,3.980132, 3.980132   ,8.5   ,0.1  ,0.4  ,0.1};
-float code  offset[8] = {0 ,0         , 0   , 0  ,-18.75  ,0     ,0     ,0  };
-// External Vref
+
+/**********************************************************************************/
+// Offset still needs to be calibrated
+float code  coeff[8]  = {100 ,10  ,3.980132, 3.980132 ,8.5    ,0.1 ,0.4  ,0.1};
+float code  offset[8] = {0   ,0   , 0      , 0        ,-18.75 ,0   ,0    ,0  };
+
+// External Vref for the 16ch ADC U/I APD 
 #define VREF       2.45f
 #endif
 
-/*************************************/
-/*************************************/
-
-/**********EXTERNAL EEPROM***********/
-/************************************/
+/**********************************************************************************/
+// External EEPROM variables
 unsigned char rEER;
-#define EEP_CTRL_KEY	    0x3C000000
-#define EEP_CTRL_READ    0x00110000   	
-#define EEP_CTRL_WRITE 	 0x00220000
+#define EEP_CTRL_KEY	      0x3C000000
+#define EEP_CTRL_READ       0x00110000   	
+#define EEP_CTRL_WRITE 	    0x00220000
 #define EEP_CTRL_INVAL_REQ -100	
 #define EEP_CTRL_INVAL_KEY -10	
 #define TEMPOFF_INDX 		27
 #define TEMPOFF_LAST_INDX  36
 
+// EEPROM structure
 struct EEPAGE {
-
 float lVIlimit[8]; // vQ iQ +6Vd +6Va -6Va -6Ia +6Ia +6Id 
 float uVIlimit[8];
-
 float luCTlimit, uuCTlimit;
 float lSSTlimit, uSSTlimit;
-
 float lVQlimit,  uVQlimit;
 float lIQlimit,  uIQlimit;
-
 float lVBiaslimit, uVBiaslimit;
 float lIBiaslimit, uIBiaslimit;
-
 float ext1offset[4];
 float ext2offset[4];
-
 unsigned long SerialN;
 unsigned int rasum[8];
 unsigned int rqpump;
@@ -218,11 +208,19 @@ unsigned char SWbias;
 unsigned char rbias [64];
 };
 
-//   LvQ   LiQ   Lp6Vd  Lp6Va Ln6Va  Lp6Ia Lp6Ia  Lp6Id 
-//   HvQ   HiQ   Hp6Vd  Hp6Va Hp6Va  Hp6Ia Hp6Ia  Hp6Id 
+// Default structure 
+struct EEPAGE xdata eepage = {
+//  LvQ, LiQ,  Lp6Vd, Lp6Va, Ln6Va , Lp6Ia, Lp6Ia , Lp6Id 
+   30.0, 0.0, 5.5, 5.5, -6.5, 0.0, 0.0, 0.0
+//   HvQ, HiQ, Hp6Vd, Hp6Va, Hp6Va,  Hp6Ia, Hp6Ia,  Hp6Id 
+   ,73.0, 0.1, 6.5, 6.5, -5.5, 0.2, 0.8, 0.2
 //   LuC Temperature,  HuC Temperature
-//   LSST Temperature, HSST Temperature
+	 ,23., 45.
+//   LuC Temperature,  HuC Temperature
+   ,20., 30.
 //   LVQ, HVQ (V)
+<<<<<<< .mine
+=======
 //   LIQ, HIQ (uA)
 //	  LVBias, HVBias (V)
 //	  LIBias, LVBias (uA)
@@ -238,16 +236,27 @@ struct EEPAGE xdata eepage = {
     ,73.0, 0.1, 6.5, 6.5, -5.5, 0.2, 1.0, 0.2
 	 ,23., 45.
     ,20., 30.
+>>>>>>> .r308
 	 ,-1.0,1.0
+//   LVQ, HVQ (V)
 	 ,-0.1,1.0
+//	  LVBias, HVBias (V)
 	 ,0.0,73.0
+//	  LIBias, LVBias (uA)
 	 ,0.0,10.0
+//	  SST channel 1 offset[0..3]
 	 ,0,0,0,0
+//   SST channel 2 offset[0..3]
 	 ,0,0,0,0
-	 ,0x00000000
+// Card Serial Number
+   ,0x00000000
+// Asum[0..7] threshold
 	 ,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff
+// Qpump DAC
 	 ,0x0000
+// Qpump switch
 	 ,0x00
+//	  DACs[0..63]
 	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
@@ -258,16 +267,17 @@ struct EEPAGE xdata eepage = {
 	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 };
 
+// EEPROM page for debugging
 struct EEPAGE xdata eepage2; //NW testing
-/*************************************/
-/*************************************/
 
+/**********************************************************************************/
+// Definitions
 #define NCHANNEL_BIAS    64
 #define NCHANNEL_ASUM     8
 #define NCHANNEL_SST      8
 #define NCHANNEL_ADT7486A 4
 
-
+// Indices for user_write functions
 #define IDXCTL         2
 #define IDXEER         1
 #define IDXQVOLT       6
@@ -281,6 +291,7 @@ struct EEPAGE xdata eepage2; //NW testing
 #define SERIALN_LENGTH 4
 #define SERIALN_ADD  0x690    
 
+// EEPROM page assignment (memory offset)
 unsigned int xdata PageAddr[]={0x0,0x100,0x200,0x300,0x400,0x500};
 
 #define FIRST_BIAS   IDXBIAS
@@ -292,9 +303,9 @@ unsigned int xdata PageAddr[]={0x0,0x100,0x200,0x300,0x400,0x500};
 // Device Address mapping
 #define ADDR_LTC1669   0x20
 #define ADDR_PCA9539   0x74
-#define ADDR_LTC2497	  0x14	
+#define ADDR_LTC2497	 0x14	
 #define ADDR_LTC2495   0x14
-//NW mirror of the DAC values 
+//NW mirror of the DAC values (for multiple DAC change)
 unsigned char xdata ltc1665mirror [64];
 
 // Global ON / OFF definition
@@ -305,9 +316,10 @@ unsigned char xdata ltc1665mirror [64];
 #define CLEAR  0
 #define SET		1
 
-
 // Shutdown mask
 // Shut down the card only if any of the following bits in the rESR register is set
+// correspond to the rESR bit assignment
+// All the Vreg U/I, uC/Board/FGD Temperature
 #define SHUTDOWN_MASK   0x7FC
 
 // Vreg Enable port assignment
@@ -316,6 +328,7 @@ sbit EN_pD5V = P3 ^ 4;
 sbit EN_pA5V = P3 ^ 3;
 sbit EN_nA5V = P3 ^ 2;
 #elif defined(FEB64REV1)
+// P3.4, P3.3 are spares
 sbit REG_EN = P3 ^ 2;
 #endif
 
@@ -352,7 +365,7 @@ sbit iReg2    = rESR ^ 14; //0x40
 sbit iReg3    = rESR ^ 15; //0x80
 sbit uCT      = rESR ^ 0;  //0x100
 sbit IntssTT  = rESR ^ 1;  //0x200
-sbit ExtssTT  = rESR ^ 2;	//0x400
+sbit ExtssTT  = rESR ^ 2;	 //0x400
 sbit EEPROM   = rESR ^ 3;  //0x800
 sbit RdssT	  = rESR ^ 4;  //0x1000
 
@@ -360,7 +373,9 @@ sbit RdssT	  = rESR ^ 4;  //0x1000
 sbit SDA		  = MSCB_I2C_SDA;
 sbit SCL		  = MSCB_I2C_SCL;
 
-/*---- Define variable parameters returned to CMD_GET_INFO command ----*/
+/**********************************************************************************/
+// MSCB structure
+//Define variable parameters returned to CMD_GET_INFO command
 struct user_data_type {
 	unsigned long SerialN;
 	unsigned int  error;         
@@ -385,7 +400,7 @@ struct user_data_type {
 	float ssTemp[4];
 	unsigned int  rAsum[8];
 	unsigned char rBias [64];
-
+// Raw data section
 	unsigned int rVBias;
 	unsigned int rIBias;
 	unsigned int rpDV;
@@ -396,16 +411,19 @@ struct user_data_type {
 	unsigned int rpDI;	
 	signed long rVBMon[8];
 	signed long rIBMon[8];
+// EEPROM back door
 	float eepValue;
 	unsigned long eeCtrSet;
 	unsigned long asumCtl;
 };
 struct user_data_type xdata user_data;
-   		
+
+// Debugging port
 sbit timing = P2 ^ 7;
-/********************************************************************\
-  Application specific init and inout/output routines
-\********************************************************************/
+
+/********************************************************************/
+// Application specific init and inout/output routines
+/********************************************************************/
 void user_init(unsigned char init);
 void user_loop(void);
 void user_write(unsigned char index) reentrant;
