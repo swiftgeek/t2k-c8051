@@ -115,9 +115,9 @@
    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pDVMon",     &user_data.pDVMon,       //9  
    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pAVMon",     &user_data.pAVMon,       //10 
    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "nAVMon",     &user_data.nAVMon,       //11 
-   4, UNIT_AMPERE,          0, 0, MSCBF_FLOAT, "nAIMon",     &user_data.nAIMon,       //12 
-   4, UNIT_AMPERE,          0, 0, MSCBF_FLOAT, "pAIMon",     &user_data.pAIMon,       //13 
-   4, UNIT_AMPERE,          0, 0, MSCBF_FLOAT, "pDIMon",     &user_data.pDIMon,       //14 
+   4, UNIT_AMPERE, 			 0, 0, MSCBF_FLOAT, "nAIMon",     &user_data.nAIMon,       //12 
+   4, UNIT_AMPERE, 			 0, 0, MSCBF_FLOAT, "pAIMon",     &user_data.pAIMon,       //13 
+   4, UNIT_AMPERE, 			 0, 0, MSCBF_FLOAT, "pDIMon",     &user_data.pDIMon,       //14 
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "uCTemp",     &user_data.uCTemp,       //15 
 
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp0",      &user_data.Temp[0],      //16 
@@ -306,18 +306,31 @@ float read_voltage(unsigned char channel,unsigned int *rvalue,  float coeff, flo
 //
 //
 //-----------------------------------------------------------------------------
+//converts channel index to eepage structure offset address
+int eepage_add_conver(unsigned int index)
+{
+	int add;
+	//if index is even
+	if(!(index%2))
+		add=index/2+4;
+		//if index is odd
+	else
+		add=index/2;
+	return add;
+}
+//
+//
+//-----------------------------------------------------------------------------
 void switchonoff(unsigned char command)
 {
     char xdata swConversion;
     if(command==ON)
     {
-        //
-        // Initial setting for communication and overall ports (if needed).
+        // Enable the voltage regulator to power the card 
         //-----------------------------------------------------------------------------
         SFRPAGE  = CONFIG_PAGE;
-        // P0MDOUT contains Tx in push-pull
-        P0MDOUT |= 0x20;   // add RS485_ENABLE in push-pull
-        //
+        P3MDOUT &= 0xFB;  // Set Vreg enable to Open drain
+        REG_EN=ON;
         // Setup the ASUM ports (P1.7,6,5)
         //-----------------------------------------------------------------------------
         P1MDOUT |= 0xE0;  // Sync, TestN, PowerDwnN 
@@ -327,18 +340,10 @@ void switchonoff(unsigned char command)
         ASUM_PWDN  = 1;
         //
         // uC Charge Pump frequency setup
-    //-----------------------------------------------------------------------------
+        //-----------------------------------------------------------------------------
         pca_operation(Q_PUMP_INIT); //Charge Pump initialization (crossbar settings)
         pca_operation(Q_PUMP_OFF);   //Initially turn it off
-        //
-        // uC Miscellaneous ADCs (V/I Monitoring)
-        //-----------------------------------------------------------------------------
-        SFRPAGE  = CONFIG_PAGE;
-        // P3.2 OpenDrain for the 3 Vreg enable
-        // P3.3,4 Spares on Push-pull
-        // P3MDOUT |= 0x18;
-        P3MDOUT &= 0xFB;  // Set Vreg enable to Open drain
-        adc_internal_init();
+
         //
         // SPI Dac (Bias voltages, 64 channels)
         //-----------------------------------------------------------------------------
@@ -347,7 +352,7 @@ void switchonoff(unsigned char command)
         P2MDOUT |= 0x18; // Setting the SPI_MOSI and SPI_SCK to push pull
         P0MDOUT |= 0xC0; // Setting the BIAS_DAC_CSn1 and BIAS_DAC_CSn2 to push pull
         P3MDOUT |= 0x63; // Setting the BIAS_DAC_CSn3,4,5,6 to push pull
-        P0MDOUT |= 0x60; // Setting the BIAS_DAC_CSn7,8 to push pull
+        P2MDOUT |= 0x60; // Setting the BIAS_DAC_CSn7,8 to push pull
         LTC1665_Init();
         #endif
         //
@@ -400,15 +405,11 @@ void switchonoff(unsigned char command)
         PCA9539_WriteByte(BACKPLANE_INPUT_ENABLE);
         delay_us(10);
         #endif
-        //
-        // SST Temperatures
-        //-----------------------------------------------------------------------------_
-        #ifdef ADT7486A     
-        SFRPAGE  = CONFIG_PAGE;
-        P1MDOUT |= 0x01; // Setting the SST_DRV (SST) to push pull
-        #endif   
 
-        REG_EN=ON;
+ 		  //Activate charge pump dac settings
+ 		  LTC1669_Flag=SET;
+   	  //Activate 64 bias dac settings
+ 		  LTC1665_Flag=SET;
     }
     else if(command==OFF)
     {       
@@ -416,12 +417,15 @@ void switchonoff(unsigned char command)
         //Switch all the ports to open drain except for mscb communication 
         P0MDOUT &= 0x23;
         P0 &= 0x23;
-        P1MDOUT = 0;
-        P1=0;
-        P2MDOUT=0;
-        P2=0;
-        P3MDOUT=0;
-        P3=0;
+		  //SST does not need to be switched offw
+        P1MDOUT &= 0x01;
+        P1 &=0x01;
+		  //SPI communication to EEPROM is maintained 
+        P2MDOUT &= 0x1F;
+        P2 &= 0x1F;
+		  //Ram_CSn is maintained 
+        P3MDOUT &= 0x80;
+        P3 &= 0x80;
     }
 }
 
@@ -482,93 +486,38 @@ void switchonoff(unsigned char command)
    P0MDOUT |= 0x20;   // add RS485_ENABLE in push-pull
 
  //
- // Setup the ASUM ports (P1.7,6,5)
- //-----------------------------------------------------------------------------
-  P1MDOUT |= 0xE0;  // Sync, TestN, PowerDwnN 
-  delay_us(1000);
-  ASUM_SYNC  = 0;
-  ASUM_TESTN = 0;
-  ASUM_PWDN  = 1;
- //
- // uC Charge Pump frequency setup
- //-----------------------------------------------------------------------------
-   pca_operation(Q_PUMP_INIT); //Charge Pump initialization (crossbar settings)
-   pca_operation(Q_PUMP_OFF);   //Initially turn it off
-
- //
  // uC Miscellaneous ADCs (V/I Monitoring)
  //-----------------------------------------------------------------------------
-   SFRPAGE  = CONFIG_PAGE;
-   // P3.2 OpenDrain for the 3 Vreg enable
-   // P3.3,4 Spares on Push-pull
-//   P3MDOUT |= 0x18;
-   P3MDOUT &= 0xFB;  // Set Vreg enable to Open drain
    adc_internal_init();
-
-
- //
- // SPI Dac (Bias voltages, 64 channels)
- //-----------------------------------------------------------------------------
- #ifdef _LTC1665_
-   SFRPAGE  = CONFIG_PAGE;
-   P2MDOUT |= 0x18; // Setting the SPI_MOSI and SPI_SCK to push pull
-   P0MDOUT |= 0xC0; // Setting the BIAS_DAC_CSn1 and BIAS_DAC_CSn2 to push pull
-   P3MDOUT |= 0x63; // Setting the BIAS_DAC_CSn3,4,5,6 to push pull
-   P0MDOUT |= 0x60; // Setting the BIAS_DAC_CSn7,8 to push pull
-
-   LTC1665_Init();
- #endif
-
- //
- // SPI ASUM DAC (8 channels)
- //-----------------------------------------------------------------------------
- #ifdef _LTC2600_
-   SFRPAGE  = CONFIG_PAGE;
-   P1MDOUT |= 0x10; // Setting the SUM_DAC_CSn to push pull
-   P2MDOUT |= 0x18; // Setting the SPI_MOSI and SPI_SCK to push pull
-   LTC2600_Init();
- #endif
 
  //
  //SPI ExtEEPROM
  //-----------------------------------------------------------------------------
  #ifdef _ExtEEPROM_
-  SFRPAGE  = CONFIG_PAGE;
+   SFRPAGE  = CONFIG_PAGE;
    P3MDOUT |= 0x80; // Setting the RAM_CSn to push pull
    P2MDOUT |= 0x18; // Setting the SPI_MOSI and SPI_SCK to push pull
-  P2MDOUT &= 0xFE; // Setting the RAM_WPn to open drain
-  ExtEEPROM_Init();
- #endif
- //
- // SMB Charge Pump DAC
- //-----------------------------------------------------------------------------
- #ifdef _LTC1669_
-   LTC1669_Init(); //I2C DAC initialization (D_CH_PUMP)
+   P2MDOUT &= 0xFE; // Setting the RAM_WPn to open drain
+   ExtEEPROM_Init();
  #endif
 
- #ifdef _LTC2497_
-   LTC2497_Init();
-  // Start Conversion on Channel 0
- #endif
-
- #ifdef _LTC2495_
-   LTC2495_Init();
-  // Start Conversion on Channel 0
- #endif
  //
- // SMB Bias Voltage switches
+ // Initialize PCA for address reading and switch settings
  //-----------------------------------------------------------------------------
  #ifdef _PCA9539_
-    SFRPAGE = CONFIG_PAGE;
-    P1MDOUT |= 0x08;
-    PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
-    delay_us(10);
-    PCA9539_WriteByte(BIAS_OUTPUT_ENABLE);
-    delay_us(10);
-    PCA9539_WriteByte(BIAS_ENABLE);
-    delay_us(10);
-    PCA9539_WriteByte(BACKPLANE_INPUT_ENABLE);
-    delay_us(10);
+   SFRPAGE = CONFIG_PAGE;
+   P1MDOUT |= 0x08;
+   PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
+   delay_us(10);
+	//Write to the PCA register for setting 0.x to output
+   PCA9539_WriteByte(BIAS_OUTPUT_ENABLE);
+   delay_us(10);
+	//Set the port pins to high
+   PCA9539_WriteByte(BIAS_ENABLE);
+   delay_us(10);
+	//Write to the PCA register for setting 1.x to input
+   PCA9539_WriteByte(BACKPLANE_INPUT_ENABLE);
+   delay_us(10);
  //
  // Physical backplane address retrieval
  //-----------------------------------------------------------------------------
@@ -587,6 +536,7 @@ void switchonoff(unsigned char command)
  //-----------------------------------------------------------------------------
 #ifdef _ExtEEPROM_
   //Read only the serial number from the protected page
+  //Protected page starts from 0x600, serial number is located in 0x690
   ExtEEPROM_Read(SERIALN_ADD,(unsigned char*)&eepage.SerialN, SERIALN_LENGTH);
   user_data.SerialN = eepage.SerialN;
   //Read all other settings from page 0(non-protected)
@@ -602,23 +552,15 @@ void switchonoff(unsigned char command)
   }
   user_data.rQpump = eepage.rqpump;
   user_data.swBias = eepage.SWbias;
-  //Activate switch settings
-  PCA_Flag=SET;
-  //Activate charge pump dac settings
-  LTC1669_Flag=SET;
-  //Activate 64 bias dac settings
-  LTC1665_Flag=SET;
   ENABLE_INTERRUPTS;
 #endif
- //
- // EEPROM serial number Retrieval
- //-----------------------------------------------------------------------------
-// #ifdef _ExtEEPROM_
-//  ExtEEPROM_Read(SERIALN_ADD,(unsigned char*)&user_data.SerialN, SERIALN_LENGTH);
-// #endif
+  //
+  //Turn off the card before the timer expires
+  //-----------------------------------------------------------------------------
+  // switchonoff(OFF);	
 
  //
- // SST Temperatures
+ // SST Temperatures, setting temperature offsets
  //-----------------------------------------------------------------------------
  #ifdef _ADT7486A_
    SFRPAGE  = CONFIG_PAGE;
@@ -673,10 +615,12 @@ void switchonoff(unsigned char command)
 #ifdef FEB64REV0
   EN_pD5V  = ON;                  // Needed for debug
   EN_pA5V  = ON;                  //-PAA- needed for ASUM test
-  EN_nA5V  = ON;                  //-PAA- needed for ASUM test
+  EN_nA5V  = ON;                  //-PAA- needed for ASUM test    
 #elif defined(FEB64REV1)
-  REG_EN = OFF;       //to be determined...
+  switchonoff(ON); //debugging only 
 #endif
+  
+  P2MDOUT |= 0x80;
 }
 
 //
@@ -815,13 +759,10 @@ void user_loop(void) {
   //ltc1665
   char xdata ltc1665_index, ltc1665_chipChan, ltc1665_chipAdd; 
  
-  char chartemporary;
-  int inttemporary;   
-  chartemporary=0x89;
-  inttemporary= chartemporary & 0x1F8;
-  //
-  //-----------------------------------------------------------------------------
-  
+   timing=1;
+  // 
+  //External ADC for REV0 cards
+  //----------------------------------------------------------------------------- 
   #ifdef _LTC2497_
       LTC2497_StartConversion(ADDR_LTC2497, adcChannel);
 		// Make sure the result is valid!
@@ -847,7 +788,9 @@ void user_loop(void) {
       adcChannel %= N_RB_CHANNEL;
 	 
   #endif
-  
+  // 
+  //External ADC for REV1 cards
+  //-----------------------------------------------------------------------------   
   #ifdef _LTC2495_
   
       LTC2495_StartConversion(ADDR_LTC2495, adcChannel, adc2mscb_table[adcChannel].gain);
@@ -880,13 +823,16 @@ void user_loop(void) {
   //
   //-----------------------------------------------------------------------------
   //Checking the eeprom control flag
-  if (EEP_CTR_FLAG)
-  {
+  if (EEP_CTR_FLAG) {
       //Checking for the special instruction
-      if (user_data.eeCtrSet & EEP_CTRL_KEY)
-		{
-	   	eep_address = (float*)&eepage + (user_data.eeCtrSet & 0x000000ff);
-   	   //Checking for the write request
+      if (user_data.eeCtrSet & EEP_CTRL_KEY) {
+			//convert the index value to fit the address of the eepage structure (temperature offset only)	
+			if((TEMPOFF_INDX<(int)(user_data.eeCtrSet & 0x000000ff))
+			   &&((int)(user_data.eeCtrSet & 0x000000ff)<TEMPOFF_LAST_INDX))
+	   		eep_address = (float*)&eepage + eepage_add_conver((int)(user_data.eeCtrSet & 0x000000ff));
+   	   else
+				eep_address = (float*)&eepage + (user_data.eeCtrSet & 0x000000ff);
+			//Checking for the write request
 		if (user_data.eeCtrSet & EEP_CTRL_WRITE){
 			//NW added (SERIALN_ADD - WP_START_ADDR) is divided by 4 because the pointer
 			// moves by 4 bytes for every increment
@@ -894,35 +840,32 @@ void user_loop(void) {
 				*eep_address = user_data.eepValue;
         	  //Checking for the read request
       } 
-		else if (user_data.eeCtrSet & EEP_CTRL_READ)
-		{
+		else if (user_data.eeCtrSet & EEP_CTRL_READ) {
 			DISABLE_INTERRUPTS;
          user_data.eepValue = *eep_address;
 			ENABLE_INTERRUPTS;
       } 
-		else 
-		{
+		else {
          // Tell the user that inappropriate task has been requested
          DISABLE_INTERRUPTS;
          user_data.eepValue = EEP_CTRL_INVAL_REQ;
          ENABLE_INTERRUPTS;
       }
 	
-  } 
-  else 
-  {
-      // Tell the user that invalid key has been provided
-      DISABLE_INTERRUPTS;
-      user_data.eepValue = EEP_CTRL_INVAL_KEY;
-      ENABLE_INTERRUPTS;
-  }
+	  } 
+	  else {
+	      // Tell the user that invalid key has been provided
+	      DISABLE_INTERRUPTS;
+	      user_data.eepValue = EEP_CTRL_INVAL_KEY;
+	      ENABLE_INTERRUPTS;
+	  }
 
       EEP_CTR_FLAG = CLEAR;
-  }
+  }  // if eep
 
   //
   //-----------------------------------------------------------------------------
-  //Checking the flags
+  //Checking switches flag for toggling the switches
   #ifdef _PCA9539_
     if(PCA_Flag & !SsS & !SmSd){
       swConversion = user_data.swBias;
@@ -931,14 +874,18 @@ void user_loop(void) {
        PCA_Flag = CLEAR;
     }
   #endif
-
+  //
+  //-----------------------------------------------------------------------------
+  //Checking ASUM flag for updating the asum values
   #ifdef _LTC2600_
     if(LTC2600_Flag  & !SsS & !SmSd) {
         LTC2600_Cmd(WriteTo_Update,LTC2600_LOAD[AsumIndex], user_data.rAsum[AsumIndex]);
         LTC2600_Flag = CLEAR;
     }
   #endif
-
+  //
+  //-----------------------------------------------------------------------------
+  //Checking APD flag for updating the APD dacs
   #ifdef _LTC1665_
      if(LTC1665_Flag  & !SsS & !SmSd) {
 	  	  for(ltc1665_index=0; ltc1665_index<64; ltc1665_index++){
@@ -954,7 +901,9 @@ void user_loop(void) {
         LTC1665_Flag = CLEAR;
       }
   #endif
-
+  //
+  //-----------------------------------------------------------------------------
+  //Checking DAC charge pump flag for adjusting the charge pump voltage
   #ifdef _LTC1669_
     if(LTC1669_Flag  & !SsS & !SmSd) {
         LTC1669_SetDAC(ADDR_LTC1669, LTC1669_INT_BG_REF, user_data.rQpump);
@@ -994,7 +943,7 @@ void user_loop(void) {
 
   } // Power Up
 
-  if ( bdoitNOW || (uptime() - currentTime) > 1) {
+  if ( bdoitNOW || ((uptime() - currentTime) > 1)) {
     //-----------------------------------------------------------------------------
     //
     // Internal ADCs monitoring Voltages and Currents based on time
@@ -1004,7 +953,7 @@ void user_loop(void) {
     rpfData = &(user_data.rVBias);
     rCSR = user_data.status;
     rESR = user_data.error; //NW
-    for (channel=0, mask=0 ; channel<INTERNAL_N_CHN ; channel++, mask++) {
+    for (channel=0; channel<INTERNAL_N_CHN ; channel++) {
       volt = read_voltage(channel
                           ,&rvolt
                           ,iadc_table[channel].coeff
@@ -1014,31 +963,36 @@ void user_loop(void) {
       pfData[channel] = volt;
       rpfData[channel] = rvolt;
       ENABLE_INTERRUPTS;
-      mask = (1<<channel);  // Should be 4 bytes for ESR
-   /*  if ((channel > 1) && !SqPump) {  // Skip vQ, I
-       if ((volt >= eepage.lVIlimit[channel])
+      mask = (1<<channel); 
+
+		 // Skip the first two channels(charge pump) 
+      if ((channel > 1)){			// Skip vQ, I
+      	if ((volt >= eepage.lVIlimit[channel])
          && (volt <= eepage.uVIlimit[channel])) {
            rESR &= ~mask; // in range
-       }
-       else {
-         rESR |= mask; // out of range
-       }
+         }
+         else {
+           rESR |= mask; // out of range
+         }
+      }
+
     }
-   */ }
     if (bdoitNOW) {
      if (rESR & SHUTDOWN_MASK) {
         pca_operation(Q_PUMP_OFF);
         SqPump   = OFF;
         SsS = ON;
         SPup = OFF;
+		  switchonoff(OFF);  //to be determined....
       } else {
         SsS = OFF; // Remove System Shutdown
-      SmSd = OFF;
-      SPup = ON;
-      }
+        SmSd = OFF;
+        SPup = ON;
+      }   
+	  
    }
+   bdoitNOW = OFF;   // Reset flag coming from PowerUp sequence
 
-    bdoitNOW = OFF;   // Reset flag coming from PowerUp sequence
 
     // Publish Registers
     DISABLE_INTERRUPTS;
@@ -1061,8 +1015,7 @@ void user_loop(void) {
     DISABLE_INTERRUPTS;
     user_data.uCTemp = (float) temperature;
     ENABLE_INTERRUPTS;
-	 //NW temperature instead of volt?
-    if ((volt >= eepage.luCTlimit) && (volt <= eepage.uuCTlimit)) {
+    if ((temperature >= eepage.luCTlimit) && (temperature <= eepage.uuCTlimit)) {
       uCT = OFF; // in range
     } else {
       uCT = ON; // out of range
@@ -1073,8 +1026,7 @@ void user_loop(void) {
       SqPump   = OFF;
       SsS  = ON;
       SPup = OFF;
-    } else {
-      SsS  = OFF; // Remove System Shutdown
+		switchonoff(OFF);  //to be determined....
     }
     // Publish Error state
     // Publish Registers state
@@ -1149,75 +1101,98 @@ void user_loop(void) {
 
   //-----------------------------------------------------------------------------
   // Temperature reading/monitoring based on time for external temperature
-  if (uptime() - sstExtTime > SST_TIME){
-    for (channel=0;channel < NCHANNEL_ADT7486A; channel++){
-        if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt1Temp, SST_LINE1, &temperature)) //NW
-      {
-        ExtssTT = CLEAR;
-         DISABLE_INTERRUPTS;
-         user_data.Temp[channel*2] = temperature;
-         user_data.error   = rESR;  //NW
-         ENABLE_INTERRUPTS;
-      }
-      else
-      {
-        DISABLE_INTERRUPTS;
-        ExtssTT = SET;
-        user_data.error   = rESR;  //NW
-        ENABLE_INTERRUPTS;
-      }
+  if ((uptime() - sstExtTime) > SST_TIME){
+     for (channel=0;channel < NCHANNEL_ADT7486A; channel++){
+        if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt1Temp, SST_LINE1, &temperature)){
+           RdssT = CLEAR;
+		 	  if ((temperature >= eepage.lSSTlimit) && (temperature <= eepage.uSSTlimit)) {
+      	     ExtssTT = OFF; // in range
+       	  } else {
+      	     ExtssTT = ON; // out of range
+    	 	  }
+           DISABLE_INTERRUPTS;
+           user_data.Temp[channel*2] = temperature;
+           user_data.error   = rESR;  //NW
+           ENABLE_INTERRUPTS;
+        }
+        else{
+           DISABLE_INTERRUPTS;
+           RdssT = SET;
+           user_data.error   = rESR;  //NW
+           ENABLE_INTERRUPTS;
+        }
      }
-    for (channel=0;channel < NCHANNEL_ADT7486A; channel++){
-        if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt2Temp, SST_LINE1, &temperature)) //NW
-      {
-        ExtssTT = CLEAR;
+     for (channel=0;channel < NCHANNEL_ADT7486A; channel++){
+        if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt2Temp, SST_LINE1, &temperature)){
+           RdssT = CLEAR;
+		 	  if ((temperature >= eepage.lSSTlimit) && (temperature <= eepage.uSSTlimit)) {
+      	     ExtssTT = OFF; // in range
+       	  } else {
+      	     ExtssTT = ON; // out of range
+    	 	  }
+           DISABLE_INTERRUPTS;
+           user_data.Temp[(channel*2)+1] = temperature;
+           user_data.error   = rESR;  //NW
+           ENABLE_INTERRUPTS;
+        }
+        else{
          DISABLE_INTERRUPTS;
-         user_data.Temp[(channel*2)+1] = temperature;
-         user_data.error   = rESR;  //NW
+         RdssT = SET;
+         user_data.error   = rESR; //NW
          ENABLE_INTERRUPTS;
-      }
-      else
-      {
-        DISABLE_INTERRUPTS;
-        ExtssTT = SET;
-        user_data.error   = rESR; //NW
-        ENABLE_INTERRUPTS;
       }
      }
 
      sstExtTime = uptime();
   }
-
+  // Set Shutdown if Error in System Register
+  if ((rESR & SHUTDOWN_MASK) && !SmSd) {
+    pca_operation(Q_PUMP_OFF);  // Toggle state
+    SqPump   = OFF;
+    SsS  = ON;
+    SPup = OFF;
+    switchonoff(OFF);  //to be determined....
+  } 
 
   //-----------------------------------------------------------------------------
   // Temperature reading/monitoring based on time for internal temperature
-  if (uptime() - sstTime > SST_TIME) {
+  if ((uptime() - sstTime) > SST_TIME) {
     for (channel=0;channel < NCHANNEL_ADT7486A; channel++) {
-    if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetIntTemp, SST_LINE1, &temperature)) //NW
-    {
-       IntssTT = 0;
-       DISABLE_INTERRUPTS;
-       user_data.ssTemp[channel] = temperature;
-       user_data.error   = rESR;  //NW
-       ENABLE_INTERRUPTS;
-    }
-    else
-    {
-      DISABLE_INTERRUPTS;
-      IntssTT = 1;
-      user_data.error   = rESR; //NW
-      ENABLE_INTERRUPTS;
-    }
+       if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetIntTemp, SST_LINE1, &temperature)){
+          RdssT = CLEAR;
+		    if ((temperature >= eepage.luCTlimit) && (temperature <= eepage.uuCTlimit)) {
+      	    IntssTT = OFF; // in range
+          } else {
+      	    IntssTT = ON; // out of range
+       	 }
+          DISABLE_INTERRUPTS;
+          user_data.ssTemp[channel] = temperature;
+          user_data.error   = rESR;  //NW
+          ENABLE_INTERRUPTS;
+       }
+       else{
+          DISABLE_INTERRUPTS;
+          RdssT = SET;
+          user_data.error   = rESR; //NW
+          ENABLE_INTERRUPTS;
+       }
     }
     sstTime = uptime();
   }
-
+  // Set Shutdown if Error in System Register
+  if ((rESR & SHUTDOWN_MASK) && !SmSd) {
+    pca_operation(Q_PUMP_OFF);  // Toggle state
+    SqPump   = OFF;
+    SsS  = ON;
+    SPup = OFF;
+    switchonoff(OFF);  //to be determined....
+  } 
 #endif
 
   //-----------------------------------------------------------------------------
   // EEPROM Save procedure based on CTL bit
   #ifdef _ExtEEPROM_
-    if (CeeS  & !SsS & !SmSd) {
+    if (CeeS) {
        //Check if we are here for the first time
       if (!eeprom_flag){
         rCSR = user_data.status;
@@ -1259,7 +1234,7 @@ void user_loop(void) {
 #endif
   //-----------------------------------------------------------------------------
   // EEPROM Restore procedure based on CTL bit
-  if (CeeR  & !SsS & !SmSd) {
+  if (CeeR) {
     rCSR = user_data.status;
 
 #ifdef _ExtEEPROM_
@@ -1285,9 +1260,8 @@ void user_loop(void) {
   //-----------------------------------------------------------------------------
   //
   // General loop delay
-
+  timing=0;
   delay_ms(10);
-
   //
   // General loop delay
 } // End of User loop

@@ -168,7 +168,7 @@ float code  offset[8] = {-0.3464 ,0.         ,-0.06   ,-0.054  ,-18.622  ,0     
 #define VREF       2.432f
 #elif defined(FEB64REV1)
 struct IADC_TABLE xdata iadc_table[8] = {
-  {IGAIN1, 100, -0.01}, {IGAIN1, 10, 0}
+  {IGAIN1, 100,      -0.01}, {IGAIN1, 10, 0}
 , {IGAIN1, 3.980132, 0}, {IGAIN1, 3.980132, 0}
 , {IGAIN1 , 8.5, -18.75}, {IGAIN1 , 0.1, 0}
 , {IGAIN1 , 0.4, 0}, {IGAIN1 , 0.1, 0}
@@ -191,6 +191,8 @@ unsigned char rEER;
 #define EEP_CTRL_WRITE 	 0x00220000
 #define EEP_CTRL_INVAL_REQ -100	
 #define EEP_CTRL_INVAL_KEY -10	
+#define TEMPOFF_INDX 		27
+#define TEMPOFF_LAST_INDX  36
 
 struct EEPAGE {
 
@@ -219,7 +221,7 @@ unsigned char rbias [64];
 //   LvQ   LiQ   Lp6Vd  Lp6Va Ln6Va  Lp6Ia Lp6Ia  Lp6Id 
 //   HvQ   HiQ   Hp6Vd  Hp6Va Hp6Va  Hp6Ia Hp6Ia  Hp6Id 
 //   LuC Temperature,  HuC Temperature
-//   LSST Temperature, LSST Temperature
+//   LSST Temperature, HSST Temperature
 //   LVQ, HVQ (V)
 //   LIQ, HIQ (uA)
 //	  LVBias, HVBias (V)
@@ -230,10 +232,10 @@ unsigned char rbias [64];
 //	  rasum
 //	  rpump
 //	  SW
-//	  DAQ
+//	  DAC
 struct EEPAGE xdata eepage = {
-     30.0, 0.0,  5.5,   5.5, -6.5,  20.0,  5.0,   5.0
-    ,73.0, 0.1,  6.5,   6.5, -5.5,  1.0,   100.0, 200.0
+     30.0, 0.0, 5.5, 5.5, -6.5, 0.0, 0.0, 0.0
+    ,73.0, 0.1, 6.5, 6.5, -5.5, 0.2, 0.8, 0.2
 	 ,23., 45.
     ,20., 30.
 	 ,-1.0,1.0
@@ -256,8 +258,7 @@ struct EEPAGE xdata eepage = {
 	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 };
 
-//BS	For testing the EXTEEPROM
-struct EEPAGE xdata eepage2;
+struct EEPAGE xdata eepage2; //NW testing
 /*************************************/
 /*************************************/
 
@@ -306,7 +307,8 @@ unsigned char xdata ltc1665mirror [64];
 
 
 // Shutdown mask
-#define SHUTDOWN_MASK   0xFC
+// Shut down the card only if any of the following bits in the rESR register is set
+#define SHUTDOWN_MASK   0x7FC
 
 // Vreg Enable port assignment
 #ifdef FEB64REV0
@@ -340,18 +342,19 @@ sbit SmSd     = rCSR ^ 7;
 //This is the reason that the sbit declarations do not appear to match
 //the documentation but they actually do.
 unsigned int bdata rESR;
-sbit vQpump   = rESR ^ 8; 
-sbit iQpump   = rESR ^ 9;
-sbit vReg1    = rESR ^ 10;
-sbit vReg2    = rESR ^ 11;
-sbit vReg3    = rESR ^ 12;
-sbit iReg1    = rESR ^ 13;
-sbit iReg2    = rESR ^ 14;
-sbit iReg3    = rESR ^ 15;
-sbit uCT      = rESR ^ 0;
-sbit IntssTT  = rESR ^ 1; 
-sbit ExtssTT  = rESR ^ 2;	
-sbit EEPROM   = rESR ^ 3;
+sbit vQpump   = rESR ^ 8;  //0x1
+sbit iQpump   = rESR ^ 9;  //0x2
+sbit vReg1    = rESR ^ 10; //0x4
+sbit vReg2    = rESR ^ 11; //0x8
+sbit vReg3    = rESR ^ 12; //0x10
+sbit iReg1    = rESR ^ 13; //0x20
+sbit iReg2    = rESR ^ 14; //0x40
+sbit iReg3    = rESR ^ 15; //0x80
+sbit uCT      = rESR ^ 0;  //0x100
+sbit IntssTT  = rESR ^ 1;  //0x200
+sbit ExtssTT  = rESR ^ 2;	//0x400
+sbit EEPROM   = rESR ^ 3;  //0x800
+sbit RdssT	  = rESR ^ 4;  //0x1000
 
 // SMBus Port Aliases
 sbit SDA		  = MSCB_I2C_SDA;
@@ -399,7 +402,7 @@ struct user_data_type {
 };
 struct user_data_type xdata user_data;
    		
-
+sbit timing = P2 ^ 7;
 /********************************************************************\
   Application specific init and inout/output routines
 \********************************************************************/
@@ -410,4 +413,5 @@ unsigned char user_read(unsigned char index);
 unsigned char user_func(unsigned char *data_in, unsigned char *data_out);
 float read_voltage(unsigned char channel,unsigned int *rvalue, float coeff, float offset, unsigned char gain);
 void switchonoff(unsigned char command);
+int eepage_add_conver(unsigned int index);
 #endif
