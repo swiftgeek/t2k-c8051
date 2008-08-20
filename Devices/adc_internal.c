@@ -26,12 +26,12 @@ void adc_internal_init(void)
 }
 
 /*------------------------------------------------------------------*/
-unsigned int adc_read(unsigned char channel)
+unsigned int adc_read(unsigned char channel, unsigned char gain)
 {
   /* set MUX */
   SFRPAGE = ADC0_PAGE;
   AMX0SL = (channel & 0x0F);
-
+  ADC0CF = ((ADC0CF&0xF8)|gain);
   AMX0CF = 0x00;   // Input 0.. 7 + Temperature in single ended mode
 
 

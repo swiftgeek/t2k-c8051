@@ -17,6 +17,6 @@
 #define INTERNAL_N_CHN 8   // Number of Internal ADCs
 #define TCHANNEL       8   // Temperature channel
 void adc_internal_init(void);
-unsigned int adc_read(unsigned char channel);
+unsigned int adc_read(unsigned char channel, unsigned char gain);
 
 #endif
