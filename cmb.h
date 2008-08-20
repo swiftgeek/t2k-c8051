@@ -2,6 +2,7 @@
  Name:         cmb.h
  Created by:   Bahman Sotoodian                
  Created on:   April/9/2008 
+ Modified  :   Noel Wu
  
  Contents:     Application specific (user) part of
  					Midas Slow Control for CMB board. 					 
