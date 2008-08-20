@@ -1,7 +1,7 @@
-
 /********************************************************************\
 Name:         feb64.c
 Created by:   Bahman Sotoodian                Feb/11/2008
+Modified  :   Noel Wu                         .. Aug 2008
 
 
 Contents:     Application specific (user) part of
@@ -22,7 +22,7 @@ define(_SST_PROTOCOL_) define(_ADT7486A_)
 Program Size: data=139.6 xdata=274 code=13497
 Program Size: data=150.2 xdata=711 code=15134
 Program Size: data=160.0 xdata=523 code=14686
-
+Program Size: data=166.5 xdata=1309 code=22083 - Aug 20/2008
 
 CODE: 16KB(0x4000), paging in 512B(0x200)
 CODE(?PR?UPGRADE?MSCBMAIN (0xF600))
@@ -106,160 +106,160 @@ sbit ASUM_PWDN      = P1 ^5;
 //-----------------------------------------------------------------------------
 MSCB_INFO_VAR code vars[] = {
   4, UNIT_BYTE,            0, 0,           0, "SerialN",    &user_data.SerialN,      //0  
-    2, UNIT_BYTE,            0, 0,           0, "Error",      &user_data.error,        //1  
-    1, UNIT_BYTE,            0, 0,           0, "Control",    &user_data.control,      //2  
-    1, UNIT_BYTE,            0, 0,           0, "Status",     &user_data.status,       //3  
-    1, UNIT_BYTE,            0, 0,           0, "EEPage",     &user_data.eepage,       //4  
-    1, UNIT_BYTE,            0, 0,           0, "swBias",     &user_data.swBias,       //5  
-    2, UNIT_BYTE,            0, 0,           0, "rQpump",     &user_data.rQpump,       //6  
+  2, UNIT_BYTE,            0, 0,           0, "Error",      &user_data.error,        //1  
+  1, UNIT_BYTE,            0, 0,           0, "Control",    &user_data.control,      //2  
+  1, UNIT_BYTE,            0, 0,           0, "Status",     &user_data.status,       //3  
+  1, UNIT_BYTE,            0, 0,           0, "EEPage",     &user_data.eepage,       //4  
+  1, UNIT_BYTE,            0, 0,           0, "swBias",     &user_data.swBias,       //5  
+  2, UNIT_BYTE,            0, 0,           0, "rQpump",     &user_data.rQpump,       //6  
 
-    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBias",      &user_data.VBias,        //7  
-    4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBias",      &user_data.IBias,        //8  
-    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pDVMon",     &user_data.pDVMon,       //9  
-    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pAVMon",     &user_data.pAVMon,       //10 
-    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "nAVMon",     &user_data.nAVMon,       //11 
-    4, UNIT_AMPERE, 			 0, 0, MSCBF_FLOAT, "nAIMon",     &user_data.nAIMon,       //12 
-    4, UNIT_AMPERE, 			 0, 0, MSCBF_FLOAT, "pAIMon",     &user_data.pAIMon,       //13 
-    4, UNIT_AMPERE, 			 0, 0, MSCBF_FLOAT, "pDIMon",     &user_data.pDIMon,       //14 
-    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "uCTemp",     &user_data.uCTemp,       //15 
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBias",      &user_data.VBias,        //7  
+  4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBias",      &user_data.IBias,        //8  
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pDVMon",     &user_data.pDVMon,       //9  
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pAVMon",     &user_data.pAVMon,       //10 
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "nAVMon",     &user_data.nAVMon,       //11 
+  4, UNIT_AMPERE, 		   0, 0, MSCBF_FLOAT, "nAIMon",     &user_data.nAIMon,       //12 
+  4, UNIT_AMPERE, 		   0, 0, MSCBF_FLOAT, "pAIMon",     &user_data.pAIMon,       //13 
+  4, UNIT_AMPERE, 			0, 0, MSCBF_FLOAT, "pDIMon",     &user_data.pDIMon,       //14 
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "uCTemp",     &user_data.uCTemp,       //15 
 
-    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp0",      &user_data.Temp[0],      //16 
-    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp1",      &user_data.Temp[1],      //17 
-    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp2",      &user_data.Temp[2],      //18 
-    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp3",      &user_data.Temp[3],      //19 
-    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp4",      &user_data.Temp[4],      //20 
-    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp5",      &user_data.Temp[5],      //21 
-    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp6",      &user_data.Temp[6],      //22 
-    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp7",      &user_data.Temp[7],      //23 
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp0",      &user_data.Temp[0],      //16 
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp1",      &user_data.Temp[1],      //17 
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp2",      &user_data.Temp[2],      //18 
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp3",      &user_data.Temp[3],      //19 
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp4",      &user_data.Temp[4],      //20 
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp5",      &user_data.Temp[5],      //21 
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp6",      &user_data.Temp[6],      //22 
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp7",      &user_data.Temp[7],      //23 
 
-    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon0",     &user_data.VBMon[0],     //24 
-    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon1",     &user_data.VBMon[1],     //25 
-    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon2",     &user_data.VBMon[2],     //26 
-    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon3",     &user_data.VBMon[3],     //27 
-    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon4",     &user_data.VBMon[4],     //28 
-    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon5",     &user_data.VBMon[5],     //29 
-    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon6",     &user_data.VBMon[6],     //30 
-    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon7",     &user_data.VBMon[7],     //31 
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon0",     &user_data.VBMon[0],     //24 
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon1",     &user_data.VBMon[1],     //25 
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon2",     &user_data.VBMon[2],     //26 
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon3",     &user_data.VBMon[3],     //27 
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon4",     &user_data.VBMon[4],     //28 
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon5",     &user_data.VBMon[5],     //29 
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon6",     &user_data.VBMon[6],     //30 
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon7",     &user_data.VBMon[7],     //31 
 
-    4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon0",     &user_data.IBMon[0],     //32 
-    4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon1",     &user_data.IBMon[1],     //33 
-    4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon2",     &user_data.IBMon[2],     //34 
-    4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon3",     &user_data.IBMon[3],     //35 
-    4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon4",     &user_data.IBMon[4],     //36 
-    4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon5",     &user_data.IBMon[5],     //37 
-    4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon6",     &user_data.IBMon[6],     //38 
-    4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon7",     &user_data.IBMon[7],     //39 
+  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon0",     &user_data.IBMon[0],     //32 
+  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon1",     &user_data.IBMon[1],     //33 
+  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon2",     &user_data.IBMon[2],     //34 
+  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon3",     &user_data.IBMon[3],     //35 
+  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon4",     &user_data.IBMon[4],     //36 
+  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon5",     &user_data.IBMon[5],     //37 
+  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon6",     &user_data.IBMon[6],     //38 
+  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon7",     &user_data.IBMon[7],     //39 
 
-    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "ssTemp0",    &user_data.ssTemp[0],    //40 
-    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "ssTemp1",    &user_data.ssTemp[1],    //41 
-    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "ssTemp2",    &user_data.ssTemp[2],    //42 
-    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "ssTemp3",    &user_data.ssTemp[3],    //43 
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "ssTemp0",    &user_data.ssTemp[0],    //40 
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "ssTemp1",    &user_data.ssTemp[1],    //41 
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "ssTemp2",    &user_data.ssTemp[2],    //42 
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "ssTemp3",    &user_data.ssTemp[3],    //43 
+  
+  2, UNIT_BYTE,            0, 0,           0, "rAsum0",     &user_data.rAsum[0],     //44 
+  2, UNIT_BYTE,            0, 0,           0, "rAsum1",     &user_data.rAsum[1],     //45 
+  2, UNIT_BYTE,            0, 0,           0, "rAsum2",     &user_data.rAsum[2],     //46 
+  2, UNIT_BYTE,            0, 0,           0, "rAsum3",     &user_data.rAsum[3],     //47 
+  2, UNIT_BYTE,            0, 0,           0, "rAsum4",     &user_data.rAsum[4],     //48 
+  2, UNIT_BYTE,            0, 0,           0, "rAsum5",     &user_data.rAsum[5],     //49 
+  2, UNIT_BYTE,            0, 0,           0, "rAsum6",     &user_data.rAsum[6],     //50 
+  2, UNIT_BYTE,            0, 0,           0, "rAsum7",     &user_data.rAsum[7],     //51 
 
-    2, UNIT_BYTE,            0, 0,           0, "rAsum0",     &user_data.rAsum[0],     //44 
-    2, UNIT_BYTE,            0, 0,           0, "rAsum1",     &user_data.rAsum[1],     //45 
-    2, UNIT_BYTE,            0, 0,           0, "rAsum2",     &user_data.rAsum[2],     //46 
-    2, UNIT_BYTE,            0, 0,           0, "rAsum3",     &user_data.rAsum[3],     //47 
-    2, UNIT_BYTE,            0, 0,           0, "rAsum4",     &user_data.rAsum[4],     //48 
-    2, UNIT_BYTE,            0, 0,           0, "rAsum5",     &user_data.rAsum[5],     //49 
-    2, UNIT_BYTE,            0, 0,           0, "rAsum6",     &user_data.rAsum[6],     //50 
-    2, UNIT_BYTE,            0, 0,           0, "rAsum7",     &user_data.rAsum[7],     //51 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias00",    &user_data.rBias[0],     //52 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias01",    &user_data.rBias[1],     //53 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias02",    &user_data.rBias[2],     //54 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias03",    &user_data.rBias[3],     //55 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias04",    &user_data.rBias[4],     //56 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias05",    &user_data.rBias[5],     //57 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias06",    &user_data.rBias[6],     //58 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias07",    &user_data.rBias[7],     //59 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias08",    &user_data.rBias[8],     //60 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias09",    &user_data.rBias[9],     //61 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias10",    &user_data.rBias[10],    //62 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias11",    &user_data.rBias[11],    //63 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias12",    &user_data.rBias[12],    //64 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias13",    &user_data.rBias[13],    //65 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias14",    &user_data.rBias[14],    //66 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias15",    &user_data.rBias[15],    //67 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias16",    &user_data.rBias[16],    //68 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias17",    &user_data.rBias[17],    //69 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias18",    &user_data.rBias[18],    //70 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias19",    &user_data.rBias[19],    //71 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias20",    &user_data.rBias[20],    //72 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias21",    &user_data.rBias[21],    //73 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias22",    &user_data.rBias[22],    //74 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias23",    &user_data.rBias[23],    //75 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias24",    &user_data.rBias[24],    //76 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias25",    &user_data.rBias[25],    //77 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias26",    &user_data.rBias[26],    //78 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias27",    &user_data.rBias[27],    //79 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias28",    &user_data.rBias[28],    //80 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias29",    &user_data.rBias[29],    //81 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias30",    &user_data.rBias[30],    //82 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias31",    &user_data.rBias[31],    //83 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias32",    &user_data.rBias[32],    //84 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias33",    &user_data.rBias[33],    //85 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias34",    &user_data.rBias[34],    //86 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias35",    &user_data.rBias[35],    //87 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias36",    &user_data.rBias[36],    //88 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias37",    &user_data.rBias[37],    //89 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias38",    &user_data.rBias[38],    //90 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias39",    &user_data.rBias[39],    //91 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias40",    &user_data.rBias[40],    //92 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias41",    &user_data.rBias[41],    //93 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias42",    &user_data.rBias[42],    //94 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias43",    &user_data.rBias[43],    //95 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias44",    &user_data.rBias[44],    //96 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias45",    &user_data.rBias[45],    //97 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias46",    &user_data.rBias[46],    //98 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias47",    &user_data.rBias[47],    //99 
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias48",    &user_data.rBias[48],    //100
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias49",    &user_data.rBias[49],    //101
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias50",    &user_data.rBias[50],    //102
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias51",    &user_data.rBias[51],    //103
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias52",    &user_data.rBias[52],    //104
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias53",    &user_data.rBias[53],    //105
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias54",    &user_data.rBias[54],    //106
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias55",    &user_data.rBias[55],    //107
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias56",    &user_data.rBias[56],    //108
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias57",    &user_data.rBias[57],    //109
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias58",    &user_data.rBias[58],    //110
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias59",    &user_data.rBias[59],    //111
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias60",    &user_data.rBias[60],    //112
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias61",    &user_data.rBias[61],    //113
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias62",    &user_data.rBias[62],    //114
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias63",    &user_data.rBias[63],    //115
 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias00",    &user_data.rBias[0],     //52 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias01",    &user_data.rBias[1],     //53 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias02",    &user_data.rBias[2],     //54 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias03",    &user_data.rBias[3],     //55 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias04",    &user_data.rBias[4],     //56 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias05",    &user_data.rBias[5],     //57 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias06",    &user_data.rBias[6],     //58 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias07",    &user_data.rBias[7],     //59 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias08",    &user_data.rBias[8],     //60 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias09",    &user_data.rBias[9],     //61 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias10",    &user_data.rBias[10],    //62 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias11",    &user_data.rBias[11],    //63 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias12",    &user_data.rBias[12],    //64 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias13",    &user_data.rBias[13],    //65 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias14",    &user_data.rBias[14],    //66 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias15",    &user_data.rBias[15],    //67 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias16",    &user_data.rBias[16],    //68 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias17",    &user_data.rBias[17],    //69 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias18",    &user_data.rBias[18],    //70 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias19",    &user_data.rBias[19],    //71 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias20",    &user_data.rBias[20],    //72 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias21",    &user_data.rBias[21],    //73 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias22",    &user_data.rBias[22],    //74 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias23",    &user_data.rBias[23],    //75 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias24",    &user_data.rBias[24],    //76 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias25",    &user_data.rBias[25],    //77 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias26",    &user_data.rBias[26],    //78 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias27",    &user_data.rBias[27],    //79 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias28",    &user_data.rBias[28],    //80 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias29",    &user_data.rBias[29],    //81 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias30",    &user_data.rBias[30],    //82 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias31",    &user_data.rBias[31],    //83 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias32",    &user_data.rBias[32],    //84 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias33",    &user_data.rBias[33],    //85 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias34",    &user_data.rBias[34],    //86 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias35",    &user_data.rBias[35],    //87 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias36",    &user_data.rBias[36],    //88 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias37",    &user_data.rBias[37],    //89 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias38",    &user_data.rBias[38],    //90 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias39",    &user_data.rBias[39],    //91 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias40",    &user_data.rBias[40],    //92 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias41",    &user_data.rBias[41],    //93 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias42",    &user_data.rBias[42],    //94 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias43",    &user_data.rBias[43],    //95 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias44",    &user_data.rBias[44],    //96 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias45",    &user_data.rBias[45],    //97 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias46",    &user_data.rBias[46],    //98 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias47",    &user_data.rBias[47],    //99 
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias48",    &user_data.rBias[48],    //100
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias49",    &user_data.rBias[49],    //101
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias50",    &user_data.rBias[50],    //102
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias51",    &user_data.rBias[51],    //103
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias52",    &user_data.rBias[52],    //104
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias53",    &user_data.rBias[53],    //105
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias54",    &user_data.rBias[54],    //106
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias55",    &user_data.rBias[55],    //107
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias56",    &user_data.rBias[56],    //108
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias57",    &user_data.rBias[57],    //109
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias58",    &user_data.rBias[58],    //110
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias59",    &user_data.rBias[59],    //111
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias60",    &user_data.rBias[60],    //112
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias61",    &user_data.rBias[61],    //113
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias62",    &user_data.rBias[62],    //114
-    1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias63",    &user_data.rBias[63],    //115
+  2, UNIT_BYTE,            0, 0,           0, "rVBias",     &user_data.rVBias,       //116
+  2, UNIT_BYTE,            0, 0,           0, "rIBias",     &user_data.rIBias,       //117
+  2, UNIT_BYTE,            0, 0,           0, "rpDV",       &user_data.rpDV,         //118
+  2, UNIT_BYTE,            0, 0,           0, "rpAV",       &user_data.rpAV,         //119
+  2, UNIT_BYTE,            0, 0,           0, "rnAV",       &user_data.rnAV,         //120
+  2, UNIT_BYTE,            0, 0,           0, "rnAI",       &user_data.rnAI,         //121
+  2, UNIT_BYTE,            0, 0,           0, "rpAI",       &user_data.rpAI,         //122
+  2, UNIT_BYTE,            0, 0,           0, "rpDI",       &user_data.rpDI,         //123
 
-    2, UNIT_BYTE,            0, 0,           0, "rVBias",     &user_data.rVBias,       //116
-    2, UNIT_BYTE,            0, 0,           0, "rIBias",     &user_data.rIBias,       //117
-    2, UNIT_BYTE,            0, 0,           0, "rpDV",       &user_data.rpDV,         //118
-    2, UNIT_BYTE,            0, 0,           0, "rpAV",       &user_data.rpAV,         //119
-    2, UNIT_BYTE,            0, 0,           0, "rnAV",       &user_data.rnAV,         //120
-    2, UNIT_BYTE,            0, 0,           0, "rnAI",       &user_data.rnAI,         //121
-    2, UNIT_BYTE,            0, 0,           0, "rpAI",       &user_data.rpAI,         //122
-    2, UNIT_BYTE,            0, 0,           0, "rpDI",       &user_data.rpDI,         //123
+  4, UNIT_BYTE,            0, 0,           0,  "rVBMon0",   &user_data.rVBMon[0],    //124
+  4, UNIT_BYTE,            0, 0,           0,  "rVBMon1",   &user_data.rVBMon[1],    //125
+  4, UNIT_BYTE,            0, 0,           0,  "rVBMon2",   &user_data.rVBMon[2],    //126
+  4, UNIT_BYTE,            0, 0,           0,  "rVBMon3",   &user_data.rVBMon[3],    //127
+  4, UNIT_BYTE,            0, 0,           0,  "rVBMon4",   &user_data.rVBMon[4],    //128
+  4, UNIT_BYTE,            0, 0,           0,  "rVBMon5",   &user_data.rVBMon[5],    //129
+  4, UNIT_BYTE,            0, 0,           0,  "rVBMon6",   &user_data.rVBMon[6],    //130
+  4, UNIT_BYTE,            0, 0,           0,  "rVBMon7",   &user_data.rVBMon[7],    //131
+  4, UNIT_BYTE,            0, 0,           0,  "rIBMon0",   &user_data.rIBMon[0],    //132
+  4, UNIT_BYTE,            0, 0,           0,  "rIBMon1",   &user_data.rIBMon[1],    //133
+  4, UNIT_BYTE,            0, 0,           0,  "rIBMon2",   &user_data.rIBMon[2],    //134
+  4, UNIT_BYTE,            0, 0,           0,  "rIBMon3",   &user_data.rIBMon[3],    //135
+  4, UNIT_BYTE,            0, 0,           0,  "rIBMon4",   &user_data.rIBMon[4],    //136
+  4, UNIT_BYTE,            0, 0,           0,  "rIBMon5",   &user_data.rIBMon[5],    //137
+  4, UNIT_BYTE,            0, 0,           0,  "rIBMon6",   &user_data.rIBMon[6],    //138
+  4, UNIT_BYTE,            0, 0,           0,  "rIBMon7",   &user_data.rIBMon[7],    //139
 
-    4, UNIT_BYTE,            0, 0,           0,  "rVBMon0",   &user_data.rVBMon[0],    //124
-    4, UNIT_BYTE,            0, 0,           0,  "rVBMon1",   &user_data.rVBMon[1],    //125
-    4, UNIT_BYTE,            0, 0,           0,  "rVBMon2",   &user_data.rVBMon[2],    //126
-    4, UNIT_BYTE,            0, 0,           0,  "rVBMon3",   &user_data.rVBMon[3],    //127
-    4, UNIT_BYTE,            0, 0,           0,  "rVBMon4",   &user_data.rVBMon[4],    //128
-    4, UNIT_BYTE,            0, 0,           0,  "rVBMon5",   &user_data.rVBMon[5],    //129
-    4, UNIT_BYTE,            0, 0,           0,  "rVBMon6",   &user_data.rVBMon[6],    //130
-    4, UNIT_BYTE,            0, 0,           0,  "rVBMon7",   &user_data.rVBMon[7],    //131
-    4, UNIT_BYTE,            0, 0,           0,  "rIBMon0",   &user_data.rIBMon[0],    //132
-    4, UNIT_BYTE,            0, 0,           0,  "rIBMon1",   &user_data.rIBMon[1],    //133
-    4, UNIT_BYTE,            0, 0,           0,  "rIBMon2",   &user_data.rIBMon[2],    //134
-    4, UNIT_BYTE,            0, 0,           0,  "rIBMon3",   &user_data.rIBMon[3],    //135
-    4, UNIT_BYTE,            0, 0,           0,  "rIBMon4",   &user_data.rIBMon[4],    //136
-    4, UNIT_BYTE,            0, 0,           0,  "rIBMon5",   &user_data.rIBMon[5],    //137
-    4, UNIT_BYTE,            0, 0,           0,  "rIBMon6",   &user_data.rIBMon[6],    //138
-    4, UNIT_BYTE,            0, 0,           0,  "rIBMon7",   &user_data.rIBMon[7],    //139
+  4, UNIT_BYTE,            0, 0,MSCBF_FLOAT|MSCBF_HIDDEN,  "eepValue", &user_data.eepValue,  // 140
+  4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,              "eeCtrSet", &user_data.eeCtrSet,  // 141
+  4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,              "asumctl", &user_data.asumCtl,    // 142
 
-    4, UNIT_BYTE,            0, 0,MSCBF_FLOAT|MSCBF_HIDDEN,  "eepValue", &user_data.eepValue,  // 140
-    4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,              "eeCtrSet", &user_data.eeCtrSet,  // 141
-    4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,              "asumctl", &user_data.asumCtl,    // 142
-
-    0
+  0
 };
 MSCB_INFO_VAR *variables = vars;   // Structure mapping
 
@@ -310,7 +310,7 @@ float read_voltage(unsigned char channel,unsigned int *rvalue,  float coeff, flo
 //
 //-----------------------------------------------------------------------------
 //converts channel index to eepage structure offset address
-int eepage_add_conver(unsigned int index)
+int eepageAddrConvert(unsigned int index)
 {
   int add;
   //if index is even
@@ -842,8 +842,8 @@ void user_loop(void) {
     if (user_data.eeCtrSet & EEP_CTRL_KEY) {
       //convert the index value to fit the address of the eepage structure (temperature offset only)	
       if((TEMPOFF_INDX<(int)(user_data.eeCtrSet & 0x000000ff))
-        &&((int)(user_data.eeCtrSet & 0x000000ff)<TEMPOFF_LAST_INDX))
-        eep_address = (float*)&eepage + eepage_add_conver((int)(user_data.eeCtrSet & 0x000000ff));
+          && ((int)(user_data.eeCtrSet & 0x000000ff)<TEMPOFF_LAST_INDX))
+        eep_address = (float*)&eepage + eepageAddrConvert((int)(user_data.eeCtrSet & 0x000000ff));
       else
         eep_address = (float*)&eepage + (user_data.eeCtrSet & 0x000000ff);
       //Checking for the write request
@@ -881,7 +881,7 @@ void user_loop(void) {
   //-----------------------------------------------------------------------------
   //Checking switches flag for toggling the switches
 #ifdef _PCA9539_
-  if(PCA_Flag & !SsS & !SmSd){
+  if(PCA_Flag && !SsS && !SmSd){
     swConversion = user_data.swBias;
     PCA9539_Conversion(&swConversion);
     PCA9539_WriteByte(BIAS_WRITE, ~swConversion);
@@ -892,7 +892,7 @@ void user_loop(void) {
   //-----------------------------------------------------------------------------
   //Checking ASUM flag for updating the asum values
 #ifdef _LTC2600_
-  if(LTC2600_Flag  & !SsS & !SmSd) {
+  if(LTC2600_Flag  && !SsS && !SmSd) {
     LTC2600_Cmd(WriteTo_Update,LTC2600_LOAD[AsumIndex], user_data.rAsum[AsumIndex]);
     LTC2600_Flag = CLEAR;
   }
@@ -901,7 +901,7 @@ void user_loop(void) {
   //-----------------------------------------------------------------------------
   //Checking APD flag for updating the APD dacs
 #ifdef _LTC1665_
-  if(LTC1665_Flag  & !SsS & !SmSd) {
+  if(LTC1665_Flag  && !SsS && !SmSd) {
     for(ltc1665_index=0; ltc1665_index<64; ltc1665_index++){
       if(ltc1665mirror[ltc1665_index] != user_data.rBias[ltc1665_index]){
         ltc1665_chipChan = (ltc1665_index / 8) + 1;
@@ -919,7 +919,7 @@ void user_loop(void) {
   //-----------------------------------------------------------------------------
   //Checking DAC charge pump flag for adjusting the charge pump voltage
 #ifdef _LTC1669_
-  if(LTC1669_Flag  & !SsS & !SmSd) {
+  if(LTC1669_Flag  && !SsS && !SmSd) {
     LTC1669_SetDAC(ADDR_LTC1669, LTC1669_INT_BG_REF, user_data.rQpump);
     LTC1669_Flag = CLEAR;
   }
@@ -963,17 +963,17 @@ void user_loop(void) {
     // Internal ADCs monitoring Voltages and Currents based on time
     //
     // Time to do V/I Reg reading
-    pfData = &(user_data.VBias);
+    pfData  = &(user_data.VBias);
     rpfData = &(user_data.rVBias);
     rCSR = user_data.status;
     rESR = user_data.error; //NW
     // Skip Current limit check if Ccurrent has been set (rCTL:0x4)
     for (channel=0; channel<(Ccurrent_Flag ? INTERNAL_N_CHN : INTERNAL_N_CHN-3); channel++) {
       volt = read_voltage(channel
-        ,&rvolt
-        ,iadc_table[channel].coeff
-        ,iadc_table[channel].offset
-        ,iadc_table[channel].gain );
+        , &rvolt
+        , iadc_table[channel].coeff
+        , iadc_table[channel].offset
+        , iadc_table[channel].gain );
       DISABLE_INTERRUPTS;
       pfData[channel] = volt;
       rpfData[channel] = rvolt;
@@ -982,15 +982,13 @@ void user_loop(void) {
 
       // Skip the first two channels(charge pump) 
       if ((channel > 1)){	// Skip vQ, I
-        if ((volt >= eepage.lVIlimit[channel])
-          && (volt <= eepage.uVIlimit[channel])) {
+        if ((volt >= eepage.lVIlimit[channel]) && (volt <= eepage.uVIlimit[channel])) {
             rESR &= ~mask; // in range
           }
         else {
-          rESR |= mask; // out of range
+            rESR |= mask; // out of range
         }
       }
-
     }
     if (bdoitNOW) {
       if (rESR & SHUTDOWN_MASK) {
@@ -1022,7 +1020,7 @@ void user_loop(void) {
     rCSR = user_data.status;
     rESR = user_data.error; //NW
     // Read uC temperature
-    volt = read_voltage(TCHANNEL,&rvolt, 0, 0, IGAIN1 );
+    volt = read_voltage(TCHANNEL, &rvolt, 0, 0, IGAIN1 );
     /* convert to deg. C */
     temperature = 1000 * (volt - 0.776) / 2.86;   // Needs calibration
     /* strip to 0.1 digits */
@@ -1085,7 +1083,7 @@ void user_loop(void) {
 
   //-----------------------------------------------------------------------------
   // Toggle Qpump ON/OFF based on Index
-  if (CqPump  & !SsS & !SmSd) {
+  if (CqPump  && !SsS && !SmSd) {
     rCSR = user_data.status;
     if (!SsS) {
       if (SqPump) {
@@ -1109,11 +1107,6 @@ void user_loop(void) {
   } // Control Pump
 
 #ifdef _ADT7486A_
-  //BS     To setting the offset associated with the temperature reading.
-  //      in that case, we probably can get rid of the conversion factors
-  //      ADT7486A_Cmd(ADT7486A_addrArray[channel], SetExt1Offset, &temperature)
-  //      ADT7486A_Cmd(ADT7486A_addrArray[channel], SetExt2Offset, &temperature)
-
   //-----------------------------------------------------------------------------
   // Temperature reading/monitoring based on time for external temperature
   if ((uptime() - sstExtTime) > SST_TIME){

@@ -186,35 +186,35 @@ unsigned char rbias [64];
 
 // Default structure 
 struct EEPAGE xdata eepage = {
-// LvQ, LiQ,  Lp6Vd, Lp6Va, Ln6Va , Lp6Ia, Lp6Ia , Lp6Id 
+// 0 - LvQ, LiQ,  Lp6Vd, Lp6Va, Ln6Va , Lp6Ia, Lp6Ia , Lp6Id 
    30.0, 0.0, 5.5, 5.5, -6.5, 0.0, 0.0, 0.0
-// HvQ, HiQ, Hp6Vd, Hp6Va, Hp6Va,  Hp6Ia, Hp6Ia,  Hp6Id 
+// 8 - HvQ, HiQ, Hp6Vd, Hp6Va, Hp6Va,  Hp6Ia, Hp6Ia,  Hp6Id 
    ,73.0, 0.1, 6.5, 6.5, -5.5, 0.2, 0.8, 0.2
-// LuC Temperature,  HuC Temperature
+// 16 - LuC Temperature,  HuC Temperature
 	 ,23., 45.
-// LSST Temperature,  HSST Temperature
+// 18 - LSST Temperature,  HSST Temperature
    ,20., 30.
-// LVQ, HVQ (V)
+// 20 - LVQ, HVQ (V)
 	 ,-1.0,1.0
-// LVQ, HVQ (V)
+// 22 - LVQ, HVQ (V)
 	 ,-0.1,1.0
-//	LVBias, HVBias (V)
+//	24 - LVBias, HVBias (V)
 	 ,0.0,73.0
-//	LIBias, LVBias (uA)
+//	26 - LIBias, LVBias (uA)
 	 ,0.0,10.0
-//	SST channel 1 offset[0..3]
+//	28 - SST channel 1 offset[0..3]
 	 ,0,0,0,0
-// SST channel 2 offset[0..3]
+// 32 - SST channel 2 offset[0..3]
 	 ,0,0,0,0
-// Card Serial Number
+// 36 - Card Serial Number
    ,0x00000000
-// Asum[0..7] threshold
+// 37 - Asum[0..7] threshold
 	 ,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff
-// Qpump DAC
+// 45 - Qpump DAC
 	 ,0x0000
-// Qpump switch
+// 46 - Qpump switch
 	 ,0x00
-//	  DACs[0..63]
+//	47 - DACs[0..63]
 	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
@@ -391,5 +391,5 @@ unsigned char user_read(unsigned char index);
 unsigned char user_func(unsigned char *data_in, unsigned char *data_out);
 float read_voltage(unsigned char channel,unsigned int *rvalue, float coeff, float offset, unsigned char gain);
 void switchonoff(unsigned char command);
-int eepage_add_conver(unsigned int index);
+int eepageAddrConvert(unsigned int index);
 #endif
