@@ -27,6 +27,12 @@ sbit IntssTT   = rESR ^ 0;
 sbit Ext1ssTT  = rESR ^ 1;	
 sbit Ext2ssTT  = rESR ^ 2;	
 
+//Internal ADC
+#define IGAIN1  0
+#define IGAIN2  1
+#define IGAIN4  2
+#define IGAIN8  3
+#define IGAIN16 4
 
 // Coeff
 //
@@ -41,7 +47,7 @@ sbit Ext2ssTT  = rESR ^ 2;
 // I		  R1	  R2	  (R1+R2)/R2	Rsense 	Isense/Vout
 //	Is4     2K	  4.7K	6.7/4.7     0.015    10/(100*0.015)= 3.33     
 // IsSC	  2K	  4.7K   6.7/4.7	   0.47		10/(100*4.7) = 0.0106
-float code coeff[8] = {1.9,0.304,1.426,1.426,1.0,1.0,1.426,1.426};
+float code coeff[8] = {1.9,0.06066,1.426,1.426,1.0,1.0,1.426,1.426};
 float code offset[8] = {0,0,0,0,0,0,0,0}; 
 
 
@@ -82,6 +88,6 @@ void user_loop(void);
 void user_write(unsigned char index) reentrant;
 unsigned char user_read(unsigned char index);
 unsigned char user_func(unsigned char *data_in, unsigned char *data_out);
-float read_voltage(unsigned char channel,unsigned int *rvalue);
+float read_voltage(unsigned char channel,unsigned int *rvalue, unsigned char gain);
 
 #endif

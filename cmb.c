@@ -75,7 +75,7 @@
  //
  // 
  //-----------------------------------------------------------------------------
-float read_voltage(unsigned char channel,unsigned int *rvalue)
+float read_voltage(unsigned char channel,unsigned int *rvalue, unsigned char gain)
 {
   unsigned int  xdata i;
   float         xdata voltage;
@@ -84,7 +84,7 @@ float read_voltage(unsigned char channel,unsigned int *rvalue)
 
 // Averaging on 10 measurements for now.
   for (i=0 ; i<10 ; i++) {
-    rawbin = adc_read(channel);
+    rawbin = adc_read(channel, gain);
     rawsum += rawbin;
     yield();
   }
@@ -117,7 +117,7 @@ float read_voltage(unsigned char channel,unsigned int *rvalue)
 		user_data.error = 0;
 		user_data.SerianN = 0x0;
 	}
- 
+   sys_info.group_addr  = 400;
  //
  // Initial setting for communication and overall ports (if needed).
  //-----------------------------------------------------------------------------
@@ -151,7 +151,7 @@ float read_voltage(unsigned char channel,unsigned int *rvalue)
 	
 	//Configure and read the address
    //C C C C C C 1 0 0 is the MSCB Addr[8..0], 9 bits
-   //Modifying what the board reads from the PCA 
+   //Modifying what the board reads from the Pins 
    SFRPAGE = CONFIG_PAGE;
    //change p3 to digital input
    P3MDOUT = 0x00;
@@ -200,7 +200,7 @@ void user_loop(void) {
     pfData = &(user_data.pIs4V);
     rpfData = &(user_data.rpIs4V);
     for (channel=0; channel<INTERNAL_N_CHN ; channel++) {
-      volt = read_voltage(channel,&rvolt);
+      volt = read_voltage(channel,&rvolt, IGAIN1);
       DISABLE_INTERRUPTS;
       pfData[channel] = volt;
     	rpfData[channel]= rvolt;
@@ -209,7 +209,7 @@ void user_loop(void) {
  //	
  //-----------------------------------------------------------------------------
  // Read uC temperature    
-    volt = read_voltage(TCHANNEL,&rvolt);
+    volt = read_voltage(TCHANNEL,&rvolt, IGAIN1);
     /* convert to deg. C */
     temperature = 1000 * (volt - 0.776) / 2.86;   // Needs calibration
     /* strip to 0.1 digits */
