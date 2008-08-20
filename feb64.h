@@ -36,12 +36,12 @@
 /**********************************************************************************/
 // External ADC
 #define N_RB_CHANNEL	 16
-#define EXT_VREF      1.25f //2.4989f
+#define EXT_VREF      1.25f  // 2.4989f
 #define CURR_MEASURE  0x04
 #define V_A2MTABLE       0
 #define I_A2MTABLE       1
 #define VOLT_MEASURE  0x04
-#define GAIN1			 0 // actually x1
+#define GAIN1				 0 // actually x1
 #define GAIN4            1 // actually x4
 #define GAIN8            2 // actually x8
 #define GAIN16           3 // actually x16
@@ -49,14 +49,8 @@
 #define GAIN64           5 // actually x64
 
 #define CONVER_FAC2 65536.0f
-// External ADC channel conversion table
-// #define CONVER_FAC2	131072.0f	// 65536 x 2
-//Fix  conversion coeff for V/I external ADC
-						 // VBMon1,VBMon3,VBMon5,VBMon7,
-						 // IBMon1,IBMon3,IBMon5,IBMon7,
-						 // VBMon0,VBMon2,VBMon4,VBMon6,
-						 // IBMon0,VBMon2,IBMon4,IBMon6,
 
+/**********************************************************************************/
 #ifdef FEB64REV0
 //2 of the 3 cards use LTC2497 instead of LTC2495
 char code adc_convert[] = { 1, 3, 5, 7, 1, 3, 5, 7, 0, 2, 4, 6, 0, 2, 4, 6 };
@@ -111,17 +105,6 @@ struct ADC2MSCB_TABLE xdata adc2mscb_table[16] = {
 , {GAIN1 , 2, V_A2MTABLE,   100, 0}, {GAIN1 , 0, V_A2MTABLE, 100, 0}
 };
 #define CONVER_FAC1 0
-/*
-float code Mon_Coef[]={ 10, 10, 10, 10
-                       , 101, 101, 101, 101
-                	   , 10, 10, 10, 10
-				       , 101, 101, 101, 101};
-
-float code Mon_Offst[]={  0.2278, 0.2278, 0.2278, 0.2278
-								, 0, 0, 0, 0
-								, 0.2278, 0.2278, 0.2278, 0.2278
-								, 0, 0, 0, 0};
-*/
 #endif
 
 /**********************************************************************************/
@@ -132,6 +115,7 @@ float code Mon_Offst[]={  0.2278, 0.2278, 0.2278, 0.2278
 
 /**********************************************************************************/
 // Internal ADC channel/gain assignment
+#define INT_VREF      2.432f // Internal uC Vref
 #define IGAIN1  0
 #define IGAIN2  1
 #define IGAIN4  2
@@ -144,11 +128,7 @@ struct IADC_TABLE {
   float offset;
 };
 
-//+6Va,+6Vd are off roughly by 5mV, -6Va is off roughly by -30mV
-// Fix conversion coeef for V/I internal ADC
-// Vb        Vbi   		+6Vd     +6Va     -6Va  	 -6Ia   +6Ia  	  +6Id 
-//float code  coeff[8]  = {41.448   ,2.496587   ,4.025   ,4.025   ,8.4534   ,0.237  ,0.475  ,0.237};
-//float code  offset[8] = {-0.2813  ,0.         ,-0.06   ,-0.054  ,-18.622  ,0     ,0.     ,0.  };
+/**********************************************************************************/
 #ifdef FEB64REV0
 struct IADC_TABLE xdata iadc_table[8] = {
   {IGAIN1, 41.448, -0.3464}, {IGAIN1, 2.496587, 0}
@@ -158,9 +138,8 @@ struct IADC_TABLE xdata iadc_table[8] = {
 };
 float code  coeff[8]  = {41.448  ,2.496587   ,4.025   ,4.025   ,8.4534   ,0.237 ,0.475  ,0.237};
 float code  offset[8] = {-0.3464 ,0.         ,-0.06   ,-0.054  ,-18.622  ,0     ,0.     ,0.  };
-// External Vref
-#define VREF       2.432f
 
+/**********************************************************************************/
 #elif defined(FEB64REV1)
 struct IADC_TABLE xdata iadc_table[8] = {
   {IGAIN1, 100,      -0.01}, {IGAIN1, 10, 0}
@@ -173,9 +152,6 @@ struct IADC_TABLE xdata iadc_table[8] = {
 // Offset still needs to be calibrated
 float code  coeff[8]  = {100 ,10  ,3.980132, 3.980132 ,8.5    ,0.1 ,0.4  ,0.1};
 float code  offset[8] = {0   ,0   , 0      , 0        ,-18.75 ,0   ,0    ,0  };
-
-// External Vref for the 16ch ADC U/I APD 
-#define VREF       2.45f
 #endif
 
 /**********************************************************************************/
@@ -210,43 +186,25 @@ unsigned char rbias [64];
 
 // Default structure 
 struct EEPAGE xdata eepage = {
-//  LvQ, LiQ,  Lp6Vd, Lp6Va, Ln6Va , Lp6Ia, Lp6Ia , Lp6Id 
+// LvQ, LiQ,  Lp6Vd, Lp6Va, Ln6Va , Lp6Ia, Lp6Ia , Lp6Id 
    30.0, 0.0, 5.5, 5.5, -6.5, 0.0, 0.0, 0.0
-//   HvQ, HiQ, Hp6Vd, Hp6Va, Hp6Va,  Hp6Ia, Hp6Ia,  Hp6Id 
+// HvQ, HiQ, Hp6Vd, Hp6Va, Hp6Va,  Hp6Ia, Hp6Ia,  Hp6Id 
    ,73.0, 0.1, 6.5, 6.5, -5.5, 0.2, 0.8, 0.2
-//   LuC Temperature,  HuC Temperature
+// LuC Temperature,  HuC Temperature
 	 ,23., 45.
-//   LuC Temperature,  HuC Temperature
+// LSST Temperature,  HSST Temperature
    ,20., 30.
-//   LVQ, HVQ (V)
-<<<<<<< .mine
-=======
-//   LIQ, HIQ (uA)
-//	  LVBias, HVBias (V)
-//	  LIBias, LVBias (uA)
-//	  SST channel 1 offset
-//   SST channel 2 offset
-//   SerialN
-//	  rasum
-//	  rpump
-//	  SW
-//	  DAC
-struct EEPAGE xdata eepage = {
-     30.0, 0.0, 5.5, 5.5, -6.5, 0.0, 0.0, 0.0
-    ,73.0, 0.1, 6.5, 6.5, -5.5, 0.2, 1.0, 0.2
-	 ,23., 45.
-    ,20., 30.
->>>>>>> .r308
+// LVQ, HVQ (V)
 	 ,-1.0,1.0
-//   LVQ, HVQ (V)
+// LVQ, HVQ (V)
 	 ,-0.1,1.0
-//	  LVBias, HVBias (V)
+//	LVBias, HVBias (V)
 	 ,0.0,73.0
-//	  LIBias, LVBias (uA)
+//	LIBias, LVBias (uA)
 	 ,0.0,10.0
-//	  SST channel 1 offset[0..3]
+//	SST channel 1 offset[0..3]
 	 ,0,0,0,0
-//   SST channel 2 offset[0..3]
+// SST channel 2 offset[0..3]
 	 ,0,0,0,0
 // Card Serial Number
    ,0x00000000
@@ -278,15 +236,15 @@ struct EEPAGE xdata eepage2; //NW testing
 #define NCHANNEL_ADT7486A 4
 
 // Indices for user_write functions
-#define IDXCTL         2
-#define IDXEER         1
-#define IDXQVOLT       6
-#define IDXBSWITCH     5
-#define IDXASUM       44
-#define IDXSST        40
-#define IDXBIAS       52
+#define IDXCTL          2
+#define IDXEER          1
+#define IDXQVOLT        6
+#define IDXBSWITCH      5
+#define IDXASUM        44
+#define IDXSST         40
+#define IDXBIAS        52
 #define IDXEEP_CTL	 141
-#define IDXASUM_CTL  142
+#define IDXASUM_CTL   142
 
 #define SERIALN_LENGTH 4
 #define SERIALN_ADD  0x690    
@@ -336,10 +294,12 @@ sbit REG_EN = P3 ^ 2;
 unsigned char bdata rCTL;
 sbit CPup     = rCTL ^ 0;
 sbit CqPump   = rCTL ^ 1;
+sbit Ccurrent = rCTL ^ 2; //temporary control the current limits
 sbit CeeS     = rCTL ^ 4;
 sbit CeeR     = rCTL ^ 5;
 sbit CeeClr   = rCTL ^ 6;
 sbit CmSd     = rCTL ^ 7;
+
 
 // CSR Register
 unsigned char bdata rCSR;
@@ -365,7 +325,7 @@ sbit iReg2    = rESR ^ 14; //0x40
 sbit iReg3    = rESR ^ 15; //0x80
 sbit uCT      = rESR ^ 0;  //0x100
 sbit IntssTT  = rESR ^ 1;  //0x200
-sbit ExtssTT  = rESR ^ 2;	 //0x400
+sbit ExtssTT  = rESR ^ 2;	//0x400
 sbit EEPROM   = rESR ^ 3;  //0x800
 sbit RdssT	  = rESR ^ 4;  //0x1000
 
