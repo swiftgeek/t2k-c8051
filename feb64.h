@@ -261,7 +261,7 @@ unsigned int xdata PageAddr[]={0x0,0x100,0x200,0x300,0x400,0x500};
 // Device Address mapping
 #define ADDR_LTC1669   0x20
 #define ADDR_PCA9539   0x74
-#define ADDR_LTC2497	 0x14	
+#define ADDR_LTC2497   0x14	
 #define ADDR_LTC2495   0x14
 //NW mirror of the DAC values (for multiple DAC change)
 unsigned char xdata ltc1665mirror [64];
