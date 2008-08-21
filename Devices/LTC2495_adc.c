@@ -40,7 +40,7 @@ void LTC2495_StartConversion(unsigned char addr, unsigned char channel, unsigned
 		cmd |= 0x08;
 	} 
 
-	cmd2= LTC2495_ENABLE|gain;
+	cmd2= LTC2495_ENABLE2 | gain;
 
 	// Wait for the SMBus to clear
 	while(SMB_BUSY);
@@ -56,7 +56,7 @@ void LTC2495_StartConversion(unsigned char addr, unsigned char channel, unsigned
 	// Setup Command Byte(s)
 	SMB_DATA_OUT_LEN = 2;
 	SMB_DATA_OUT[0] = cmd;
-	SMB_DATA_OUT[1] = cmd;
+	SMB_DATA_OUT[1] = cmd2;
 
 	// Setup Receive Buffer
 	SMB_DATA_IN_LEN = 0;
@@ -82,10 +82,10 @@ unsigned char channel, signed long *pResult, unsigned char gain) {
 		cmd |= 0x08;
 	} 	
 
-	cmd2= LTC2495_ENABLE|gain;
+	cmd2= LTC2495_ENABLE2 | gain;
 
 	// Wait for the SMBus to clear
-	while(SMB_BUSY);
+   while(SMB_BUSY);
 	SMB_BUSY = 1;
 
 	SMB_RW = SMB_WRITE;
