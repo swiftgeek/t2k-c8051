@@ -420,7 +420,7 @@ void switchonoff(unsigned char command)
     //Switch all the ports to open drain except for mscb communication 
     P0MDOUT &= 0x23;
     P0 &= 0x23;
-    //SST does not need to be switched offw
+    //SST does not need to be switched off
     P1MDOUT &= 0x01;
     P1 &=0x01;
     //SPI communication to EEPROM is maintained 
@@ -1145,7 +1145,7 @@ void user_loop(void) {
       }
       else{
         DISABLE_INTERRUPTS;
-        RdssT = SET;
+        RdssT = SET;		  
         user_data.error   = rESR; //NW
         ENABLE_INTERRUPTS;
       }
@@ -1155,11 +1155,16 @@ void user_loop(void) {
   }
   // Set Shutdown if Error in System Register
   if ((rESR & SHUTDOWN_MASK) && !SmSd) {
-    pca_operation(Q_PUMP_OFF);  // Toggle state
+    pca_operation(Q_PUMP_OFF);
     SqPump   = OFF;
     SsS  = ON;
     SPup = OFF;
-    switchonoff(OFF);  //to be determined....
+    switchonoff(OFF);
+  	// Publish Registers state
+    DISABLE_INTERRUPTS;
+    user_data.control = rCTL;
+    user_data.status  = rCSR;
+    ENABLE_INTERRUPTS;
   } 
 
   //-----------------------------------------------------------------------------
@@ -1193,7 +1198,12 @@ void user_loop(void) {
     SqPump   = OFF;
     SsS  = ON;
     SPup = OFF;
-    switchonoff(OFF);  //to be determined....
+    switchonoff(OFF);
+	// Publish Registers state
+    DISABLE_INTERRUPTS;
+    user_data.control = rCTL;
+    user_data.status  = rCSR;
+    ENABLE_INTERRUPTS;
   } 
 #endif
 
