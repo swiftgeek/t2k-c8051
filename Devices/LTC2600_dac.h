@@ -14,8 +14,11 @@
 #define  _LTC2600_DAC_H
 
 //Pin assignment
+#ifdef TEMP36
+#define SUM_DAC_CSn P0 ^ 7
+#else
 #define SUM_DAC_CSn P1 ^ 4
-
+#endif
 sbit DAC_SCK = MSCB_SPI_SCK;    // // SPI Protocol Serial Clock
 sbit SUM_CSn = SUM_DAC_CSn;
 
