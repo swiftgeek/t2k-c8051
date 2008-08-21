@@ -16,6 +16,10 @@
 #ifndef  _PCA9539_IO_H
 #define  _PCA9539_IO_H
 
+#ifdef FEB64
+sbit PCA_RESETN = P1 ^ 3;
+#endif
+
 // Command Bytes
 #define PCA9539_INPUT0			  0x00
 #define PCA9539_INPUT1			  0x01

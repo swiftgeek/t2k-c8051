@@ -28,7 +28,9 @@
 //
 //------------------------------------------------------------------------
 void PCA9539_Init(void) {
+	PCA_RESETN = 0;
 	SMBus_Init(); // SMBus initialization (should be called after pca_operation)
+	PCA_RESETN = 1;
 }
 
 //
