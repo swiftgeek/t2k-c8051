@@ -3,7 +3,7 @@
   Created by:   Brian Lee                
   Modified by:  Bahman Sotoodian	
 
-  Contents:     SPI protocol for FEB64 
+  Contents:     SPI protocol for FEB64
 
 
   $Id$
@@ -42,6 +42,9 @@ void SPI_Init(void)
 {
   SFRPAGE  = SPI0_PAGE ;
   SPI_MOSI = 1;          //pull the MOSI line high
+#ifdef AD5300
+  SPI_SCK = 1;
+#endif
 }
 
 //
@@ -54,7 +57,7 @@ we are in the right page to properly communicate with the SPI protocol.
 */
 void SPI_ClockOnce(void)
 {
-  SFRPAGE = SPI0_PAGE ;
+  SFRPAGE = SPI0_PAGE;
   delay_us(SPI_DELAY);
   SPI_SCK = 1;
   delay_us(SPI_DELAY);
