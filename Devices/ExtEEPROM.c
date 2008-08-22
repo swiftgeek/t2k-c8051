@@ -9,7 +9,7 @@
   $Id$
 
 \********************************************************************/
-//  need to have FEB64 defined
+//  need to have FEB64 or TEMP36 defined
 
 #ifdef  _ExtEEPROM_
 
@@ -87,14 +87,16 @@ Writes data to the ext_eeprom.
 @return EEP_BUSY					 Indiacting that the device is busy performing the internal write cycle
 @return EEP_SUCCESS  			 				  
 */
+
+
 unsigned char ExtEEPROM_Write_Clear(unsigned int write_addr, unsigned char **source, 
 unsigned char page_size, unsigned char WC_flag, unsigned char *flag)
 {
 	unsigned char i,j;
 	unsigned int Nblock;
-	unsigned char counter = EEP_MAX_BYTE;		
-	
-	//Checking if we are trying to write in the write protected block
+	unsigned char counter = EEP_MAX_BYTE;	
+
+		//Checking if we are trying to write in the write protected block
 	if (write_addr+page_size >= WP_START_ADDR)
 		return EEP_PROTECTED;
 
@@ -120,7 +122,7 @@ unsigned char page_size, unsigned char WC_flag, unsigned char *flag)
 		//Sending the Write Enable instruction 
 		if (ExtEEPROM_WriteEnable() == EEP_BUSY){	 //The device will be automatically
 			*flag = i;
-			return EEP_BUSY;											 //returned to the write disable state 
+			return EEP_BUSY;								//returned to the write disable state 
 		}													    //at the completion of write cycle
 		
 	
@@ -128,7 +130,7 @@ unsigned char page_size, unsigned char WC_flag, unsigned char *flag)
 	
 		SPI_WriteByte(EEP_WRITEcmd); 					//Sending the WRITE opcode 
 		SPI_WriteUInt(write_addr);	 			   	//Sending the memory address which 
-															  //data is going to be stored in
+		                                          //data is going to be stored in;
 						
 		for (j=0; j<counter; j++) {	
 			if (WC_flag == WRITE_EEPROM){
@@ -140,14 +142,14 @@ unsigned char page_size, unsigned char WC_flag, unsigned char *flag)
 		}
 
 		delay_us(EEP_delay);							
-		RAM_CSn = 1;								 //Programming will start after the chip select 
-														 // is brought high	 
+		RAM_CSn = 1;	 //Programming will start after the chip select is brought high	 
 		delay_us(EEP_delay);		
 	}
 
 	RAM_WPn = 0;	
 	return EEP_SUCCESS;
 }
+
 //
 //-----------------------------------------------------------------
 /**

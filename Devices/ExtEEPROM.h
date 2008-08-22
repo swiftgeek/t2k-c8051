@@ -12,17 +12,37 @@
 #define  _ExtEEPROM_H_
 
 //ExtEEPROM port assignment
+#ifdef FEB64
 #define RAM_CHIP_SELECT    P3 ^ 7
 #define RAM_HOLD_DOWN      P2 ^ 2
 #define RAM_WRITE_PROTECT  P2 ^ 0
+
+#define PAGE_SIZE				0xE7		 //Would define the length of our pages
+#define NUMEBER_PAGES		0x06		 //Would define number of pages  	
+
+#elif defined(TEMP36)   //NW temp36 board
+#define RAM_CHIP_SELECT    P2 ^ 0
+#define RAM_HOLD_DOWN      P2 ^ 3
+#define RAM_WRITE_PROTECT  P2 ^ 2
+
+#define PAGE_SIZE				0x4E		 //Would define the length of our pages
+#define NUMEBER_PAGES		0x06		 //Would define number of pages  
+
+#elif defined(LPB)   //NW temp36 board
+#define RAM_CHIP_SELECT    P1 ^ 2
+#define RAM_HOLD_DOWN      P2 ^ 2
+#define RAM_WRITE_PROTECT  P2 ^ 0
+
+#define PAGE_SIZE				0x4E		 //Would define the length of our pages
+#define NUMEBER_PAGES		0x06		 //Would define number of pages  
+#endif
 
 sbit RAM_CSn  = RAM_CHIP_SELECT;     // The Chip Select Signal would select/unselect the chip
 sbit RAM_HLDn = RAM_HOLD_DOWN;		 // The Hold Down Signal would puase the serial communication			
 sbit RAM_WPn  = RAM_WRITE_PROTECT;   // The Write Protection signal would enable/disable write to 
 												 // the status register
 
-#define PAGE_SIZE				0xC7		 //Would define the length of our pages
-#define NUMEBER_PAGES		0x06		 //Would define number of pages  	
+	
 
 //The EEP_CLEAR and EEP_WRITE would be passed to the ExtEEPROM_Write_Clear() function
 //to determine whether to perform the "clear" operation or the "write" one.
@@ -62,8 +82,12 @@ sbit RAM_WPn  = RAM_WRITE_PROTECT;   // The Write Protection signal would enable
 void ExtEEPROM_Init (void);
 unsigned char ExtEEPROM_Read (unsigned int ReadPage, unsigned char *destination, 
 unsigned char page_size);
-unsigned char ExtEEPROM_Write_Clear(unsigned int WritePage, unsigned char **source, 
-unsigned char page_size, unsigned char WC_flag, unsigned char *flag);
+
+unsigned char ExtEEPROM_Write_Clear(unsigned int WritePage
+                                  , unsigned char **source
+											 , unsigned char page_size
+											 , unsigned char WC_flag
+											 , unsigned char *flag);
 unsigned char ExtEEPROM_WriteEnable(void);
 unsigned char ExtEEPROM_WriteStatusReg(unsigned char status);
 unsigned char ExtEEPROM_Status(void);
