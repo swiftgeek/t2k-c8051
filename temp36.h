@@ -26,6 +26,7 @@ struct {
    unsigned int  DAC[8];
 	unsigned int  navg;
 	float 		  AT[36];
+	float			  ref;
 } xdata user_data;			
 
 
@@ -97,17 +98,20 @@ sbit CeeS     = rCTL ^ 0;
 sbit CeeR     = rCTL ^ 1;
 sbit CeeClr   = rCTL ^ 2;
 sbit CHum     = rCTL ^ 3;
+sbit Cref	  = rCTL ^ 4;	
 
 // Status Register
 unsigned char bdata rCSR;
 sbit SeeS     = rCSR ^ 0;
 sbit SeeR     = rCSR ^ 1;
+sbit Sref     = rCSR ^ 4;
+
 
 //Index value for the user data
 #define IDXCTL          	1
 #define IDXEEP_CTL	     47
 #define IDXNAVG 		  	   4
-
+#define IDXREF 			  96
 // Global ON / OFF definition
 #define DONE   1
 #define FAILED 0

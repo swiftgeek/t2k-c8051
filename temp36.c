@@ -41,7 +41,7 @@
  // Local flag
  bit EEP_CTR_FLAG;
  bit LTC2600_FLAG;
-
+ bit REF_FLAG;
  //EEPROM variables
  int* xdata eep_address;
  static unsigned char tcounter;
@@ -175,13 +175,35 @@
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg34",       &user_data.AT[33],      //93
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg35",       &user_data.AT[34],      //94
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg36",       &user_data.AT[35],      //95
-   0
+   
+	4, UNIT_CELSIUS,			 0, 0, MSCBF_FLOAT, "REF",				&user_data.ref	  ,      //96
+	0
  };
  
  MSCB_INFO_VAR *variables = vars;   // Structure mapping
 
+void autocalibration(float reference)
+{
+	float buffer;
+	int offset, i;
+	for(i=0;i<18; i++){
+		//offset channel 2
+	   buffer=reference-user_data.AT[2*i];
+	   //Every increment of 16 corresponds to a quarter degree change
+	   buffer*=4;
+	   offset=(int)(buffer*16);
+		eepage.ext2offset[i]=offset;	
+		//offset channel 1
+	   buffer=reference-user_data.AT[2*i+1];
+	   //Every increment of 16 corresponds to a quarter degree change
+	   buffer*=4;
+	   offset=(int)(buffer*16);		
+		eepage.ext1offset[i]=offset;
+	}
+	return;
+}
 //converts channel index to eepage structure offset address
-int eepage_add_conver(unsigned int index)
+int eepageAddrConvert(unsigned int index)
 {
 	int add;
 	//if index is even
@@ -261,7 +283,7 @@ void user_init(unsigned char init)
 					  , &temperature);
       delay_us(100); //wait for ADT7486A
    }
-   delay_us(100);
+   delay_us(300);
    for (channel=9;channel < 18; channel++){
 		//Set the offset for the temp19,21...35 sensors
 	   ADT7486A_Cmd(ADT7486A_addrArray[channel-9]
@@ -272,7 +294,7 @@ void user_init(unsigned char init)
 					  , &temperature);      
       delay_us(100); //wait for ADT7486A
    }                                                                   
-   delay_us(100);
+   delay_us(300);
    for (channel=0;channel < 9; channel++){
 		//Set the offset for the temp02,04...18 sensors
       ADT7486A_Cmd(ADT7486A_addrArray[channel]
@@ -283,7 +305,7 @@ void user_init(unsigned char init)
 					  , &temperature);
       delay_us(100); //wait for ADT7486A
    }
-   delay_us(100);
+   delay_us(300);
    for (channel=9;channel < 18; channel++){
 		//Set the offset for the temp20,22...36 sensors
       ADT7486A_Cmd(ADT7486A_addrArray[channel-9]
@@ -294,7 +316,7 @@ void user_init(unsigned char init)
 					  , &temperature);
 		delay_us(100); //wait for ADT7486A
    }
-   delay_us(100);
+   delay_us(300);
 #endif
    //User variables initialization
    DISABLE_INTERRUPTS
@@ -319,6 +341,9 @@ void user_init(unsigned char init)
 	{
 		user_data.AT[i]=0;
 	}
+	
+	user_data.ref=0;
+
    ENABLE_INTERRUPTS
    //General Variables initialization
 	EEP_CTR_FLAG=0;
@@ -531,8 +556,8 @@ void user_loop(void)
       //Checking for the special instruction
       if (user_data.eeCtrSet & EEP_CTRL_KEY){
 			//convert the index value to fit the address of the eepage structure, temp offset only
-			if((user_data.eeCtrSet & 0x000000ff)<TEMPOFF_LAST_INDX)
-	   		eep_address = (int*)(&eepage) + eepage_add_conver((int)(user_data.eeCtrSet & 0x000000ff));
+			if(((int)(user_data.eeCtrSet & 0x000000ff))<TEMPOFF_LAST_INDX)
+	   		eep_address = (int*)(&eepage) + eepageAddrConvert((int)(user_data.eeCtrSet & 0x000000ff));
    	   else
 				eep_address = (int*)(&eepage) + (int)(user_data.eeCtrSet & 0x000000ff);
 			//Checking for the write request
@@ -660,5 +685,15 @@ void user_loop(void)
       LTC2600_FLAG = CLEAR;
    }
 #endif
+	
+	if(Cref){
+		autocalibration(user_data.ref);
+		Sref = 1;
+		Cref = 0;
+		DISABLE_INTERRUPTS;
+		user_data.status=rCSR;
+		user_data.control=rCTL;
+		ENABLE_INTERRUPTS; 
+	}
  	led_blink(1, 1, 250);
 }
