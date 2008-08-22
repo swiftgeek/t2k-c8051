@@ -565,7 +565,7 @@ void user_init(unsigned char init)
   //
   //Turn off the card before the timer expires
   //-----------------------------------------------------------------------------
-  // switchonoff(OFF);	
+  switchonoff(OFF);	
 
   //
   // SST Temperatures, setting temperature offsets
@@ -625,7 +625,17 @@ void user_init(unsigned char init)
   EN_pA5V  = ON;                  //-PAA- needed for ASUM test
   EN_nA5V  = ON;                  //-PAA- needed for ASUM test    
 #elif defined(FEB64REV1)
-  switchonoff(ON); //debugging only 
+#if 0
+ {
+    //debugging only
+	 switchonoff(ON); 
+    SPup = ON;
+    // Publish Registers
+    DISABLE_INTERRUPTS;
+    user_data.status  = rCSR;
+    ENABLE_INTERRUPTS;
+  }
+#endif // 0
 #endif
 
   P2MDOUT |= 0x80;
