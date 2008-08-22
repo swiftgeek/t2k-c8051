@@ -256,5 +256,5 @@ void SHT7x_ClockOnce2(int humsen){
 		delay_us(SHT7x_DELAY);
 		SHT7x_SCK2 = 1;
 	}
-#endif-+
+#endif
 }
