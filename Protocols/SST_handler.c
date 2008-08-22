@@ -175,6 +175,10 @@ unsigned char SST_DrvClientResponse(int SST_LINE) {
 #if defined(CPU_C8051F120)
 #ifdef CMB 
 	  SFRPAGE  = CPT1_PAGE;
+#elif defined(FEB64)	
+	  SFRPAGE  = CPT1_PAGE;
+#elif defined(LPB)	
+	  SFRPAGE  = CPT1_PAGE;
 #else
      SFRPAGE  = CPT0_PAGE;
 #endif	
