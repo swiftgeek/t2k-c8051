@@ -85,6 +85,8 @@ unsigned long xdata currentTime=0, sstTime=0,sstExtTime=0;
 unsigned char xdata eeprom_channel,channel, chipAdd, chipChan;
 unsigned char xdata BiasIndex, AsumIndex;
 unsigned char xdata SST_LINE1=1;
+unsigned long xdata loopcnt = 0;
+
 // Global bit register
 unsigned char bdata bChange;
 // Local flag
@@ -258,7 +260,8 @@ MSCB_INFO_VAR code vars[] = {
   4, UNIT_BYTE,            0, 0,MSCBF_FLOAT|MSCBF_HIDDEN,  "eepValue", &user_data.eepValue,  // 140
   4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,              "eeCtrSet", &user_data.eeCtrSet,  // 141
   4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,              "asumctl", &user_data.asumCtl,    // 142
-
+  4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,              "watchdog", &user_data.watchdog,  // 143
+  
   0
 };
 MSCB_INFO_VAR *variables = vars;   // Structure mapping
@@ -279,6 +282,19 @@ LTC2600_LOAD_C,LTC2600_LOAD_D,
 LTC2600_LOAD_E,LTC2600_LOAD_F,
 LTC2600_LOAD_G,LTC2600_LOAD_H};
 #endif
+
+
+
+//
+// Watchdog counter function
+//-----------------------------------------------------------------------------
+void watchdog(short int state)
+{
+  loopcnt++;
+  DISABLE_INTERRUPTS;
+  user_data.watchdog = ((loopcnt<<16) | (state & 0xFFFF));
+  ENABLE_INTERRUPTS;
+}
 
 //
 // 
@@ -420,7 +436,7 @@ void switchonoff(unsigned char command)
     //Switch all the ports to open drain except for mscb communication 
     P0MDOUT &= 0x23;
     P0 &= 0x23;
-    //SST does not need to be switched off
+    //SST does not need to be switched offw
     P1MDOUT &= 0x01;
     P1 &=0x01;
     //SPI communication to EEPROM is maintained 
@@ -611,6 +627,7 @@ void user_init(unsigned char init)
   user_data.eepage     = rEER;    // Default EE page
   user_data.status     = rCSR;    // Shutdown state
   user_data.control    = 0x80;    // Manual Shutdown
+  user_data.watchdog   = 0;       // Watchdog counter for debugging purpose
   for(i=0;i<8;i++){
     user_data.VBMon[i] = 0;
     user_data.IBMon[i] = 0;
@@ -671,9 +688,7 @@ void user_write(unsigned char index) reentrant
   // -- Index Bias Dac
   if (index == IDXBSWITCH) {
 #ifdef _PCA9539_
-    if (!SsS) {
-      PCA_Flag = 1;
-    } // !Shutdown
+    if (!SsS) PCA_Flag = 1;  // !Shutdown
 #endif
   }
 
@@ -688,22 +703,20 @@ void user_write(unsigned char index) reentrant
     AsumIndex = (index - FIRST_ASUM);
 #ifdef _LTC2600_
     // Update Bias Dac voltages as requested by bit5 of control register
-    LTC2600_Flag = 1;
+    if (!SsS) LTC2600_Flag = 1;  // !Shutdown
 #endif
   }
   //
   // -- Index Bias Dac
   if ((index >= FIRST_BIAS) && (index < LAST_BIAS)) {
 #ifdef _LTC1665_
-    LTC1665_Flag = 1;
+    if (!SsS) LTC1665_Flag = 1;  // Shutdown
 #endif
   }
   //
   // --- Index Qpump DAC
 #ifdef _LTC1669_
-  if(SqPump) {
-    LTC1669_Flag = 1;
-  }
+  if(SqPump && !SsS) LTC1669_Flag = 1;   // Qpump on and !Shutdown
 #endif
 
   //
@@ -784,6 +797,7 @@ void user_loop(void) {
   char xdata ltc1665_index, ltc1665_chipChan, ltc1665_chipAdd; 
 
   timing=1;
+  watchdog(0);
   // 
   //External ADC for REV0 cards
   //----------------------------------------------------------------------------- 
@@ -838,80 +852,46 @@ void user_loop(void) {
   }                                 
   ENABLE_INTERRUPTS;
 
-
   adcChannel++;                 // increment channel
   adcChannel %= N_RB_CHANNEL;   // modulus 16
 
 #endif
 
-  //
-  //-----------------------------------------------------------------------------
-  //Checking the eeprom control flag
-  if (EEP_CTR_Flag) {
-    //Checking for the special instruction
-    if (user_data.eeCtrSet & EEP_CTRL_KEY) {
-      //convert the index value to fit the address of the eepage structure (temperature offset only)	
-      if((TEMPOFF_INDX<(int)(user_data.eeCtrSet & 0x000000ff))
-          && ((int)(user_data.eeCtrSet & 0x000000ff)<TEMPOFF_LAST_INDX))
-        eep_address = (float*)&eepage + eepageAddrConvert((int)(user_data.eeCtrSet & 0x000000ff));
-      else
-        eep_address = (float*)&eepage + (user_data.eeCtrSet & 0x000000ff);
-      //Checking for the write request
-      if (user_data.eeCtrSet & EEP_CTRL_WRITE){
-        //NW added (SERIALN_ADD - WP_START_ADDR) is divided by 4 because the pointer
-        // moves by 4 bytes for every increment
-        if ((user_data.eeCtrSet & 0x000000ff) <= ((SERIALN_ADD - WP_START_ADDR)/4))
-          *eep_address = user_data.eepValue;
-        //Checking for the read request
-      } 
-      else if (user_data.eeCtrSet & EEP_CTRL_READ) {
-        DISABLE_INTERRUPTS;
-        user_data.eepValue = *eep_address;
-        ENABLE_INTERRUPTS;
-      } 
-      else {
-        // Tell the user that inappropriate task has been requested
-        DISABLE_INTERRUPTS;
-        user_data.eepValue = EEP_CTRL_INVAL_REQ;
-        ENABLE_INTERRUPTS;
-      }
-
-    } 
-    else {
-      // Tell the user that invalid key has been provided
-      DISABLE_INTERRUPTS;
-      user_data.eepValue = EEP_CTRL_INVAL_KEY;
-      ENABLE_INTERRUPTS;
-    }
-
-    EEP_CTR_Flag = CLEAR;
-  }  // if eep
+  watchdog(1);
 
   //
   //-----------------------------------------------------------------------------
   //Checking switches flag for toggling the switches
 #ifdef _PCA9539_
-  if(PCA_Flag && !SsS && !SmSd){
+  if(PCA_Flag){
+    watchdog(2);
     swConversion = user_data.swBias;
     PCA9539_Conversion(&swConversion);
     PCA9539_WriteByte(BIAS_WRITE, ~swConversion);
     PCA_Flag = CLEAR;
   }
 #endif
+  watchdog(52);
+
   //
   //-----------------------------------------------------------------------------
   //Checking ASUM flag for updating the asum values
+  // Can do this action only when card is off shutdown (system/Manual)
 #ifdef _LTC2600_
-  if(LTC2600_Flag  && !SsS && !SmSd) {
+  if(LTC2600_Flag) {
+    watchdog(3);
     LTC2600_Cmd(WriteTo_Update,LTC2600_LOAD[AsumIndex], user_data.rAsum[AsumIndex]);
     LTC2600_Flag = CLEAR;
   }
 #endif
+  watchdog(53);
+
   //
   //-----------------------------------------------------------------------------
   //Checking APD flag for updating the APD dacs
 #ifdef _LTC1665_
-  if(LTC1665_Flag  && !SsS && !SmSd) {
+  if(LTC1665_Flag) {
+    watchdog(4);
     for(ltc1665_index=0; ltc1665_index<64; ltc1665_index++){
       if(ltc1665mirror[ltc1665_index] != user_data.rBias[ltc1665_index]){
         ltc1665_chipChan = (ltc1665_index / 8) + 1;
@@ -925,21 +905,26 @@ void user_loop(void) {
     LTC1665_Flag = CLEAR;
   }
 #endif
+  watchdog(54);
+
   //
   //-----------------------------------------------------------------------------
   //Checking DAC charge pump flag for adjusting the charge pump voltage
 #ifdef _LTC1669_
-  if(LTC1669_Flag  && !SsS && !SmSd) {
+  if(LTC1669_Flag) {
+    watchdog(5);
     LTC1669_SetDAC(ADDR_LTC1669, LTC1669_INT_BG_REF, user_data.rQpump);
     LTC1669_Flag = CLEAR;
   }
 #endif
+  watchdog(55);
 
   //-----------------------------------------------------------------------------
   // Power Up based on CTL bit
   if (CPup) {
+    watchdog(6);
     rCSR = user_data.status;
-    if (!SsS  || SsS || SmSd) { // Shutdown or NOT
+    if (!SsS  && !SmSd) { // Not Shutdown or NOT
       // Publish Registers
       SsS = OFF;
       DISABLE_INTERRUPTS;
@@ -963,11 +948,13 @@ void user_loop(void) {
 
     // Reset Action
     CPup = CLEAR;  // rCTL not updated yet
-    // Publish state after V/U check
+    // Publish state after U/I check
 
   } // Power Up
+  watchdog(56);
 
   if ( bdoitNOW || ((uptime() - currentTime) > 1)) {
+     watchdog(7);
     //-----------------------------------------------------------------------------
     //
     // Internal ADCs monitoring Voltages and Currents based on time
@@ -1001,6 +988,7 @@ void user_loop(void) {
       }
     }
     if (bdoitNOW) {
+
       if (rESR & SHUTDOWN_MASK) {
         pca_operation(Q_PUMP_OFF);
         SqPump   = OFF;
@@ -1023,6 +1011,8 @@ void user_loop(void) {
     user_data.error   = rESR; //NW
     user_data.status  = rCSR;
     ENABLE_INTERRUPTS;
+
+    watchdog(57);
 
     //-----------------------------------------------------------------------------
     //
@@ -1063,9 +1053,12 @@ void user_loop(void) {
     currentTime = uptime();
   }
 
+  watchdog(58);
+
   //-----------------------------------------------------------------------------
   // Set Manual Shutdown based on Index
   if (CmSd) {
+    watchdog(9);
     rCSR = user_data.status;
     if (!SsS) {
       SmSd = ON;  // Set Manual Shutdown
@@ -1090,10 +1083,12 @@ void user_loop(void) {
     user_data.status  = rCSR;
     ENABLE_INTERRUPTS;
   } // !Shutdown
+    watchdog(59);
 
   //-----------------------------------------------------------------------------
   // Toggle Qpump ON/OFF based on Index
   if (CqPump  && !SsS && !SmSd) {
+    watchdog(10);
     rCSR = user_data.status;
     if (!SsS) {
       if (SqPump) {
@@ -1115,11 +1110,13 @@ void user_loop(void) {
     user_data.status  = rCSR;
     ENABLE_INTERRUPTS;
   } // Control Pump
+  watchdog(60);
 
 #ifdef _ADT7486A_
   //-----------------------------------------------------------------------------
   // Temperature reading/monitoring based on time for external temperature
   if ((uptime() - sstExtTime) > SST_TIME){
+    watchdog(11);
     for (channel=0;channel < NCHANNEL_ADT7486A; channel++){
       if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt1Temp, SST_LINE1, &temperature)){
         RdssT = CLEAR;
@@ -1141,7 +1138,8 @@ void user_loop(void) {
       }
     }
     for (channel=0;channel < NCHANNEL_ADT7486A; channel++){
-      if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt2Temp, SST_LINE1, &temperature)){
+      watchdog(12);
+     if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt2Temp, SST_LINE1, &temperature)){
         RdssT = CLEAR;
         if ((temperature >= eepage.lSSTlimit) && (temperature <= eepage.uSSTlimit)) {
           ExtssTT = OFF; // in range
@@ -1155,31 +1153,29 @@ void user_loop(void) {
       }
       else{
         DISABLE_INTERRUPTS;
-        RdssT = SET;		  
+        RdssT = SET;
         user_data.error   = rESR; //NW
         ENABLE_INTERRUPTS;
       }
     }
-
+    watchdog(62);
     sstExtTime = uptime();
   }
   // Set Shutdown if Error in System Register
   if ((rESR & SHUTDOWN_MASK) && !SmSd) {
-    pca_operation(Q_PUMP_OFF);
+    watchdog(13);
+    pca_operation(Q_PUMP_OFF);  // Toggle state
     SqPump   = OFF;
     SsS  = ON;
     SPup = OFF;
-    switchonoff(OFF);
-  	// Publish Registers state
-    DISABLE_INTERRUPTS;
-    user_data.control = rCTL;
-    user_data.status  = rCSR;
-    ENABLE_INTERRUPTS;
+    switchonoff(OFF);  //to be determined....
   } 
+  watchdog(63);
 
   //-----------------------------------------------------------------------------
   // Temperature reading/monitoring based on time for internal temperature
   if ((uptime() - sstTime) > SST_TIME) {
+    watchdog(14);
     for (channel=0;channel < NCHANNEL_ADT7486A; channel++) {
       if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetIntTemp, SST_LINE1, &temperature)){
         RdssT = CLEAR;
@@ -1200,6 +1196,7 @@ void user_loop(void) {
         ENABLE_INTERRUPTS;
       }
     }
+    watchdog(64);
     sstTime = uptime();
   }
   // Set Shutdown if Error in System Register
@@ -1208,19 +1205,60 @@ void user_loop(void) {
     SqPump   = OFF;
     SsS  = ON;
     SPup = OFF;
-    switchonoff(OFF);
-	// Publish Registers state
-    DISABLE_INTERRUPTS;
-    user_data.control = rCTL;
-    user_data.status  = rCSR;
-    ENABLE_INTERRUPTS;
+    switchonoff(OFF);  //to be determined....
   } 
 #endif
+   watchdog(65);
+
+  //
+  //-----------------------------------------------------------------------------
+  //Checking the eeprom control flag
+  if (EEP_CTR_Flag) {
+    watchdog(16);
+    //Checking for the special instruction
+    if (user_data.eeCtrSet & EEP_CTRL_KEY) {
+      //convert the index value to fit the address of the eepage structure (temperature offset only)	
+      if((TEMPOFF_INDX<(int)(user_data.eeCtrSet & 0x000000ff))
+          && ((int)(user_data.eeCtrSet & 0x000000ff)<TEMPOFF_LAST_INDX))
+        eep_address = (float*)&eepage + eepageAddrConvert((int)(user_data.eeCtrSet & 0x000000ff));
+      else
+        eep_address = (float*)&eepage + (user_data.eeCtrSet & 0x000000ff);
+      //Checking for the write request
+      if (user_data.eeCtrSet & EEP_CTRL_WRITE){
+        //NW added (SERIALN_ADD - WP_START_ADDR) is divided by 4 because the pointer
+        // moves by 4 bytes for every increment
+        if ((user_data.eeCtrSet & 0x000000ff) <= ((SERIALN_ADD - WP_START_ADDR)/4))
+          *eep_address = user_data.eepValue;
+        //Checking for the read request
+      } 
+      else if (user_data.eeCtrSet & EEP_CTRL_READ) {
+        DISABLE_INTERRUPTS;
+        user_data.eepValue = *eep_address;
+        ENABLE_INTERRUPTS;
+      } 
+      else {
+        // Tell the user that inappropriate task has been requested
+        DISABLE_INTERRUPTS;
+        user_data.eepValue = EEP_CTRL_INVAL_REQ;
+        ENABLE_INTERRUPTS;
+      }
+
+    } 
+    else {
+      // Tell the user that invalid key has been provided
+      DISABLE_INTERRUPTS;
+      user_data.eepValue = EEP_CTRL_INVAL_KEY;
+      ENABLE_INTERRUPTS;
+    }
+
+    EEP_CTR_Flag = CLEAR;
+  }  // if eep
 
   //-----------------------------------------------------------------------------
   // EEPROM Save procedure based on CTL bit
 #ifdef _ExtEEPROM_
   if (CeeS) {
+    watchdog(17);
     //Check if we are here for the first time
     if (!eeprom_flag) {
       rCSR = user_data.status;
@@ -1263,6 +1301,7 @@ void user_loop(void) {
   //-----------------------------------------------------------------------------
   // EEPROM Restore procedure based on CTL bit
   if (CeeR) {
+    watchdog(18);
     rCSR = user_data.status;
 
 #ifdef _ExtEEPROM_
@@ -1288,6 +1327,7 @@ void user_loop(void) {
   //-----------------------------------------------------------------------------
   //
   // General loop delay
+  watchdog(20);
   timing=0;
   delay_ms(10);
   //

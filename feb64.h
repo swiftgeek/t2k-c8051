@@ -375,6 +375,7 @@ struct user_data_type {
 	float eepValue;
 	unsigned long eeCtrSet;
 	unsigned long asumCtl;
+	unsigned long watchdog;
 };
 struct user_data_type xdata user_data;
 
