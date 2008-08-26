@@ -27,8 +27,8 @@
 #define BIAS_OUTPUT_ENABLE ADDR_PCA9539, PCA9539_CONFIG0, PCA9539_ALL_OUTPUT
 #define BIAS_DISABLE       ADDR_PCA9539, PCA9539_OUTPUT0, 0xFF
 #define BIAS_ENABLE        ADDR_PCA9539, PCA9539_OUTPUT0, 0x00
-#define BIAS_READ			     ADDR_PCA9539, PCA9539_INPUT0
-#define BIAS_WRITE				 ADDR_PCA9539, PCA9539_OUTPUT0
+#define BIAS_READ		   ADDR_PCA9539, PCA9539_INPUT0
+#define BIAS_WRITE	       ADDR_PCA9539, PCA9539_OUTPUT0
 
 #define BACKPLANE_INPUT_ENABLE  ADDR_PCA9539, PCA9539_CONFIG1, PCA9539_ALL_INPUT
 #define BACKPLANE_READ			    ADDR_PCA9539, PCA9539_INPUT1	 
@@ -36,12 +36,12 @@
 /**********************************************************************************/
 // External ADC
 #define N_RB_CHANNEL	 16
-#define EXT_VREF      1.25f  // 2.4989f
-#define CURR_MEASURE  0x04
+#define EXT_VREF      1.25f  // 2.4989f actually 1/2 of the number here
+#define CURR_MEASURE  0x04       
 #define V_A2MTABLE       0
 #define I_A2MTABLE       1
 #define VOLT_MEASURE  0x04
-#define GAIN1				 0 // actually x1
+#define GAIN1			 0 // actually x1
 #define GAIN4            1 // actually x4
 #define GAIN8            2 // actually x8
 #define GAIN16           3 // actually x16
@@ -95,14 +95,14 @@ unsigned int Offst;
 };
 
 struct ADC2MSCB_TABLE xdata adc2mscb_table[16] = {
-  {GAIN64, 1, I_A2MTABLE, 10000, 9350}, {GAIN64, 3, I_A2MTABLE, 10000, 0}
-, {GAIN64, 5, I_A2MTABLE, 10000, 0}, {GAIN64, 7, I_A2MTABLE, 10000, 0}
-, {GAIN1 , 7, V_A2MTABLE,   100, 0}, {GAIN1 , 5, V_A2MTABLE, 100, 0}
-, {GAIN1 , 3, V_A2MTABLE,   100, 0}, {GAIN1 , 1, V_A2MTABLE, 100, 0}
-, {GAIN64, 0, I_A2MTABLE, 10000, 0}, {GAIN64, 2, I_A2MTABLE, 10000, 0}
-, {GAIN64, 4, I_A2MTABLE, 10000, 0}, {GAIN64, 6, I_A2MTABLE, 10000, 0}
-, {GAIN1 , 6, V_A2MTABLE,   100, 0}, {GAIN1 , 4, V_A2MTABLE, 100, 0}
-, {GAIN1 , 2, V_A2MTABLE,   100, 0}, {GAIN1 , 0, V_A2MTABLE, 100, 0}
+  {GAIN32, 1, I_A2MTABLE, 10000, 22}, {GAIN32, 3, I_A2MTABLE, 10000, 127}
+, {GAIN32, 5, I_A2MTABLE, 10000, 7176}, {GAIN32, 7, I_A2MTABLE, 10000, 1840}
+, {GAIN1 , 7, V_A2MTABLE,   101, 0}, {GAIN1 , 5, V_A2MTABLE, 101, 0}
+, {GAIN1 , 3, V_A2MTABLE,   101, 0}, {GAIN1 , 1, V_A2MTABLE, 101, 0}
+, {GAIN32, 0, I_A2MTABLE, 10000, 3178}, {GAIN32, 2, I_A2MTABLE, 10000, 1800}
+, {GAIN32, 4, I_A2MTABLE, 10000, 925}, {GAIN32, 6, I_A2MTABLE, 10000, 4895}
+, {GAIN1 , 6, V_A2MTABLE,   101, 0}, {GAIN1 , 4, V_A2MTABLE, 101, 0}
+, {GAIN1 , 2, V_A2MTABLE,   101, 0}, {GAIN1 , 0, V_A2MTABLE, 101, 0}
 };
 #define CONVER_FAC1 0
 #endif
@@ -131,39 +131,33 @@ struct IADC_TABLE {
 /**********************************************************************************/
 #ifdef FEB64REV0
 struct IADC_TABLE xdata iadc_table[8] = {
-  {IGAIN1, 41.448, -0.3464}, {IGAIN1, 2.496587, 0}
-, {IGAIN1, 4.025, -0.06}, {IGAIN1, 4.025, -0.054}
+  {IGAIN1, 41.448, -0.3464} , {IGAIN1, 2.496587, 0}
+, {IGAIN1, 4.025, -0.06}    , {IGAIN1, 4.025, -0.054}
 , {IGAIN1 , 8.4534, -18.622}, {IGAIN1 , 0.237, 0}
-, {IGAIN1 , 0.475, 0}, {IGAIN1 , 0.237, 0}
+, {IGAIN1 , 0.475, 0}       , {IGAIN1 , 0.237, 0}
 };
-float code  coeff[8]  = {41.448  ,2.496587   ,4.025   ,4.025   ,8.4534   ,0.237 ,0.475  ,0.237};
-float code  offset[8] = {-0.3464 ,0.         ,-0.06   ,-0.054  ,-18.622  ,0     ,0.     ,0.  };
 
 /**********************************************************************************/
 #elif defined(FEB64REV1)
 struct IADC_TABLE xdata iadc_table[8] = {
-  {IGAIN1, 100,      -0.01}, {IGAIN1, 10, 0}
+  {IGAIN2, 50.0,       0.0}, {IGAIN1, 10, 0}
 , {IGAIN1, 3.980132,     0}, {IGAIN1, 3.980132, 0}
 , {IGAIN1, 8.5,     -18.75}, {IGAIN1, 0.1, 0}
 , {IGAIN1, 0.4,          0}, {IGAIN1, 0.1, 0}
 };
 
-/**********************************************************************************/
-// Offset still needs to be calibrated
-float code  coeff[8]  = {100 ,10  ,3.980132, 3.980132 ,8.5    ,0.1 ,0.4  ,0.1};
-float code  offset[8] = {0   ,0   , 0      , 0        ,-18.75 ,0   ,0    ,0  };
 #endif
 
 /**********************************************************************************/
 // External EEPROM variables
 unsigned char rEER;
-#define EEP_CTRL_KEY	      0x3C000000
+#define EEP_CTRL_KEY	    0x3C000000
 #define EEP_CTRL_READ       0x00110000   	
 #define EEP_CTRL_WRITE 	    0x00220000
 #define EEP_CTRL_INVAL_REQ -100	
 #define EEP_CTRL_INVAL_KEY -10	
 #define TEMPOFF_INDX 		27
-#define TEMPOFF_LAST_INDX  36
+#define TEMPOFF_LAST_INDX   36
 
 // EEPROM structure
 struct EEPAGE {
@@ -177,6 +171,7 @@ float lVBiaslimit, uVBiaslimit;
 float lIBiaslimit, uIBiaslimit;
 float ext1offset[4];
 float ext2offset[4];
+float iBiasOffset[8]; 
 unsigned long SerialN;
 unsigned int rasum[8];
 unsigned int rqpump;
@@ -198,23 +193,26 @@ struct EEPAGE xdata eepage = {
 	 ,-1.0,1.0
 // 22 - LVQ, HVQ (V)
 	 ,-0.1,1.0
-//	24 - LVBias, HVBias (V)
+// 24 - LVBias, HVBias (V)
 	 ,0.0,73.0
-//	26 - LIBias, LVBias (uA)
+// 26 - LIBias, LVBias (uA)
 	 ,0.0,10.0
-//	28 - SST channel 1 offset[0..3]
+// 28 - SST channel 1 offset[0..3]
 	 ,0,0,0,0
 // 32 - SST channel 2 offset[0..3]
 	 ,0,0,0,0
-// 36 - Card Serial Number
+// 36 - Current Bias Offset [0..7]
+// TO BE ADDED
+//-PAA     , 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+// 44 - Card Serial Number
    ,0x00000000
-// 37 - Asum[0..7] threshold
+// 45 - Asum[0..7] threshold
 	 ,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff
-// 45 - Qpump DAC
+// 53 - Qpump DAC
 	 ,0x0000
-// 46 - Qpump switch
+// 54 - Qpump switch
 	 ,0x00
-//	47 - DACs[0..63]
+// 55 - DACs[0..63]
 	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
@@ -243,11 +241,11 @@ struct EEPAGE xdata eepage2; //NW testing
 #define IDXASUM        44
 #define IDXSST         40
 #define IDXBIAS        52
-#define IDXEEP_CTL	 141
+#define IDXEEP_CTL	  141
 #define IDXASUM_CTL   142
 
 #define SERIALN_LENGTH 4
-#define SERIALN_ADD  0x690    
+#define SERIALN_ADD    0x690    
 
 // EEPROM page assignment (memory offset)
 unsigned int xdata PageAddr[]={0x0,0x100,0x200,0x300,0x400,0x500};
@@ -272,14 +270,8 @@ unsigned char xdata ltc1665mirror [64];
 #define DONE   1
 #define FAILED 0
 #define CLEAR  0
-#define SET		1
 
-// Shutdown mask
-// Shut down the card only if any of the following bits in the rESR register is set
-// correspond to the rESR bit assignment
-// All the Vreg U/I, uC/Board/FGD Temperature
-#define SHUTDOWN_MASK   0x7FC
-
+ 
 // Vreg Enable port assignment
 #ifdef FEB64REV0
 sbit EN_pD5V = P3 ^ 4;
@@ -319,15 +311,32 @@ sbit vQpump   = rESR ^ 8;  //0x1
 sbit iQpump   = rESR ^ 9;  //0x2
 sbit vReg1    = rESR ^ 10; //0x4
 sbit vReg2    = rESR ^ 11; //0x8
+
 sbit vReg3    = rESR ^ 12; //0x10
 sbit iReg1    = rESR ^ 13; //0x20
 sbit iReg2    = rESR ^ 14; //0x40
 sbit iReg3    = rESR ^ 15; //0x80
+
 sbit uCT      = rESR ^ 0;  //0x100
 sbit IntssTT  = rESR ^ 1;  //0x200
-sbit ExtssTT  = rESR ^ 2;	//0x400
+sbit ExtssTT  = rESR ^ 2;  //0x400
 sbit EEPROM   = rESR ^ 3;  //0x800
+
 sbit RdssT	  = rESR ^ 4;  //0x1000
+//sbit xxx      = rESR ^ 5 //0x2000
+//sbit xxx      = rESR ^ 6 //0x4000
+//sbit xxx      = rESR ^ 7 //0x8000
+
+
+// Shutdown mask
+// Shut down the card only if any of the following bits in the rESR register is set
+// correspond to the rESR bit assignment
+// All the Vreg U/I, uC/Board/FGD Temperature
+#define UCTEMPERATURE_MASK   0x0100
+#define BTEMPERATURE_MASK    0x0200
+#define FGDTEMPERATURE_MASK  0x0400
+#define VOLTAGE_MASK         0x001C
+#define CURRENT_MASK         0x00E0
 
 // SMBus Port Aliases
 sbit SDA		  = MSCB_I2C_SDA;
