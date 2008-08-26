@@ -1070,6 +1070,14 @@ void user_loop(void) {
       ENABLE_INTERRUPTS;
       mask = (1<<channel); 
 
+		// Check for Qpump Voltage ON (> 40V)
+      if (channel == 0) {
+        if ((volt >= eepage.lVIlimit[channel]))
+		   SqPump = ON;
+        else 
+		   SqPump = OFF;
+      }
+
       // Skip the first two channels(charge pump) 
       if ((channel > 1)) {	// Skip vQ, I
         if ((volt >= eepage.lVIlimit[channel]) && (volt <= eepage.uVIlimit[channel])) {
@@ -1143,11 +1151,9 @@ void user_loop(void) {
 
    if (SqPump) {
      pca_operation(Q_PUMP_OFF);  // Toggle state
-     SqPump   = OFF;
    }
    else {
      pca_operation(Q_PUMP_ON);   // Toggle state
-     SqPump   = ON;
    }
 
     // Reset Action
@@ -1156,7 +1162,6 @@ void user_loop(void) {
     // Publish Registers state
     DISABLE_INTERRUPTS;
     user_data.control = rCTL;
-    user_data.status  = rCSR;
     ENABLE_INTERRUPTS;
 
   } // Control Pump
