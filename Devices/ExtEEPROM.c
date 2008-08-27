@@ -47,9 +47,9 @@ Reads data from ext_eeprom.
 @param page_size		number of bytes of data that the originator wants to read from memory
 */
 unsigned char ExtEEPROM_Read (unsigned int ReadPage, unsigned char *destination, 
-unsigned char page_size) {
+unsigned int page_size) {
 		
-	unsigned char i=0;
+	unsigned int i=0;
 			
 	//Making sure that Write Protection pin is high to start doing W/R operation
 	RAM_WPn = 1;	
@@ -89,14 +89,17 @@ Writes data to the ext_eeprom.
 */
 
 
-unsigned char ExtEEPROM_Write_Clear(unsigned int write_addr, unsigned char **source, 
-unsigned char page_size, unsigned char WC_flag, unsigned char *flag)
+unsigned char ExtEEPROM_Write_Clear(unsigned int write_addr
+                                  , unsigned char **source
+                                  , unsigned int page_size
+                                  , unsigned char WC_flag
+                                  , unsigned char *flag)
 {
-	unsigned char i,j;
+	unsigned int i,j;
 	unsigned int Nblock;
-	unsigned char counter = EEP_MAX_BYTE;	
+	unsigned int counter = EEP_MAX_BYTE;	
 
-		//Checking if we are trying to write in the write protected block
+   //Checking if we are trying to write in the write protected block
 	if (write_addr+page_size >= WP_START_ADDR)
 		return EEP_PROTECTED;
 
@@ -122,16 +125,14 @@ unsigned char page_size, unsigned char WC_flag, unsigned char *flag)
 		//Sending the Write Enable instruction 
 		if (ExtEEPROM_WriteEnable() == EEP_BUSY){	 //The device will be automatically
 			*flag = i;
-			return EEP_BUSY;								//returned to the write disable state 
-		}													    //at the completion of write cycle
-		
+			return EEP_BUSY;						//returned to the write disable state 
+		}	//at the completion of write cycle
 	
 		RAM_CSn = 0;
 	
-		SPI_WriteByte(EEP_WRITEcmd); 					//Sending the WRITE opcode 
-		SPI_WriteUInt(write_addr);	 			   	//Sending the memory address which 
-		                                          //data is going to be stored in;
-						
+		SPI_WriteByte(EEP_WRITEcmd); 			  //Sending the WRITE opcode 
+		SPI_WriteUInt(write_addr);	 			  //Sending the memory address which 
+		                                          //data is going to be stored in;						
 		for (j=0; j<counter; j++) {	
 			if (WC_flag == WRITE_EEPROM){
 				SPI_WriteByte(**source);

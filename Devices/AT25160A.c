@@ -15,7 +15,7 @@
 #include "AT25160A.h"
 #include "../Protocols/SPI_handler.h"
 
-signed char ExtEEPROM_Init (unsigned char npages, unsigned char page_size)
+signed char ExtEEPROM_Init (unsigned char npages, unsigned int page_size)
 {	 
 	// Unselecting the device 
 	RAM_CSn = 1;
@@ -31,10 +31,12 @@ signed char ExtEEPROM_Init (unsigned char npages, unsigned char page_size)
 	return 0;
 }
 
-signed char ExtEEPROM_Read (unsigned int ReadPage, unsigned char *destination, unsigned char page_size)
+signed char ExtEEPROM_Read (unsigned int ReadPage
+                          , unsigned char *destination
+								  , unsigned int page_size)
 {
 		
-	unsigned char i=0;
+	unsigned int i=0;
 			
 	//Making sure that Write Protection pin is high
 	RAM_WPn = 1;	
@@ -56,11 +58,11 @@ signed char ExtEEPROM_Read (unsigned int ReadPage, unsigned char *destination, u
 	return 0;
 }
 
-signed char ExtEEPROM_WriteProtect(unsigned char *source, unsigned char page_size)
+signed char ExtEEPROM_WriteProtect(unsigned char *source, unsigned int page_size)
 {	
-	unsigned char i,j;
+	unsigned int i,j;
 	unsigned int eeprom_addr, blockSize;
-	unsigned char counter = AT2516_MAX_BYTE;	
+	unsigned int counter = AT2516_MAX_BYTE;	
 	
 	//Making sure that Write Protection pin is high
 	RAM_WPn = 1;
@@ -80,8 +82,8 @@ signed char ExtEEPROM_WriteProtect(unsigned char *source, unsigned char page_siz
 	
 		RAM_CSn = 0;
 	
-		SPI_WriteByte(AT2516_WRITE); 					//Sending the Write Data to Memory Array command
-		SPI_WriteUInt(eeprom_addr);	 					//Sending the address of location that we want to do the write
+		SPI_WriteByte(AT2516_WRITE); 		// Sending the Write Data to Memory Array command
+		SPI_WriteUInt(eeprom_addr);	 	// Sending the address of location that we want to do the write
 						
 		for (j=0; j<counter; j++) {	
 			SPI_WriteByte(*source);
@@ -100,12 +102,14 @@ signed char ExtEEPROM_WriteProtect(unsigned char *source, unsigned char page_siz
 }
 
 
-signed char ExtEEPROM_Write_Clear(unsigned int write_addr, unsigned char *source, 
-unsigned char page_size, unsigned char clear)
+signed char ExtEEPROM_Write_Clear(unsigned int write_addr
+									     , unsigned char *source
+										  , unsigned int page_size
+										  , unsigned char clear)
 {
-	unsigned char i,j;
+	unsigned int i,j;
 	unsigned int blockSize;
-	unsigned char counter = AT2516_MAX_BYTE;	
+	unsigned int counter = AT2516_MAX_BYTE;	
 	
 	//Making sure that Write Protection pin is high
 	RAM_WPn = 1;
