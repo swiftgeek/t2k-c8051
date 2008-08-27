@@ -17,7 +17,7 @@ SPI      _LTC2600_      : Asum DAC
 Memory usage:
 define(FEB64) define(_SPI_PROTOCOL_) define(_LTC1665_)
 define(_SMB_PROTOCOL_) define (_LTC1669_)  define(_LTC2600_)
-define(_SST_PROTOCOL_) define(_ADT7486A_) 
+define(_SST_PROTOCOL_) define(_ADT7486A_)
 
 Program Size: data=139.6 xdata=274 code=13497
 Program Size: data=150.2 xdata=711 code=15134
@@ -81,7 +81,10 @@ char idata svn_rev_code[] = "$Rev$";
 unsigned char idata _n_sub_addr = 1;
 
 // local variables
-unsigned long xdata currentTime=0, sstTime=0,sstExtTime=0;
+int xdata k, calState=0, calCount=0;
+float xdata calNumber = 10.0;
+char xdata calQpumpSave=0, calSwSave=0; 
+unsigned long xdata currentTime=0, sstTime=0,sstExtTime=0, calTime=0;
 unsigned char xdata eeprom_channel,channel, chipAdd, chipChan;
 unsigned char xdata BiasIndex, AsumIndex;
 unsigned char xdata SST_LINE1=1;
@@ -107,113 +110,113 @@ sbit ASUM_PWDN      = P1 ^5;
 // User Data structure declaration
 //-----------------------------------------------------------------------------
 MSCB_INFO_VAR code vars[] = {
-  4, UNIT_BYTE,            0, 0,           0, "SerialN",    &user_data.SerialN,      //0  
-  2, UNIT_BYTE,            0, 0,           0, "Error",      &user_data.error,        //1  
-  1, UNIT_BYTE,            0, 0,           0, "Control",    &user_data.control,      //2  
-  1, UNIT_BYTE,            0, 0,           0, "Status",     &user_data.status,       //3  
-  1, UNIT_BYTE,            0, 0,           0, "EEPage",     &user_data.eepage,       //4  
-  1, UNIT_BYTE,            0, 0,           0, "swBias",     &user_data.swBias,       //5  
-  2, UNIT_BYTE,            0, 0,           0, "rQpump",     &user_data.rQpump,       //6  
+  4, UNIT_BYTE,            0, 0,           0, "SerialN",    &user_data.SerialN,      //0
+  2, UNIT_BYTE,            0, 0,           0, "Error",      &user_data.error,        //1
+  1, UNIT_BYTE,            0, 0,           0, "Control",    &user_data.control,      //2
+  1, UNIT_BYTE,            0, 0,           0, "Status",     &user_data.status,       //3
+  1, UNIT_BYTE,            0, 0,           0, "EEPage",     &user_data.eepage,       //4
+  1, UNIT_BYTE,            0, 0,           0, "swBias",     &user_data.swBias,       //5
+  2, UNIT_BYTE,            0, 0,           0, "rQpump",     &user_data.rQpump,       //6
 
-  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBias",      &user_data.VBias,        //7  
-  4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBias",      &user_data.IBias,        //8  
-  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pDVMon",     &user_data.pDVMon,       //9  
-  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pAVMon",     &user_data.pAVMon,       //10 
-  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "nAVMon",     &user_data.nAVMon,       //11 
-  4, UNIT_AMPERE, 		     0, 0, MSCBF_FLOAT, "nAIMon",     &user_data.nAIMon,       //12 
-  4, UNIT_AMPERE, 		     0, 0, MSCBF_FLOAT, "pAIMon",     &user_data.pAIMon,       //13 
-  4, UNIT_AMPERE, 			   0, 0, MSCBF_FLOAT, "pDIMon",     &user_data.pDIMon,       //14 
-  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "uCTemp",     &user_data.uCTemp,       //15 
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBias",      &user_data.VBias,        //7
+  4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBias",      &user_data.IBias,        //8
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pDVMon",     &user_data.pDVMon,       //9
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pAVMon",     &user_data.pAVMon,       //10
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "nAVMon",     &user_data.nAVMon,       //11
+  4, UNIT_AMPERE,          0, 0, MSCBF_FLOAT, "nAIMon",     &user_data.nAIMon,       //12
+  4, UNIT_AMPERE,          0, 0, MSCBF_FLOAT, "pAIMon",     &user_data.pAIMon,       //13
+  4, UNIT_AMPERE,          0, 0, MSCBF_FLOAT, "pDIMon",     &user_data.pDIMon,       //14
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "uCTemp",     &user_data.uCTemp,       //15
 
-  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp0",      &user_data.Temp[0],      //16 
-  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp1",      &user_data.Temp[1],      //17 
-  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp2",      &user_data.Temp[2],      //18 
-  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp3",      &user_data.Temp[3],      //19 
-  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp4",      &user_data.Temp[4],      //20 
-  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp5",      &user_data.Temp[5],      //21 
-  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp6",      &user_data.Temp[6],      //22 
-  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp7",      &user_data.Temp[7],      //23 
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp0",      &user_data.Temp[0],      //16
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp1",      &user_data.Temp[1],      //17
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp2",      &user_data.Temp[2],      //18
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp3",      &user_data.Temp[3],      //19
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp4",      &user_data.Temp[4],      //20
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp5",      &user_data.Temp[5],      //21
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp6",      &user_data.Temp[6],      //22
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp7",      &user_data.Temp[7],      //23
 
-  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon0",     &user_data.VBMon[0],     //24 
-  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon1",     &user_data.VBMon[1],     //25 
-  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon2",     &user_data.VBMon[2],     //26 
-  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon3",     &user_data.VBMon[3],     //27 
-  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon4",     &user_data.VBMon[4],     //28 
-  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon5",     &user_data.VBMon[5],     //29 
-  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon6",     &user_data.VBMon[6],     //30 
-  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon7",     &user_data.VBMon[7],     //31 
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon0",     &user_data.VBMon[0],     //24
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon1",     &user_data.VBMon[1],     //25
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon2",     &user_data.VBMon[2],     //26
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon3",     &user_data.VBMon[3],     //27
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon4",     &user_data.VBMon[4],     //28
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon5",     &user_data.VBMon[5],     //29
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon6",     &user_data.VBMon[6],     //30
+  4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBMon7",     &user_data.VBMon[7],     //31
 
-  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon0",     &user_data.IBMon[0],     //32 
-  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon1",     &user_data.IBMon[1],     //33 
-  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon2",     &user_data.IBMon[2],     //34 
-  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon3",     &user_data.IBMon[3],     //35 
-  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon4",     &user_data.IBMon[4],     //36 
-  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon5",     &user_data.IBMon[5],     //37 
-  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon6",     &user_data.IBMon[6],     //38 
-  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon7",     &user_data.IBMon[7],     //39 
+  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon0",     &user_data.IBMon[0],     //32
+  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon1",     &user_data.IBMon[1],     //33
+  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon2",     &user_data.IBMon[2],     //34
+  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon3",     &user_data.IBMon[3],     //35
+  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon4",     &user_data.IBMon[4],     //36
+  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon5",     &user_data.IBMon[5],     //37
+  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon6",     &user_data.IBMon[6],     //38
+  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBMon7",     &user_data.IBMon[7],     //39
 
-  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "ssTemp0",    &user_data.ssTemp[0],    //40 
-  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "ssTemp1",    &user_data.ssTemp[1],    //41 
-  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "ssTemp2",    &user_data.ssTemp[2],    //42 
-  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "ssTemp3",    &user_data.ssTemp[3],    //43 
-  
-  2, UNIT_BYTE,            0, 0,           0, "rAsum0",     &user_data.rAsum[0],     //44 
-  2, UNIT_BYTE,            0, 0,           0, "rAsum1",     &user_data.rAsum[1],     //45 
-  2, UNIT_BYTE,            0, 0,           0, "rAsum2",     &user_data.rAsum[2],     //46 
-  2, UNIT_BYTE,            0, 0,           0, "rAsum3",     &user_data.rAsum[3],     //47 
-  2, UNIT_BYTE,            0, 0,           0, "rAsum4",     &user_data.rAsum[4],     //48 
-  2, UNIT_BYTE,            0, 0,           0, "rAsum5",     &user_data.rAsum[5],     //49 
-  2, UNIT_BYTE,            0, 0,           0, "rAsum6",     &user_data.rAsum[6],     //50 
-  2, UNIT_BYTE,            0, 0,           0, "rAsum7",     &user_data.rAsum[7],     //51 
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "ssTemp0",    &user_data.ssTemp[0],    //40
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "ssTemp1",    &user_data.ssTemp[1],    //41
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "ssTemp2",    &user_data.ssTemp[2],    //42
+  4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "ssTemp3",    &user_data.ssTemp[3],    //43
 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias00",    &user_data.rBias[0],     //52 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias01",    &user_data.rBias[1],     //53 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias02",    &user_data.rBias[2],     //54 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias03",    &user_data.rBias[3],     //55 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias04",    &user_data.rBias[4],     //56 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias05",    &user_data.rBias[5],     //57 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias06",    &user_data.rBias[6],     //58 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias07",    &user_data.rBias[7],     //59 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias08",    &user_data.rBias[8],     //60 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias09",    &user_data.rBias[9],     //61 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias10",    &user_data.rBias[10],    //62 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias11",    &user_data.rBias[11],    //63 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias12",    &user_data.rBias[12],    //64 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias13",    &user_data.rBias[13],    //65 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias14",    &user_data.rBias[14],    //66 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias15",    &user_data.rBias[15],    //67 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias16",    &user_data.rBias[16],    //68 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias17",    &user_data.rBias[17],    //69 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias18",    &user_data.rBias[18],    //70 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias19",    &user_data.rBias[19],    //71 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias20",    &user_data.rBias[20],    //72 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias21",    &user_data.rBias[21],    //73 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias22",    &user_data.rBias[22],    //74 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias23",    &user_data.rBias[23],    //75 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias24",    &user_data.rBias[24],    //76 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias25",    &user_data.rBias[25],    //77 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias26",    &user_data.rBias[26],    //78 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias27",    &user_data.rBias[27],    //79 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias28",    &user_data.rBias[28],    //80 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias29",    &user_data.rBias[29],    //81 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias30",    &user_data.rBias[30],    //82 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias31",    &user_data.rBias[31],    //83 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias32",    &user_data.rBias[32],    //84 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias33",    &user_data.rBias[33],    //85 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias34",    &user_data.rBias[34],    //86 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias35",    &user_data.rBias[35],    //87 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias36",    &user_data.rBias[36],    //88 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias37",    &user_data.rBias[37],    //89 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias38",    &user_data.rBias[38],    //90 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias39",    &user_data.rBias[39],    //91 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias40",    &user_data.rBias[40],    //92 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias41",    &user_data.rBias[41],    //93 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias42",    &user_data.rBias[42],    //94 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias43",    &user_data.rBias[43],    //95 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias44",    &user_data.rBias[44],    //96 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias45",    &user_data.rBias[45],    //97 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias46",    &user_data.rBias[46],    //98 
-  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias47",    &user_data.rBias[47],    //99 
+  2, UNIT_BYTE,            0, 0,           0, "rAsum0",     &user_data.rAsum[0],     //44
+  2, UNIT_BYTE,            0, 0,           0, "rAsum1",     &user_data.rAsum[1],     //45
+  2, UNIT_BYTE,            0, 0,           0, "rAsum2",     &user_data.rAsum[2],     //46
+  2, UNIT_BYTE,            0, 0,           0, "rAsum3",     &user_data.rAsum[3],     //47
+  2, UNIT_BYTE,            0, 0,           0, "rAsum4",     &user_data.rAsum[4],     //48
+  2, UNIT_BYTE,            0, 0,           0, "rAsum5",     &user_data.rAsum[5],     //49
+  2, UNIT_BYTE,            0, 0,           0, "rAsum6",     &user_data.rAsum[6],     //50
+  2, UNIT_BYTE,            0, 0,           0, "rAsum7",     &user_data.rAsum[7],     //51
+
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias00",    &user_data.rBias[0],     //52
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias01",    &user_data.rBias[1],     //53
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias02",    &user_data.rBias[2],     //54
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias03",    &user_data.rBias[3],     //55
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias04",    &user_data.rBias[4],     //56
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias05",    &user_data.rBias[5],     //57
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias06",    &user_data.rBias[6],     //58
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias07",    &user_data.rBias[7],     //59
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias08",    &user_data.rBias[8],     //60
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias09",    &user_data.rBias[9],     //61
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias10",    &user_data.rBias[10],    //62
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias11",    &user_data.rBias[11],    //63
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias12",    &user_data.rBias[12],    //64
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias13",    &user_data.rBias[13],    //65
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias14",    &user_data.rBias[14],    //66
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias15",    &user_data.rBias[15],    //67
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias16",    &user_data.rBias[16],    //68
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias17",    &user_data.rBias[17],    //69
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias18",    &user_data.rBias[18],    //70
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias19",    &user_data.rBias[19],    //71
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias20",    &user_data.rBias[20],    //72
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias21",    &user_data.rBias[21],    //73
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias22",    &user_data.rBias[22],    //74
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias23",    &user_data.rBias[23],    //75
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias24",    &user_data.rBias[24],    //76
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias25",    &user_data.rBias[25],    //77
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias26",    &user_data.rBias[26],    //78
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias27",    &user_data.rBias[27],    //79
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias28",    &user_data.rBias[28],    //80
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias29",    &user_data.rBias[29],    //81
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias30",    &user_data.rBias[30],    //82
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias31",    &user_data.rBias[31],    //83
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias32",    &user_data.rBias[32],    //84
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias33",    &user_data.rBias[33],    //85
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias34",    &user_data.rBias[34],    //86
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias35",    &user_data.rBias[35],    //87
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias36",    &user_data.rBias[36],    //88
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias37",    &user_data.rBias[37],    //89
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias38",    &user_data.rBias[38],    //90
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias39",    &user_data.rBias[39],    //91
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias40",    &user_data.rBias[40],    //92
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias41",    &user_data.rBias[41],    //93
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias42",    &user_data.rBias[42],    //94
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias43",    &user_data.rBias[43],    //95
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias44",    &user_data.rBias[44],    //96
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias45",    &user_data.rBias[45],    //97
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias46",    &user_data.rBias[46],    //98
+  1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias47",    &user_data.rBias[47],    //99
   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias48",    &user_data.rBias[48],    //100
   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias49",    &user_data.rBias[49],    //101
   1,UNIT_BYTE,             0, 0,MSCBF_HIDDEN, "rBias50",    &user_data.rBias[50],    //102
@@ -261,7 +264,8 @@ MSCB_INFO_VAR code vars[] = {
   4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,              "eeCtrSet", &user_data.eeCtrSet,  // 141
   4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,              "asumctl", &user_data.asumCtl,    // 142
   4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,              "watchdog", &user_data.watchdog,  // 143
-  
+  4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,              "smbdebug", &user_data.debugsmb,  // 144
+
   0
 };
 MSCB_INFO_VAR *variables = vars;   // Structure mapping
@@ -271,20 +275,31 @@ extern SYS_INFO sys_info;          // For address setting
 
 #ifdef _ADT7486A_
 unsigned char ADT7486A_addrArray[] = {ADT7486A_ADDR1
-, ADT7486A_ADDR0
-, ADT7486A_ADDR3
-, ADT7486A_ADDR2};
+                                    , ADT7486A_ADDR0
+                                    , ADT7486A_ADDR3
+                                    , ADT7486A_ADDR2};
 #endif
 
 #ifdef _LTC2600_
 unsigned char xdata LTC2600_LOAD[] = {LTC2600_LOAD_A,LTC2600_LOAD_B,
-LTC2600_LOAD_C,LTC2600_LOAD_D,
-LTC2600_LOAD_E,LTC2600_LOAD_F,
-LTC2600_LOAD_G,LTC2600_LOAD_H};
+                                      LTC2600_LOAD_C,LTC2600_LOAD_D,
+                                      LTC2600_LOAD_E,LTC2600_LOAD_F,
+                                      LTC2600_LOAD_G,LTC2600_LOAD_H};
 #endif
 
-
-
+//
+// Update from eepage the local ADC2 Table
+//-----------------------------------------------------------------------------
+void updateAdc2Table(void)
+{
+  int i, j;
+  for(i=0;i<16;i++) {
+    if (adc2mscb_table[i].current) {
+       j = adc2mscb_table[i].mscbIdx;
+       adc2mscb_table[i].Offst = (unsigned int) eepage.iBiasOffset[j];
+    }
+   }
+}
 //
 // Watchdog counter function
 //-----------------------------------------------------------------------------
@@ -297,7 +312,7 @@ void watchdog(short int state)
 }
 
 //
-// 
+//
 //-----------------------------------------------------------------------------
 float read_voltage(unsigned char channel,unsigned int *rvalue,  float coeff, float offset, unsigned char gain)
 {
@@ -345,14 +360,14 @@ void switchonoff(unsigned char command)
   char xdata swConversion;
   if(command==ON)
   {
-    // Enable the voltage regulator to power the card 
+    // Enable the voltage regulator to power the card
     //-----------------------------------------------------------------------------
     SFRPAGE  = CONFIG_PAGE;
     P3MDOUT &= 0xFB;  // Set Vreg enable to Open drain
     REG_EN=ON;
     // Setup the ASUM ports (P1.7,6,5)
     //-----------------------------------------------------------------------------
-    P1MDOUT |= 0xE0;  // Sync, TestN, PowerDwnN 
+    P1MDOUT |= 0xE0;  // Sync, TestN, PowerDwnN
     delay_us(1000);
     ASUM_SYNC  = 0;
     ASUM_TESTN = 0;
@@ -431,18 +446,18 @@ void switchonoff(unsigned char command)
     LTC1665_Flag = ON;
   }
   else if(command==OFF)
-  {       
+  {
     SFRPAGE  = CONFIG_PAGE;
-    //Switch all the ports to open drain except for mscb communication 
+    //Switch all the ports to open drain except for mscb communication
     P0MDOUT &= 0x23;
     P0 &= 0x23;
     //SST does not need to be switched off
     P1MDOUT &= 0x01;
     P1 &=0x01;
-    //SPI communication to EEPROM is maintained 
+    //SPI communication to EEPROM is maintained
     P2MDOUT &= 0x1F;
     P2 &= 0x1F;
-    //Ram_CSn is maintained 
+    //Ram_CSn is maintained
     P3MDOUT &= 0x80;
 //    P3 &= 0x80;
   }
@@ -455,7 +470,7 @@ Application specific init and in/output routines
 /*---- User init function ------------------------------------------*/
 void user_init(unsigned char init)
 {
-  char xdata i, j, pca_add=0;
+  char xdata i, pca_add=0;
   float xdata temperature;
   unsigned int xdata crate_add=0, board_address=0;
   unsigned char xdata swConversion=0;
@@ -548,11 +563,11 @@ void user_init(unsigned char init)
   PCA9539_Read(BACKPLANE_READ, &pca_add, 1);
   //C C C C C C 0 B B is the MSCB Addr[8..0], 9 bits
   //Modifying what the board reads from the PCA
-  //Externally, the crate address are reversed 
+  //Externally, the crate address are reversed
   crate_add= ((~pca_add)<<1)  & 0x01F8;
   //Internally, the board address are not reversed
   board_address = crate_add | ((pca_add) & 0x0003);
-  sys_info.node_addr   = board_address; 
+  sys_info.node_addr   = board_address;
 #endif
 
   //
@@ -577,21 +592,14 @@ void user_init(unsigned char init)
   user_data.rQpump = eepage.rqpump;
   user_data.swBias = eepage.SWbias;
   ENABLE_INTERRUPTS;
-  
+
   // Update adc2mscb_table[adcChannel].Offst values for current ONLY
-#if 0 //-PAA
-  for(i=0;i<16;i++) {
-    if (adc2mscb_table[i].current) {
-       j = adc2mscb_table[i].mscbIdx;
-       adc2mscb_table[i].Offst = (unsigned int) eepage.iBiasOffset[j];
-    }
-   }
-#endif 
+  updateAdc2Table();
 #endif
   //
   //Turn off the card before the timer expires
   //-----------------------------------------------------------------------------
-  switchonoff(OFF);	
+  switchonoff(OFF);
 
   //
   // SST Temperatures, setting temperature offsets
@@ -650,12 +658,12 @@ void user_init(unsigned char init)
 #ifdef FEB64REV0
   EN_pD5V  = ON;                  // Needed for debug
   EN_pA5V  = ON;                  //-PAA- needed for ASUM test
-  EN_nA5V  = ON;                  //-PAA- needed for ASUM test    
+  EN_nA5V  = ON;                  //-PAA- needed for ASUM test
 #elif defined(FEB64REV1)
 #if 0
  {
     //debugging only
-	 switchonoff(ON); 
+   switchonoff(ON);
     SPup = ON;
     // Publish Registers
     DISABLE_INTERRUPTS;
@@ -689,10 +697,11 @@ void user_write(unsigned char index) reentrant
   if (index == IDXCTL) {
     rCTL = user_data.control;
     // Test for the Current limit flag, by default it is OFF
-	if (Ccurrent) {
+    if (Ccurrent) {
       if (Ccurrent_Flag) Ccurrent_Flag  = 0;
-	  else Ccurrent_Flag = 1;
-	 }
+      else Ccurrent_Flag = 1;
+   }
+    if (Ccal) calState = 10;
   }
   //
   // -- Index Bias Dac
@@ -788,7 +797,7 @@ Main loop should include:
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void user_loop(void) {
-  float xdata volt, temperature, adc_value;
+  float xdata volt, temperature, adc_value, ftemp;
   //NW make sure pointers are stored in xdata
   float* xdata pfData;
   float* xdata eep_address;
@@ -802,20 +811,20 @@ void user_loop(void) {
   static  unsigned char xdata eeprom_flag = CLEAR;
   static xdata char adcChannel = 0; // -PAA was 16 ... special start value
   //ltc1665
-  char xdata ltc1665_index, ltc1665_chipChan, ltc1665_chipAdd; 
+  char xdata ltc1665_index, ltc1665_chipChan, ltc1665_chipAdd;
 
   timing=1;
   watchdog(0);
-  // 
+  //
   //External ADC for REV0 cards
-  //----------------------------------------------------------------------------- 
+  //-----------------------------------------------------------------------------
 #ifdef _LTC2497_
   LTC2497_StartConversion(ADDR_LTC2497, adcChannel);
   // Make sure the result is valid!
   if(!LTC2497_ReadConversion(ADDR_LTC2497, adcChannel, &result)) {
     result = -CONVER_FAC1;
   }
-  adc_value = ((float)((result) 
+  adc_value = ((float)((result)
     + CONVER_FAC1) * (float)(EXT_VREF / CONVER_FAC2));
   adc_value = (adc_value * adc2mscb_table[adcChannel].Coef + adc2mscb_table[adcChannel].Offst);
 
@@ -834,9 +843,9 @@ void user_loop(void) {
   adcChannel %= N_RB_CHANNEL;
 
 #endif
-  // 
+  //
   //External ADC for REV1 cards
-  //-----------------------------------------------------------------------------   
+  //-----------------------------------------------------------------------------
 #ifdef _LTC2495_
 
   LTC2495_StartConversion(ADDR_LTC2495, adcChannel, adc2mscb_table[adcChannel].gain);
@@ -845,7 +854,7 @@ void user_loop(void) {
     result = -CONVER_FAC1;
   }
 
-  adc_value = ((float)((result - adc2mscb_table[adcChannel].Offst) 
+  adc_value = ((float)((result - adc2mscb_table[adcChannel].Offst)
     + CONVER_FAC1) * (float)(EXT_VREF / CONVER_FAC2));
   adc_value = (adc_value * adc2mscb_table[adcChannel].Coef) ;
   //dividing by the gain
@@ -857,12 +866,12 @@ void user_loop(void) {
   } else {
     user_data.VBMon[adc2mscb_table[adcChannel].mscbIdx] = adc_value;
     user_data.rVBMon[adc2mscb_table[adcChannel].mscbIdx] = result;
-  }                                 
+  }
   ENABLE_INTERRUPTS;
 
   adcChannel++;                 // increment channel
   adcChannel %= N_RB_CHANNEL;   // modulus 16
-
+  
 #endif
 
   watchdog(1);
@@ -907,7 +916,7 @@ void user_loop(void) {
         LTC1665_Cmd(ltc1665_chipAdd,user_data.rBias[ltc1665_index] , ltc1665_chipChan);
         ltc1665mirror[ltc1665_index]=user_data.rBias[ltc1665_index];
       }
-    }	
+    }
     //LTC1665_Cmd(chipAdd,user_data.rBias[BiasIndex] ,chipChan);
     LTC1665_Flag = CLEAR;
   }
@@ -931,12 +940,12 @@ void user_loop(void) {
   if (CPup) {
     watchdog(6);
     rCSR = user_data.status;
-	 // Clear Status
-	 SsS = OFF;
-	 DISABLE_INTERRUPTS;
-	 user_data.status  = rCSR;
-	 ENABLE_INTERRUPTS;
-	// Power up Card
+   // Clear Status
+   SsS = OFF;
+   DISABLE_INTERRUPTS;
+   user_data.status  = rCSR;
+   ENABLE_INTERRUPTS;
+  // Power up Card
 #ifdef FEB64REV0
    EN_pD5V = ON;
    EN_pA5V = ON;
@@ -979,7 +988,7 @@ void user_loop(void) {
     }  // For loop
     watchdog(64);
     sstTime = uptime();
-   }  // Internal temperature 
+   }  // Internal temperature
 
   //-----------------------------------------------------------------------------
   // Temperature reading/monitoring based on time for external temperature
@@ -1026,8 +1035,9 @@ void user_loop(void) {
     watchdog(62);
     sstExtTime = uptime();
   } // External Temperature
+#endif
 
-  // 
+  //
   // uCtemperature, Voltage and Current readout
   if ( bdoitNOW || ((uptime() - currentTime) > 1)) {
 
@@ -1068,24 +1078,24 @@ void user_loop(void) {
       pfData[channel] = volt;
       rpfData[channel] = rvolt;
       ENABLE_INTERRUPTS;
-      mask = (1<<channel); 
+      mask = (1<<channel);
 
-		// Check for Qpump Voltage ON (> 40V)
+    // Check for Qpump Voltage ON (> 40V)
       if (channel == 0) {
         if ((volt >= eepage.lVIlimit[channel]))
-		   SqPump = ON;
-        else 
-		   SqPump = OFF;
+       SqPump = ON;
+        else
+       SqPump = OFF;
       }
 
-      // Skip the first two channels(charge pump) 
-      if ((channel > 1)) {	// Skip vQ, I
+      // Skip the first two channels(charge pump)
+      if ((channel > 1)) {  // Skip vQ, I
         if ((volt >= eepage.lVIlimit[channel]) && (volt <= eepage.uVIlimit[channel])) {
             rESR &= ~mask; // in range
         } else {
             rESR |= mask; // out of range
         }
-      } // skip v/iQ channel 
+      } // skip v/iQ channel
     }  // for loop
 
     // update time for next loop
@@ -1104,15 +1114,15 @@ void user_loop(void) {
     } else {
       SsS = SmSd = OFF;
       SPup = ON;
-    }   
+    }
   }  // Publishing
-  
+
   // Publish Control, Error and Status for all the bdoitNOW actions.
   DISABLE_INTERRUPTS;
   user_data.control = rCTL;
   user_data.error   = rESR; //NW
   user_data.status  = rCSR;
-  ENABLE_INTERRUPTS; 
+  ENABLE_INTERRUPTS;
   // Publish Error state
 
   //-----------------------------------------------------------------------------
@@ -1156,6 +1166,7 @@ void user_loop(void) {
      pca_operation(Q_PUMP_ON);   // Toggle state
    }
 
+   // Status will be based on the vQPump voltage during Voltage test
     // Reset Action
     CqPump = CLEAR;
 
@@ -1175,7 +1186,7 @@ void user_loop(void) {
     watchdog(16);
     //Checking for the special instruction
     if (user_data.eeCtrSet & EEP_CTRL_KEY) {
-      //convert the index value to fit the address of the eepage structure (temperature offset only)	
+      //convert the index value to fit the address of the eepage structure (temperature offset only)
       if((TEMPOFF_INDX<(int)(user_data.eeCtrSet & 0x000000ff))
           && ((int)(user_data.eeCtrSet & 0x000000ff)<TEMPOFF_LAST_INDX))
         eep_address = (float*)&eepage + eepageAddrConvert((int)(user_data.eeCtrSet & 0x000000ff));
@@ -1188,12 +1199,12 @@ void user_loop(void) {
         if ((user_data.eeCtrSet & 0x000000ff) <= ((SERIALN_ADD - WP_START_ADDR)/4))
           *eep_address = user_data.eepValue;
         //Checking for the read request
-      } 
+      }
       else if (user_data.eeCtrSet & EEP_CTRL_READ) {
         DISABLE_INTERRUPTS;
         user_data.eepValue = *eep_address;
         ENABLE_INTERRUPTS;
-      } 
+      }
       else {
         // Tell the user that inappropriate task has been requested
         DISABLE_INTERRUPTS;
@@ -1201,7 +1212,7 @@ void user_loop(void) {
         ENABLE_INTERRUPTS;
       }
 
-    } 
+    }
     else {
       // Tell the user that invalid key has been provided
       DISABLE_INTERRUPTS;
@@ -1238,7 +1249,7 @@ void user_loop(void) {
       , eep_request
       , &eeprom_flag);
 
-    if (eeprom_channel == DONE) {    
+    if (eeprom_channel == DONE) {
       SeeS = DONE;
       eeprom_flag = CLEAR;
       CeeS = CLEAR;
@@ -1283,9 +1294,104 @@ void user_loop(void) {
   }
 
   //-----------------------------------------------------------------------------
+  // Auto calibration for the iBiasOffset
+  if (Ccal) {
+    watchdog(19);
+    switch (calState) {
+     case 10:
+     // Check Card ON Qpump ON to start with:
+     rCSR = user_data.status;
+     if (SPup && SqPump && (user_data.swBias == 0xff)) {
+       Scal = ON;
+       // Publish Registers state
+       DISABLE_INTERRUPTS;
+       user_data.status  = rCSR;
+       ENABLE_INTERRUPTS;     
+       calState = 15;
+     } else {
+       Ccal = CLEAR;
+       Scal = OFF;
+       calState = 0;   // unknown state 
+       // Publish Registers state
+       DISABLE_INTERRUPTS;
+       user_data.control = rCTL;
+       user_data.status  = rCSR;
+       ENABLE_INTERRUPTS;     
+     }
+		 break;
+		 case 15:
+     // Remember previous rQpump & Switch and set Cal value
+     calQpumpSave = user_data.rQpump;
+     calSwSave    = user_data.swBias;
+#ifdef _LTC1669_
+     LTC1669_SetDAC(ADDR_LTC1669, LTC1669_INT_BG_REF, 800);
+#endif
+     // Reset eePage Offset array
+     for (k=0;k<8;k++) eepage.iBiasOffset[k] = 0.0;
+     calState = 30;
+     // Reset calTime to current time
+     calTime = uptime();
+		 break;  
+     case 30:
+     // Wait 10 seconds
+     if ((uptime() - calTime) > 10) {
+       calCount = 0;
+       calState = 40;
+     }
+     break;
+     case 40:
+     // Read Offset N times
+     if (calCount < calNumber) {
+        if (adcChannel == 0) {
+           calCount++;
+           for (k=0;k<8;k++) {
+              eepage.iBiasOffset[k] += (float) user_data.rIBMon[k];
+           }
+        }  
+     } else calState = 50;
+     break;
+     case 50:
+     // Compute average
+     for (k=0;k<8;k++) {
+       ftemp = eepage.iBiasOffset[k] / calNumber;
+       eepage.iBiasOffset[k] = ftemp;
+     }
+     // Update ADC Table
+     updateAdc2Table();
+     calState = 60;
+     break; 
+     case 60:
+     // Restore Qpump value
+#ifdef _LTC1669_
+     LTC1669_SetDAC(ADDR_LTC1669, LTC1669_INT_BG_REF, calQpumpSave);
+#endif
+     // Clear the Calibration command
+     Ccal = CLEAR;
+     calState = 0;   // unknown state 
+     Scal = OFF;
+     // Write eepage to EEprom
+     CeeS = ON;
+     // Publish Registers state
+     DISABLE_INTERRUPTS;
+     user_data.control = rCTL;
+     user_data.status  = rCSR;
+     ENABLE_INTERRUPTS;
+     break;
+     default:
+     break;
+    }
+    DISABLE_INTERRUPTS;
+    user_data.debugsmb = calState;
+    ENABLE_INTERRUPTS;
+  }
+
+  //-----------------------------------------------------------------------------
   //
   // General loop delay
   watchdog(20);
+    DISABLE_INTERRUPTS;
+    user_data.debugsmb = smbdebug;
+    ENABLE_INTERRUPTS;
   timing=0;
   delay_ms(10);
   //
