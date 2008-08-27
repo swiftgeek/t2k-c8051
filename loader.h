@@ -17,7 +17,8 @@
 #ifdef L_TEMP36
 #define PAGE_SIZE			0x4E
 #elif defined(L_FEB64)
-#define PAGE_SIZE			0xE7
+//#define PAGE_SIZE			0xE7
+#define PAGE_SIZE           0x107         // with the iBiasOffsets
 #elif defined(L_CMB)
 #define PAGE_SIZE			0xC8
 #elif defined(L_LPB)
@@ -29,7 +30,7 @@
 #define WRITE				0x00
 
 //Defining the page mapping
-unsigned int xdata page_addr[]={0x600,0x0,0x100,0x200,0x300,0x400,0x500};
+unsigned int xdata page_addr[]={0x600,0x0,0x200,0x400};
 
 #define ADDR_PCA9539   0x74
 // PCA9539 Macro Definitions
@@ -73,24 +74,20 @@ struct EEPAGE xdata eepage = {
 	0,
 	1000
 };
+
 #elif defined(L_FEB64)
 struct EEPAGE {
-
 float lVIlimit[8]; // vQ iQ +6Vd +6Va -6Va -6Ia +6Ia +6Id 
 float uVIlimit[8];
-
 float luCTlimit, uuCTlimit;
 float lSSTlimit, uSSTlimit;
-
 float lVQlimit,  uVQlimit;
 float lIQlimit,  uIQlimit;
-
 float lVBiaslimit, uVBiaslimit;
 float lIBiaslimit, uIBiaslimit;
-
 float ext1offset[4];
 float ext2offset[4];
-
+float iBiasOffset[8]; 
 unsigned long SerialN;
 unsigned int rasum[8];
 unsigned int rqpump;
@@ -98,42 +95,49 @@ unsigned char SWbias;
 unsigned char rbias [64];
 };
 
-//   LvQ   LiQ   Lp6Vd  Lp6Va Ln6Va  Lp6Ia Lp6Ia  Lp6Id 
-//   HvQ   HiQ   Hp6Vd  Hp6Va Hp6Va  Hp6Ia Hp6Ia  Hp6Id 
-//   LuC Temperature,  HuC Temperature
-//   LSST Temperature, LSST Temperature
-//   LVQ, HVQ (V)
-//   LIQ, HIQ (uA)
-//	  LVBias, HVBias (V)
-//	  LIBias, LVBias (uA)
-//	  rasum
-//	  rpump
-//	  SW
-//	  DAQ
+// Default structure 
 struct EEPAGE xdata eepage = {
-     30.0, 0.0,  5.5,   5.5, -6.5,  20.0,  5.0,   5.0
-    ,73.0, 0.1,  6.5,   6.5, -5.5,  1.0,   100.0, 200.0
+// 0 - LvQ, LiQ,  Lp6Vd, Lp6Va, Ln6Va , Lp6Ia, Lp6Ia , Lp6Id 
+   30.0, 0.0, 5.5, 5.5, -6.5, 0.0, 0.0, 0.0
+// 8 - HvQ, HiQ, Hp6Vd, Hp6Va, Hp6Va,  Hp6Ia, Hp6Ia,  Hp6Id 
+   ,73.0, 0.1, 6.5, 6.5, -5.5, 0.2, 0.8, 0.2
+// 16 - LuC Temperature,  HuC Temperature
 	 ,23., 45.
-    ,20., 30.
+// 18 - LSST Temperature,  HSST Temperature
+   ,20., 30.
+// 20 - LVQ, HVQ (V)
 	 ,-1.0,1.0
+// 22 - LVQ, HVQ (V)
 	 ,-0.1,1.0
+// 24 - LVBias, HVBias (V)
 	 ,0.0,73.0
+// 26 - LIBias, LVBias (uA)
 	 ,0.0,10.0
+// 28 - SST channel 1 offset[0..3]
 	 ,0,0,0,0
+// 32 - SST channel 2 offset[0..3]
 	 ,0,0,0,0
-	 ,0x00000000
+// 36 - Current Bias Offset [0..7]
+   , 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+// 44 - Card Serial Number
+   ,0x00000000
+// 45 - Asum[0..7] threshold
 	 ,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff
+// 53 - Qpump DAC
 	 ,0x0000
+// 54 - Qpump switch
 	 ,0x00
-	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-	 ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+// 55 - DACs[0..63]
+	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
+	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
+	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
+	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
+	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
+	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
+	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
+	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
 };
+
 #elif defined(L_CMB)
 struct EEPAGE {
 	unsigned long SerialN;
@@ -150,7 +154,7 @@ struct EEPAGE xdata eepage = {
 };
 #endif
 
-struct EEPAGE xdata eepage2 ;
+struct EEPAGE xdata eepage2;
 
 
 #endif

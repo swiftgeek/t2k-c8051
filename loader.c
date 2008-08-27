@@ -153,14 +153,14 @@ void user_loop(void)
 		}
 		//For testing purpose..
       FAILED=ExtEEPROM_Read  (WP_START_ADDR,(unsigned char*)&eepage2, PAGE_SIZE);
-		if(!FAILED)
+		if(!FAILED && (user_data.serialN == eepage2.SerialN))
 		{
 			DISABLE_INTERRUPTS;
 			user_data.status |= (1<<1);
 			ENABLE_INTERRUPTS;
 		}
 		//Write to Page 0
-	   FAILED =ExtEEPROM_Write_Clear (0x0000,(unsigned char*)&eepage, PAGE_SIZE,WRITE);
+	   FAILED =ExtEEPROM_Write_Clear (page_addr[1],(unsigned char*)&eepage, PAGE_SIZE, WRITE);
 		if(!FAILED)
 		{
 			DISABLE_INTERRUPTS;
@@ -168,8 +168,8 @@ void user_loop(void)
 			ENABLE_INTERRUPTS;
 		}
 		//For testing purpose...
-      FAILED=ExtEEPROM_Read  (0x0000,(unsigned char*)&eepage2, PAGE_SIZE);
-		if(!FAILED)
+      FAILED=ExtEEPROM_Read  (page_addr[1],(unsigned char*)&eepage2, PAGE_SIZE);
+		if(!FAILED && (user_data.serialN == eepage2.SerialN))
 		{
 			DISABLE_INTERRUPTS;
 			user_data.status |= (1<<3);
