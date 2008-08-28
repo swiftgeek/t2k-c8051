@@ -491,7 +491,6 @@ sbit RS485_ENABLE = P0 ^ 3; //MSCB communication enable port
 #define SST_ClientResponse1 (char) ((CPT1CN & 0x40) >> 6) //Comparator1 overflow bit
 
 #define LED_ON 0 //defines LED "ON" as forcing the specified pin to low
-
 // SMB
 #define MSCB_I2C_SDA P0 ^ 2
 #define MSCB_I2C_SCL P0 ^ 3
