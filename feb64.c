@@ -589,7 +589,7 @@ void user_init(unsigned char init)
     //NW mirror of the rBias values
     ltc1665mirror[i] = eepage.rbias[i];
   }
-  user_data.rQpump = eepage.rqpump;
+  user_data.rQpump = (char) (eepage.rqpump & 0xFF);
   user_data.swBias = eepage.SWbias;
   ENABLE_INTERRUPTS;
 
