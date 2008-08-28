@@ -62,6 +62,7 @@
   user_data.control = 0;
 	user_data.status = 0;
  	add = cur_sub_addr();
+  sys_info.node_addr = 1;
 	EEPROM_FLAG=0;
  //
  // Initial setting for communication and overall ports (if needed).
