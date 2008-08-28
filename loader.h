@@ -74,7 +74,9 @@ unsigned int structsze;
 unsigned int rasum[8];
 unsigned int rqpump;
 unsigned int SWbias;
-unsigned char rbias [64];
+unsigned int calQpump; 
+unsigned char rbias [64];  
+// back door access starts @ 92 ->offset=23 (0x17)
 float lVIlimit[8]; // vQ iQ +6Vd +6Va -6Va -6Ia +6Ia +6Id 
 float uVIlimit[8];
 float luCTlimit, uuCTlimit;
@@ -85,22 +87,24 @@ float lVBiaslimit, uVBiaslimit;
 float lIBiaslimit, uIBiaslimit;
 float ext1offset[4];
 float ext2offset[4];
-float iBiasOffset[8]; 
+float iBiasOffset[8];
 };
 
 // Default structure 
 struct EEPAGE xdata eepage = {
-// 44 - Card Serial Number
+// 0x0 - Card Serial Number
    0x00000000
-// Structure size
+// - Structure size
    ,110
-// 45 - Asum[0..7] threshold
+// - Asum[0..7] threshold
 	 ,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff
-// 53 - Qpump DAC
+// - Qpump DAC
 	 ,0x0000
-// 54 - Qpump switch
+// - Qpump switch
 	 ,0x0000
-// 55 - DACs[0..63]
+// - Qpump DAC value for Calibration
+   , 800
+// - DACs[0..63]
 	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
 	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
 	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
@@ -109,27 +113,27 @@ struct EEPAGE xdata eepage = {
 	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
 	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
 	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
-// 0 - LvQ, LiQ,  Lp6Vd, Lp6Va, Ln6Va , Lp6Ia, Lp6Ia , Lp6Id 
+// 0x17 - LvQ, LiQ,  Lp6Vd, Lp6Va, Ln6Va , Lp6Ia, Lp6Ia , Lp6Id 
    ,30.0, 0.0, 5.5, 5.5, -6.5, 0.0, 0.0, 0.0
-// 8 - HvQ, HiQ, Hp6Vd, Hp6Va, Hp6Va,  Hp6Ia, Hp6Ia,  Hp6Id 
+// 0x1F - HvQ, HiQ, Hp6Vd, Hp6Va, Hp6Va,  Hp6Ia, Hp6Ia,  Hp6Id 
    ,73.0, 0.1, 6.5, 6.5, -5.5, 0.2, 0.8, 0.2
-// 16 - LuC Temperature,  HuC Temperature
-	 ,23., 45.
-// 18 - LSST Temperature,  HSST Temperature
-   ,20., 30.
-// 20 - LVQ, HVQ (V)
-	 ,-1.0,1.0
-// 22 - LVQ, HVQ (V)
-	 ,-0.1,1.0
-// 24 - LVBias, HVBias (V)
-	 ,0.0,73.0
-// 26 - LIBias, LVBias (uA)
-	 ,0.0,10.0
-// 28 - SST channel 1 offset[0..3]
-	 ,0,0,0,0
-// 32 - SST channel 2 offset[0..3]
-	 ,0,0,0,0
-// 36 - Current Bias Offset [0..7]
+// 0x27 - LuC Temperature,  HuC Temperature
+	 ,18., 50.
+// 0x29 - LSST Temperature,  HSST Temperature
+   ,18. ,30.
+// 0x2B - LVQ, HVQ (V)
+	 ,-1.0 ,1.0
+// 0x2D - LVQ, HVQ (V)
+	 ,-0.1 ,1.0
+// 0x2F - LVBias, HVBias (V)
+	 ,0.0 ,73.0
+// 0x31 - LIBias, LVBias (uA)
+	 ,0.0 ,10.0
+// 0x33 - SST channel 1 offset[0..3]
+	 ,0,0 ,0,0
+// 0x35 - SST channel 2 offset[0..3]
+	 ,0,0 ,0,0
+// 0x37 - Current Bias Offset [0..7]
    , 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 };
 
