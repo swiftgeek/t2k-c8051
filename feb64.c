@@ -1324,7 +1324,7 @@ void user_loop(void) {
      calQpumpSave = user_data.rQpump;
      calSwSave    = user_data.swBias;
 #ifdef _LTC1669_
-     LTC1669_SetDAC(ADDR_LTC1669, LTC1669_INT_BG_REF, 800);
+     LTC1669_SetDAC(ADDR_LTC1669, LTC1669_INT_BG_REF, eepage.calQpump);
 #endif
      // Reset eePage Offset array
      for (k=0;k<8;k++) eepage.iBiasOffset[k] = 0.0;
