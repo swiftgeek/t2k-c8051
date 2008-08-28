@@ -17,17 +17,13 @@
 #define RAM_HOLD_DOWN      P2 ^ 2
 #define RAM_WRITE_PROTECT  P2 ^ 0
 
-//#define PAGE_SIZE           0xE7         //Would define the length of our pages
-#define PAGE_SIZE           0x107         // with the iBiasOffsets
-#define NUMEBER_PAGES       0x06         //Would define number of pages     
-
 #elif defined(TEMP36)   //NW temp36 board
 #define RAM_CHIP_SELECT    P2 ^ 0
 #define RAM_HOLD_DOWN      P2 ^ 3
 #define RAM_WRITE_PROTECT  P2 ^ 2
 
-#define PAGE_SIZE           0x4E         //Would define the length of our pages
-#define NUMEBER_PAGES       0x06         //Would define number of pages  
+//#define PAGE_SIZE           0x4E         //Would define the length of our pages
+//#define NUMEBER_PAGES       0x06         //Would define number of pages  
 
 #elif defined(LPB)   //NW temp36 board
 #define RAM_CHIP_SELECT    P1 ^ 2
@@ -35,7 +31,7 @@
 #define RAM_WRITE_PROTECT  P2 ^ 0
 
 #define PAGE_SIZE           0x4E         //Would define the length of our pages
-#define NUMEBER_PAGES       0x06         //Would define number of pages  
+#define NUMEBER_PAGES       0x04         //Would define number of pages  
 #endif
 
 sbit RAM_CSn  = RAM_CHIP_SELECT;     // The Chip Select Signal would select/unselect the chip
