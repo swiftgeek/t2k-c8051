@@ -13,35 +13,23 @@
 #ifndef  _LOADER_H_
 #define  _LOADER_H_
 
+#define NUMBER_PAGES	   3
+#define CLEAR				  0x01
+#define WRITE				  0x00
 
-#ifdef L_TEMP36
-#define PAGE_SIZE			0x4E
-#elif defined(L_FEB64)
-//#define PAGE_SIZE			0xE7
-#define PAGE_SIZE           0x107         // with the iBiasOffsets
-#elif defined(L_CMB)
-#define PAGE_SIZE			0xC8
-#elif defined(L_LPB)
-#define PAGE_SIZE			0xC8
-#endif
-
-#define NUMEBER_PAGES	0x06
-#define CLEAR				0x01
-#define WRITE				0x00
-
-//Defining the page mapping
-unsigned int xdata page_addr[]={0x600,0x0,0x200,0x400};
+//Defining the page mapping     Protected  Non protected
+unsigned int xdata page_addr[]={0x600,     0x0,0x200,0x400};
 
 #define ADDR_PCA9539   0x74
 // PCA9539 Macro Definitions
-#define BIAS_OUTPUT_ENABLE      ADDR_PCA9539, PCA9539_CONFIG0, PCA9539_ALL_OUTPUT
-#define BIAS_DISABLE            ADDR_PCA9539, PCA9539_OUTPUT0, 0xFF
-#define BIAS_ENABLE             ADDR_PCA9539, PCA9539_OUTPUT0, 0x00
-#define BIAS_READ			        ADDR_PCA9539, PCA9539_INPUT0
-#define BIAS_WRITE				  ADDR_PCA9539, PCA9539_OUTPUT0
+#define BIAS_OUTPUT_ENABLE     ADDR_PCA9539, PCA9539_CONFIG0, PCA9539_ALL_OUTPUT
+#define BIAS_DISABLE           ADDR_PCA9539, PCA9539_OUTPUT0, 0xFF
+#define BIAS_ENABLE            ADDR_PCA9539, PCA9539_OUTPUT0, 0x00
+#define BIAS_READ			         ADDR_PCA9539, PCA9539_INPUT0
+#define BIAS_WRITE				     ADDR_PCA9539, PCA9539_OUTPUT0
 
-#define BACKPLANE_INPUT_ENABLE  ADDR_PCA9539, PCA9539_CONFIG1, PCA9539_ALL_INPUT
-#define BACKPLANE_READ			  ADDR_PCA9539, PCA9539_INPUT1	 
+#define BACKPLANE_INPUT_ENABLE ADDR_PCA9539, PCA9539_CONFIG1, PCA9539_ALL_INPUT
+#define BACKPLANE_READ			   ADDR_PCA9539, PCA9539_INPUT1	 
 
 /*---- Define variable parameters returned to CMD_GET_INFO command ----*/
 struct{
@@ -54,7 +42,9 @@ struct{
 bit EEPROM_FLAG;
 #define IDXCTL 1
 
-
+//
+// SELECT EEPAGE STRUCTURE BASED ON BOARD
+//-----------------------------------------------------------------------------
 #ifdef L_TEMP36
 struct EEPAGE {
 	int ext1offset[18];
@@ -75,8 +65,16 @@ struct EEPAGE xdata eepage = {
 	1000
 };
 
+//-----------------------------------------------------------------------------
 #elif defined(L_FEB64)
+// EEPROM structure should be a COPY of the feb64.h structure
 struct EEPAGE {
+unsigned long SerialN;
+unsigned int structsze;
+unsigned int rasum[8];
+unsigned int rqpump;
+unsigned int SWbias;
+unsigned char rbias [64];
 float lVIlimit[8]; // vQ iQ +6Vd +6Va -6Va -6Ia +6Ia +6Id 
 float uVIlimit[8];
 float luCTlimit, uuCTlimit;
@@ -88,17 +86,31 @@ float lIBiaslimit, uIBiaslimit;
 float ext1offset[4];
 float ext2offset[4];
 float iBiasOffset[8]; 
-unsigned long SerialN;
-unsigned int rasum[8];
-unsigned int rqpump;
-unsigned char SWbias;
-unsigned char rbias [64];
 };
 
 // Default structure 
 struct EEPAGE xdata eepage = {
+// 44 - Card Serial Number
+   0x00000000
+// Structure size
+   ,110
+// 45 - Asum[0..7] threshold
+	 ,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff
+// 53 - Qpump DAC
+	 ,0x0000
+// 54 - Qpump switch
+	 ,0x0000
+// 55 - DACs[0..63]
+	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
+	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
+	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
+	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
+	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
+	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
+	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
+	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
 // 0 - LvQ, LiQ,  Lp6Vd, Lp6Va, Ln6Va , Lp6Ia, Lp6Ia , Lp6Id 
-   30.0, 0.0, 5.5, 5.5, -6.5, 0.0, 0.0, 0.0
+   ,30.0, 0.0, 5.5, 5.5, -6.5, 0.0, 0.0, 0.0
 // 8 - HvQ, HiQ, Hp6Vd, Hp6Va, Hp6Va,  Hp6Ia, Hp6Ia,  Hp6Id 
    ,73.0, 0.1, 6.5, 6.5, -5.5, 0.2, 0.8, 0.2
 // 16 - LuC Temperature,  HuC Temperature
@@ -119,25 +131,12 @@ struct EEPAGE xdata eepage = {
 	 ,0,0,0,0
 // 36 - Current Bias Offset [0..7]
    , 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
-// 44 - Card Serial Number
-   ,0x00000000
-// 45 - Asum[0..7] threshold
-	 ,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff
-// 53 - Qpump DAC
-	 ,0x0000
-// 54 - Qpump switch
-	 ,0x00
-// 55 - DACs[0..63]
-	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
-	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
-	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
-	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
-	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
-	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
-	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
-	 ,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
 };
 
+unsigned long xdata smbdebug;
+
+//
+//-----------------------------------------------------------------------------
 #elif defined(L_CMB)
 struct EEPAGE {
 	unsigned long SerialN;
@@ -145,6 +144,9 @@ struct EEPAGE {
 struct EEPAGE xdata eepage = {
 	 0x0000
 };
+
+//
+//-----------------------------------------------------------------------------
 #elif defined(L_LPB)
 struct EEPAGE {
 	unsigned long SerialN;
@@ -154,8 +156,11 @@ struct EEPAGE xdata eepage = {
 };
 #endif
 
+// EEPROM page for loader confirmation
 struct EEPAGE xdata eepage2;
 
+// Macro EEPAGE size independently of the BOARD
+#define PAGE_SIZE  sizeof(eepage)
 
 #endif
 

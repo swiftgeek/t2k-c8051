@@ -36,10 +36,10 @@
  // User Data structure declaration
  //-----------------------------------------------------------------------------
  MSCB_INFO_VAR code vars[] = {
- 	4, UNIT_BYTE,            0, 0,           0, "SerialN",    &user_data.serialN,  	  // 0
+ 	 4, UNIT_BYTE,            0, 0,           0, "SerialN",    &user_data.serialN,  	  // 0
    1, UNIT_BYTE,            0, 0,           0, "Control",    &user_data.control,      // 1
    1, UNIT_BYTE,            0, 0,           0, "EEPage",     &user_data.eepage,       // 2
-	1, UNIT_BYTE,            0, 0,           0, "Status",     &user_data.status,       // 3 
+   1, UNIT_BYTE,            0, 0,           0, "Status",     &user_data.status,       // 3 
    0
  };
 
@@ -56,8 +56,10 @@
  {
  	char xdata add;
 
+  if (init) {}
+
 	// Initialize control and status
-  	user_data.control = 0;
+  user_data.control = 0;
 	user_data.status = 0;
  	add = cur_sub_addr();
 	EEPROM_FLAG=0;
@@ -78,11 +80,12 @@
 #elif defined(L_FEB64)
    P3MDOUT |= 0x80; // Setting the RAM_CSn to push pull
    P2MDOUT |= 0x18; // Setting the SPI_MOSI and SPI_SCK to push pull
-	P2MDOUT &= 0xFE; // Setting the RAM_WPn to open drain
+	 P2MDOUT &= 0xFE; // Setting the RAM_WPn to open drain
+   P1MDOUT |= 0x08; // ResetN 
 #elif defined(L_CMB)
    P3MDOUT |= 0x80; // Setting the RAM_CSn to push pull
    P2MDOUT |= 0x18; // Setting the SPI_MOSI and SPI_SCK to push pull
-	P2MDOUT &= 0xFE; // Setting the RAM_WPn to open drain
+	 P2MDOUT &= 0xFE; // Setting the RAM_WPn to open drain
 #else defined(L_LPB)
    P3MDOUT |= 0x80; // Setting the RAM_CSn to push pull
    P2MDOUT |= 0x18; // Setting the SPI_MOSI and SPI_SCK to push pull
@@ -90,21 +93,30 @@
 #endif	
 #ifdef _PCA9539_
    PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
-	PCA9539_WriteByte(BACKPLANE_INPUT_ENABLE);
+	 PCA9539_WriteByte(BACKPLANE_INPUT_ENABLE);
 	
 	// Physical backplane address retrieval
 	//-----------------------------------------------------------------------------
-  	PCA9539_Read(BACKPLANE_READ, &add, 1);
-
+  PCA9539_Read(BACKPLANE_READ, &add, 1);
 	sys_info.node_addr = add;
-
 #endif
 	
-	if(ExtEEPROM_Init(NUMEBER_PAGES,PAGE_SIZE))
+// Adjust Node name based on the type of Board
+#ifdef L_TEMP36
+  sprintf(sys_info.node_name,"TEMP36");
+#elif defined(L_FEB64)
+  sprintf(sys_info.node_name,"FEB64");
+#elif defined(L_CMB)
+  sprintf(sys_info.node_name,"CMB");
+#elif defined(L_LPB)
+  sprintf(sys_info.node_name,"LPB");
+#endif
+   
+  // Check if EEPROM size is lartge enough for structure
+	if(ExtEEPROM_Init(NUMBER_PAGES, PAGE_SIZE))
 	{
 	  user_data.status = (1<<7);
 	}
-
  }
 
 /*---- User write function -----------------------------------------*/
@@ -112,8 +124,7 @@
 
 void user_write(unsigned char index) reentrant
 {
-	if(index==IDXCTL)
-	{
+	if(index==IDXCTL) {
 		EEPROM_FLAG=1;
 	}
 }
@@ -183,4 +194,5 @@ void user_loop(void)
 			ENABLE_INTERRUPTS;
 		}
 	}
+  delay_ms(1);
 } 
