@@ -24,13 +24,13 @@
 #include "../mscbemb.h"
 #include "../Protocols/SMBus_handler.h"
 #include "PCA9539_io.h"
+extern  unsigned long xdata smbdebug;
 
 //
 //------------------------------------------------------------------------
 void PCA9539_Init(void) {
-	PCA_RESETN = 0;
-	SMBus_Init(); // SMBus initialization (should be called after pca_operation)
-	PCA_RESETN = 1;
+  SMBus_Init(); // SMBus initialization (should be called after pca_operation)
+
 }
 
 //
@@ -39,7 +39,8 @@ void PCA9539_WriteByte(unsigned char addr, unsigned char selectPort, unsigned ch
 	watchdog_refresh(0);
 
 	// Wait for the SMBus to clear
-	while(SMB_BUSY);
+// while(SMB_BUSY);
+	dowhile(&SMB_BUSY, 3);
 	SMB_BUSY = 1;
 
 	// Have Command Bytes to send, so set to write to start
@@ -73,7 +74,8 @@ void PCA9539_WriteWord(unsigned char addr, unsigned char selectPort, unsigned in
 	watchdog_refresh(0);
 
 	// Wait for the SMBus to clear
-	while(SMB_BUSY);
+//	while(SMB_BUSY);
+	dowhile(&SMB_BUSY, 4);
 	SMB_BUSY = 1;
 
 	// Have Command Bytes to send, so set to write to start
@@ -107,7 +109,8 @@ void PCA9539_Read(unsigned char addr, unsigned char selectPort, unsigned char *p
 	watchdog_refresh(0);
 
 	// Wait for the SMBus to clear
-	while(SMB_BUSY);
+// while(SMB_BUSY);
+	dowhile(&SMB_BUSY, 7);
 	SMB_BUSY = 1;
 
 	// Have Command Bytes to send, so set to write to start
@@ -127,7 +130,8 @@ void PCA9539_Read(unsigned char addr, unsigned char selectPort, unsigned char *p
 	// Start Communication and Block until completed
 	SFRPAGE = SMB0_PAGE;
 	STA = 1;
-	while(SMB_BUSY);
+//	while(SMB_BUSY);
+	dowhile(&SMB_BUSY, 6);
 }
 void PCA9539_Conversion(unsigned char *conversion){
 	unsigned char xdata temporary=0;

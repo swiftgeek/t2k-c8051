@@ -16,10 +16,6 @@
 #ifndef  _PCA9539_IO_H
 #define  _PCA9539_IO_H
 
-#ifdef FEB64
-sbit PCA_RESETN = P1 ^ 3;
-#endif
-
 // Command Bytes
 #define PCA9539_INPUT0			  0x00
 #define PCA9539_INPUT1			  0x01
@@ -32,20 +28,21 @@ sbit PCA_RESETN = P1 ^ 3;
 
 // Bit Meanings
 #define PCA9539_READ				  1
-#define PCA9539_WRITE			  0
+#define PCA9539_WRITE			    0
 
 #define PCA9539_INVERT			  1
 #define PCA9539_NO_INVERT		  0
-#define PCA9539_INPUT			  1
+#define PCA9539_INPUT			    1
 #define PCA9539_OUTPUT			  0
 #define PCA9539_ALL_INPUT		  0xFF
-#define PCA9539_ALL_OUTPUT		  0x00
+#define PCA9539_ALL_OUTPUT		0x00
 
 void PCA9539_Init(void);
 void PCA9539_WriteByte(unsigned char addr, unsigned char selectPort, unsigned char dataByte);
 void PCA9539_WriteWord(unsigned char addr, unsigned char selectPort, unsigned int dataWord);
 void PCA9539_Read(unsigned char addr, unsigned char selectPort, unsigned char* dataBytes, unsigned char dataLen);
 void PCA9539_Conversion(unsigned char *conversion);
+void dowhile(char *busy, char location);
 #endif // _PCA9539_IO_H
 
 #endif // _PCA9539_
