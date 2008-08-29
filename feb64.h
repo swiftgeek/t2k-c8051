@@ -293,7 +293,7 @@ sbit REG_EN = P3 ^ 2;
 unsigned char bdata rCTL;
 sbit CPup     = rCTL ^ 0;
 sbit CqPump   = rCTL ^ 1;
-sbit Ccurrent = rCTL ^ 2; //temporary control the current limits
+sbit CAsum    = rCTL ^ 2;
 sbit Ccal     = rCTL ^ 3;
 sbit CeeS     = rCTL ^ 4;
 sbit CeeR     = rCTL ^ 5;
@@ -305,6 +305,7 @@ sbit CmSd     = rCTL ^ 7;
 unsigned char bdata rCSR;
 sbit SPup     = rCSR ^ 0;
 sbit SqPump   = rCSR ^ 1;
+sbit SAsum    = rCSR ^ 2;
 sbit Scal     = rCSR ^ 3;
 sbit SeeS     = rCSR ^ 4;
 sbit SeeR     = rCSR ^ 5;
