@@ -100,12 +100,15 @@ sbit LTC2600_Flag   = bChange ^ 2;
 sbit LTC1665_Flag   = bChange ^ 3;
 sbit LTC1669_Flag   = bChange ^ 4;
 sbit EEP_CTR_Flag   = bChange ^ 5;
-sbit Ccurrent_Flag  = bChange ^ 6;
+sbit CAsum_Flag     = bChange ^ 6;
+//
+// RESET output pin for PCA9539 (PIO) and LTC1665 (DACx8)
+sbit RESETN         = P1 ^ 3;
 //
 // ASUM port
-sbit ASUM_SYNC      = P1 ^7;
-sbit ASUM_TESTN     = P1 ^6;
-sbit ASUM_PWDN      = P1 ^5;
+sbit ASUM_SYNC      = P1 ^ 7;
+sbit ASUM_TEST      = P1 ^ 6;
+sbit ASUM_PWDN      = P1 ^ 5;
 
 // User Data structure declaration
 //-----------------------------------------------------------------------------
@@ -365,12 +368,15 @@ void switchonoff(unsigned char command)
     SFRPAGE  = CONFIG_PAGE;
     P3MDOUT &= 0xFB;  // Set Vreg enable to Open drain
     REG_EN=ON;
-    // Setup the ASUM ports (P1.7,6,5)
+    // Setup the ASUM ports (P1.7, 6,5)
     //-----------------------------------------------------------------------------
-    P1MDOUT |= 0xE0;  // Sync, TestN, PowerDwnN
+    P1MDOUT |= 0xE0;  // Sync, Test, PowerDwnN Push-pull
+
+    // Pulse the serializer (ASUM)
+    ASUM_SYNC  = 1;
     delay_us(1000);
     ASUM_SYNC  = 0;
-    ASUM_TESTN = 0;
+    ASUM_TEST  = 0;
     ASUM_PWDN  = 1;
     //
     // uC Charge Pump frequency setup
@@ -448,18 +454,19 @@ void switchonoff(unsigned char command)
   else if(command==OFF)
   {
     SFRPAGE  = CONFIG_PAGE;
-    //Switch all the ports to open drain except for mscb communication
+    // Switch all the ports to open drain except for 
+    // mscb communication
     P0MDOUT &= 0x23;
-    P0 &= 0x23;
-    //SST does not need to be switched off
-    P1MDOUT &= 0x01;
-    P1 &=0x01;
+//    P0 &= 0x23;
+    //SST and RESETN stay ON
+    P1MDOUT &= 0x09;
+//    P1 &=0x01;
     //SPI communication to EEPROM is maintained
     P2MDOUT &= 0x1F;
-    P2 &= 0x1F;
+//    P2 &= 0x1F;
     //Ram_CSn is maintained
     P3MDOUT &= 0x80;
-//    P3 &= 0x80;
+//  P3 &= 0x80;
   }
 }
 
@@ -540,6 +547,10 @@ void user_init(unsigned char init)
   ExtEEPROM_Init();
 #endif
 
+// Reset PCA9539 (PIO) and LTC1665 (DACx8)
+  P1MDOUT |= 0x8;
+	RESETN = 0;
+	RESETN = 1;
   //
   // Initialize PCA for address reading and switch settings
   //-----------------------------------------------------------------------------
@@ -696,13 +707,9 @@ void user_write(unsigned char index) reentrant
   rCSR = user_data.status;
   if (index == IDXCTL) {
     rCTL = user_data.control;
-    // Test for the Current limit flag, by default it is OFF
-    if (Ccurrent) {
-      if (Ccurrent_Flag) Ccurrent_Flag  = 0;
-      else Ccurrent_Flag = 1;
-   }
     if (Ccal) calState = 10;
-  }
+  } // IDXCTL
+
   //
   // -- Index Bias Dac
   if (index == IDXBSWITCH) {
@@ -740,11 +747,11 @@ void user_write(unsigned char index) reentrant
   // --- ASum Hidden Register
   if (index == IDXASUM_CTL) {
     //-PAA- At boot the Sync is high for 1sec while power is up
-    // to shutdown sync w 143 0x4
-    // to restart       w 143 0x5 (Sync + pwd)
-    //                  w 143 0x4 (sync = 0)
+    // to shutdown sync w 142 0x4
+    // to restart       w 142 0x5 (Sync + pwd)
+    //                  w 142 0x4 (sync = 0)
     ASUM_SYNC  =  user_data.asumCtl & 0x1;
-    ASUM_TESTN = (user_data.asumCtl & 0x2) >> 1;
+    ASUM_TEST  = (user_data.asumCtl & 0x2) >> 1;
     ASUM_PWDN  = (user_data.asumCtl & 0x4) >> 1;
   }
 
@@ -1176,6 +1183,33 @@ void user_loop(void) {
     ENABLE_INTERRUPTS;
 
   } // Control Pump
+
+   watchdog(65);
+
+  //-----------------------------------------------------------------------------
+  // Toggle  Asum counter ON/OFF based on Index
+  if (CAsum) {
+
+    watchdog(80);
+
+    if (ASUM_TEST)
+     ASUM_TEST = OFF;
+    else
+     ASUM_TEST = ON;
+
+    // Set status based on port pin state
+    SAsum = ASUM_TEST;
+
+    // Reset Action
+    CAsum = CLEAR;
+
+    // Publish Registers state
+    DISABLE_INTERRUPTS;
+    user_data.control = rCTL;
+    user_data.status  = rCSR;
+    ENABLE_INTERRUPTS;
+
+  } // Asum 
 
    watchdog(65);
 
