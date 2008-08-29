@@ -22,6 +22,9 @@
 #include "../Protocols/SMBus_handler.h"
 #include "LTC2495_adc.h"
 
+extern  unsigned long xdata smbdebug;
+
+
 //
 //------------------------------------------------------------------------
 void LTC2495_Init(void) {
@@ -43,7 +46,7 @@ void LTC2495_StartConversion(unsigned char addr, unsigned char channel, unsigned
 	cmd2= LTC2495_ENABLE2 | gain;
 
 	// Wait for the SMBus to clear
-	while(SMB_BUSY);
+	dowhile(&SMB_BUSY,2);
 	SMB_BUSY = 1;
 	SMB_ACKPOLL = 1;
 
@@ -85,7 +88,8 @@ unsigned char channel, signed long *pResult, unsigned char gain) {
 	cmd2= LTC2495_ENABLE2 | gain;
 
 	// Wait for the SMBus to clear
-   while(SMB_BUSY);
+//   while(SMB_BUSY);
+	dowhile(&SMB_BUSY, 5);
 	SMB_BUSY = 1;
 
 	SMB_RW = SMB_WRITE;
@@ -107,7 +111,8 @@ unsigned char channel, signed long *pResult, unsigned char gain) {
 	SFRPAGE = SMB0_PAGE;
 	STA = 1;
 
-     	while(SMB_BUSY);
+//  	while(SMB_BUSY);
+	dowhile(&SMB_BUSY, 10);
 
 	if(((value & 0xC0000000) == 0xC0000000) || ((value & 0xC0000000) == 0x00000000)) {
 		// Over/Under-range

@@ -32,5 +32,6 @@ void LTC2495_StartConversion(unsigned char addr, unsigned char channel, unsigned
 //------------------------------------------------------------------------
 unsigned char  LTC2495_ReadConversion(unsigned char addr, unsigned char channel, 
 signed long *pResult, unsigned char gain);
+void dowhile(char *busy, char location);
 
 #endif

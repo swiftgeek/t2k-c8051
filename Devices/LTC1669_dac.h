@@ -23,6 +23,7 @@
 void LTC1669_Init(void);
 void LTC1669_Cmd(unsigned char addr, unsigned char cmd);
 void LTC1669_SetDAC(unsigned char addr, unsigned char cmd, unsigned int dataWord);
+void dowhile(char *busy, char location);
 
 #endif // _LTC1669_DAC_H
 

@@ -23,7 +23,25 @@
 #include "../mscbemb.h"
 #include "../Protocols/SMBus_handler.h"
 #include "LTC1669_dac.h"
+extern  unsigned long xdata smbdebug;
+static unsigned long xdata  lcounter=0;
 
+void dowhile(char *busy, char location)
+{
+	char timeout = 0;
+	while (*busy && (timeout < 100)) {
+     timeout++;
+	  delay_ms(5);
+	}
+ 	if (timeout >= 100) {
+    SFRPAGE = 0;
+	  smbdebug =  ((unsigned long)location << 24) 
+                | ((lcounter++) <<  16)
+                | (SMB0DAT << 8) 
+                |  SMB0STA;
+     *busy = 0;
+   }
+}
 //
 //-------------------------------------------------------------------
 /**
@@ -64,10 +82,15 @@ void LTC1669_Cmd(unsigned char addr, unsigned char cmd) {
 #endif
 
 void LTC1669_SetDAC(unsigned char addr, unsigned char cmd, unsigned int dataWord) {
-	watchdog_refresh(0);
+	char timeout=0;
+
+    watchdog_refresh(0);
 
 	// Wait for the SMBus to clear
-	while(SMB_BUSY);
+//	while(SMB_BUSY);
+	dowhile(&SMB_BUSY, 1);
+	delay_us(1);
+
 	SMB_BUSY = 1;
 
 	// Have Command Bytes to send, so set to write to start

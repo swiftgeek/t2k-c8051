@@ -41,7 +41,8 @@ void LTC2497_StartConversion(unsigned char addr, unsigned char channel) {
 	} 
 
 	// Wait for the SMBus to clear
-	while(SMB_BUSY);
+//	while(SMB_BUSY);
+	dowhile(&SMB_BUSY, 9);
 	SMB_BUSY = 1;
 	SMB_ACKPOLL = 1;
 
@@ -80,7 +81,8 @@ unsigned char channel, signed long *pResult) {
 	} 	
 
 	// Wait for the SMBus to clear
-	while(SMB_BUSY);
+//	while(SMB_BUSY);
+	dowhile(&SMB_BUSY, 8);
 	SMB_BUSY = 1;
 
 	SMB_RW = SMB_WRITE;
@@ -101,7 +103,8 @@ unsigned char channel, signed long *pResult) {
 	SFRPAGE = SMB0_PAGE;
 	STA = 1;
 
-     	while(SMB_BUSY);
+//     	while(SMB_BUSY);
+	dowhile(&SMB_BUSY, 11);
 
 	if(((value & 0xC0000000) == 0xC0000000) || ((value & 0xC0000000) == 0x00000000)) {
 		// Over/Under-range
