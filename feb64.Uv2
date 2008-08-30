@@ -17,26 +17,10 @@ File 1,1,<.\Devices\LTC1665_dac.c><LTC1665_dac.c>
 File 1,1,<.\Devices\LTC1669_dac.c><LTC1669_dac.c>
 File 1,1,<.\Devices\LTC2600_dac.c><LTC2600_dac.c>
 File 1,1,<.\Devices\PCA9539_io.c><PCA9539_io.c>
-File 1,5,<.\Devices\adc_internal.h><adc_internal.h>
-File 1,5,<.\Devices\ADT7486A_tsensor.h><ADT7486A_tsensor.h>
-File 1,5,<.\Devices\ExtEEPROM.h><ExtEEPROM.h>
-File 1,5,<.\Devices\LTC1665_dac.h><LTC1665_dac.h>
-File 1,5,<.\Devices\LTC1669_dac.h><LTC1669_dac.h>
-File 1,5,<.\Devices\LTC2497_adc.h><LTC2497_adc.h>
-File 1,5,<.\Devices\LTC2600_dac.h><LTC2600_dac.h>
-File 1,5,<.\Devices\PCA9539_io.h><PCA9539_io.h>
-File 1,5,<.\Devices\pca_internal.h><pca_internal.h>
-File 1,5,<.\Protocols\SMBus_handler.h><SMBus_handler.h>
-File 1,5,<.\Protocols\SPI_handler.h><SPI_handler.h>
-File 1,5,<.\Protocols\SST_handler.h><SST_handler.h>
 File 1,1,<.\Protocols\SMBus_handler.c><SMBus_handler.c>
 File 1,1,<.\Protocols\SPI_handler.c><SPI_handler.c>
 File 1,1,<.\Protocols\SST_handler.c><SST_handler.c>
-File 1,5,<.\c8051F120.h><c8051F120.h>
-File 1,5,<.\feb64.h><feb64.h>
-File 1,5,<.\mscbemb.h><mscbemb.h>
 File 1,1,<.\Devices\LTC2495_adc.c><LTC2495_adc.c>
-File 1,5,<.\Devices\LTC2495_adc.h><LTC2495_adc.h>
 
 
 Options 1,0,0  // Target 'Target 1'
@@ -146,7 +130,7 @@ Options 1,0,0  // Target 'Target 1'
  LX51DAS ()
  LX51IDS ()
   OPTDL (S8051.DLL)()(DCYG.DLL)(-pCYGF310)(S8051.DLL)()(TCYG.DLL)(-pCYGF310)
-  OPTDBG 48126,5,()()()()()()()()()() (BIN\SiC8051F.dll)()()()
+  OPTDBG 48126,8,()()()()()()()()()() (BIN\SiC8051F.dll)()()()
  FLASH1 { 1,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0 }
  FLASH2 (BIN\SiC8051F.dll)
  FLASH3 ("" ())
