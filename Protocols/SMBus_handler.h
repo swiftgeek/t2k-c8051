@@ -45,7 +45,7 @@ extern unsigned char xdata SMB_DATA_IN_LEN;
 
 extern unsigned char xdata SMB_TARGET;
 
-extern bit SMB_BUSY;
+extern char SMB_BUSY;
 extern bit SMB_RW;
 extern bit SMB_ACKPOLL;
 

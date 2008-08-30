@@ -32,7 +32,7 @@ unsigned char xdata SMB_DATA_IN_LEN;
 
 unsigned char xdata SMB_TARGET;
 
-bit SMB_BUSY;
+char SMB_BUSY;
 bit SMB_RW;
 bit SMB_ACKPOLL;
 
@@ -63,6 +63,7 @@ void SMBus_Init(void) {
    
 		SFRPAGE = SMB0_PAGE;
 		SMB0CN = 0x43;
+    EIP1 |= 0x02; // SMB High priority 
 		EIE1 |= 0x02;	// Enable SMBus interrupts
 		EIE2 |= 0x01;	// Enable Timer3 interrupts
 		EA = 1;			// Enable Global interrupts     
