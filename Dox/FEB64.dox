@@ -1,10 +1,10 @@
-/*!\page FEB64 FEB64 board 
+/*!\page FEB64 FEB64 board
 
 @section feb64purpose Purpose
 The FEB64 board handles 64 MPPC Silicon PM mounted in the FGD detector.
 Its main purpose is to read the 64 (76) MPPC channels. The information is stored in the
 AFTER SCA chip (Analog memory).
-On Trigger each cell of the analog memory (76x512 cells) is
+For every trigger, each cell of the analog memory (76x512 cells) is
 digitized, the digital value representing the amplitude at a given time (20Msps)
 is transmitted to the @ref CMB card. In parallel to its main function, the
 FE64 has a "slow control" section which run completely independently from the
@@ -12,169 +12,282 @@ data acquisition section and provides card condition status, board and internal 
 temperature monitoring and control/monitoring of the high voltage fed to the MPPCs.
 
 @section feb64functions Functions
+- @ref snnumber : Card Serial Number.
 - @ref internaluit : Board condition monitoring.
 - @ref uimonitoring : Voltages and Currents monitoring.
 - @ref boardtemperatures : Board and micro controller temperature monitoring.
 - @ref busboardtemperature : FGD Internal detector temperature monitoring.
-- @ref mppchv : High Voltage control for each MPPC. 
+- @ref mppchv : High Voltage control for each MPPC.
+ - @ref qpumpdaq : Charge pump voltage setting.
  - @ref qpumpmonitoring : Charge pump voltage and current.
  - @ref channelsw : Each of 8 switches is associated with 8 consecutive MPPC.
-- @ref channelmonitoring : Voltage and current associated to each of the 8 MPPC branches.
-- @ref biasvolt : The 64 DAQs
+ - @ref channelmonitoring : Voltage and current associated to each of the 8 MPPC branches.
+ - @ref biasvolt : MPPC 64 DAQs
 - @ref afterchip : MPPC signal processing.
 - @ref asumcircuit : Analog sum signal for trigger generation (transmitted to @ref CMB card).
 - @ref eeprom : Permanent configuration parameter saving/restoring.
 - The MSCB @ref user_data_type contains all the communication variables to the FEB64 card.
-  
- * <center> Block Diagram layout.
- *  \image html feb64-block.jpg
- * </center> 
 
-@section feb64operation Card Operation
+* <center> Block Diagram layout.
+*  \image html feb64-block.jpg
+* </center>
+
+@section feb64operation Operation
 - By default at power up the main elements of the card are kept unpowered.
-- By default configuration from page 1 of the onboard memory is 
+- By default configuration from page 1 of the onboard memory is
 restored.
 
 - <b>To power up the card</b>:
- - CTL register : Set bit ^ 0 [0x1]
- - The CSR register will shows bit ^ 0 = 1/0 (1=on, 0=off)
+- CTL register : Set bit ^ 0 [0x1]
+- The CSR register will shows bit ^ 0 = 1/0 (1=on, 0=off)
 
 - <b>To power up the Charge pump</b>:
- - CTL register : Set bit ^ 1 [0x2] <i> this is a toggeling bit</i>
- - The CSR register will shows bit ^ 1 = 1/0 (1=on, 0=off)
+- CTL register : Set bit ^ 1 [0x2] <i> this is a toggeling bit</i>
+- The CSR register will shows bit ^ 1 = 1/0 (1=on, 0=off)
 
 - <b>To power down the Charge pump</b>:
- - CTL register : Set bit ^ 1 [0x2] <i> this is a toggeling bit</i>
- - The CSR register will shows bit ^ 1 = 1/0 (1=on, 0=off)
-  
-- <b>To power down the card</b>:
- - CTL register : Set bit ^ 7 [0x80]  Manual Shutdown
- - The CSR register will shows bit ^ 0 = 1/0 (1=on, 0=off)
+- CTL register : Set bit ^ 1 [0x2] <i> this is a toggeling bit</i>
+- The CSR register will shows bit ^ 1 = 1/0 (1=on, 0=off)
 
- 
+- <b>To power down the card</b>:
+- CTL register : Set bit ^ 7 [0x80]  Manual Shutdown
+- The CSR register will shows bit ^ 0 = 1/0 (1=on, 0=off)
+
+@section febconvension Label convention
+@code
+rXXXX  : Raw data, meant for DAC or ADC values.
+pXXXX  : Positive
+nXXXX  : Negative
+xDyyy  : Digital
+xAyyy  : Analog
+Vxxx   : Voltage
+Ixxx   : Current
+xyMon  : Monitored
+uCTemp : micro-controller Temperature
+Temp   : FGD Temperature
+xAsum  : Analog Sum
+ssTemp : Board Temperature
+eexxxx : EEPROM parameter
+@endcode
+
 @section feb64location Location
 This card is located in each "crate" mounted on the surrounding structure
 of each FGD (24 crates per FGD). Each crate contains 4 FEB64 cards.
 */
 
-/*!<!----------------------------------------------------------------->*/
+<!----------------------------------------------------------------->
+/*!@page snnumber S/N Card
+
+@section Purpose
+Identify individual electronics card within the FGD detector.
+
+@section Description
+This identification is done in 2 ways:
+- With a barcode placed on the back of the card.
+- Written in the external EEPROM Write protect region.
+
+All the FGD card are identify by a unique string following the convention below:
+@code
+FEB64 card:  TR76300000 .. TR763001000
+CMB   card:  TR76400000 .. TR764000100
+LPB   card:  TR76500000 .. TR765000100
+@endcode
+
+This code is stored within the Protected Memory (Read Only) of the
+external EEPROM located on the card. The operational firmeware doesn't allow
+write access to the region. Upgrade of the firmware with a dedicated code "loader"
+is required to overwrite this S/N number.
+
+@section MSCB Registers
+@code
+MSCB(0): SerialN   32bit U        76300003 (0x048C3EE3) byte
+@endcode
+
+@section Location
+On the FEB64 card
+*/
+
+<!----------------------------------------------------------------->
 /*!@page internaluit FEB64 board condition monitoring
 
 @section Purpose
-Monitor periodically (~1Hz) all the DC Voltages required for the proper 
-operation of the FEB64 card. Corresponding current consumption is also 
-monitored as well as the local FEB64 board temperature.
+Monitor periodically (~1Hz) all the DC Voltages required for the proper
+operation of the FEB64 card. Current consumption, temperatures
+are monitored as well.
 The FEB64 can be controlled for the following operation:
 - Manual Power Up sequence, ie: turn ON all the DC Voltage (Def:OFF).
 - Manual Shutdown sequence, ie: turn OFF all the DC Voltage.
 - Toggle the activation of the Charge Pump (Def:OFF).
+- Set Charge Pump DACs.
+- Activate individual bias voltage branch.
 - Set Individual Bias DACs.
-- Save/Restore current Qpump, Switch, Bias DACs.
+- Save/Restore from EEPROM all the internal coefficient, Qpump voltage, Switch, Bias DACs.
+- Issue auto-calibration procedure.
 
-@section The Overal Monitoring Procedure
 * <center>
 * \image html FEB64Monitoring.jpg
 * </center>
 
-
-@section Location
-Local (FEB64)
-
 @section Condition
-- board temperature T > 60degC : Shutdown FEB64 card.
-- +6Vdigital off limits : Shutdown FEB64 (@ref feb64_limits).
-- +6Vanalog off limits  : Shutdown FEB64 (@ref feb64_limits).
-- -6Vanalog off limits  : Shutdown FEB64 (@ref feb64_limits).
-- -Ianalog off limits   : Shutdown FEB64 (@ref feb64_limits).
-- +Idigital off limits  : Shutdown FEB64 (@ref feb64_limits).
-- uC Temperature off limits: Shutdown FEB64 (@ref feb64_limits).
+- +6Vdigital voltage off limits : Shutdown FEB64 (@ref feb64_limits).
+- +6Vanalog voltage  off limits : Shutdown FEB64 (@ref feb64_limits).
+- -6Vanalog voltage  off limits : Shutdown FEB64 (@ref feb64_limits).
+- +6Vdigital current off limits : Shutdown FEB64 (@ref feb64_limits).
+- +6Vanalog current  off limits : Shutdown FEB64 (@ref feb64_limits).
+- -6Vanalog current  off limits : Shutdown FEB64 (@ref feb64_limits).
+- uC Temperature     off limits : Shutdown FEB64 (@ref feb64_limits).
+- Board Temperature  off limits : Shutdown FEB64 (@ref feb64_limits).
+- FGD Temperature    off limits : Shutdown FEB64 (@ref feb64_limits).
 
 @section feb64-internal MSCB Registers
+
+3 registers are available for the main operations of the card:
+- Error register indicating individual type of error.
+- Control register use for command activation. Its state will return to
+'0' once the command is issued.
+- Status register confirming the success of the command request. In case
+of failure, the status will not be set and the source of the fault will
+be registered in the error register.
+
 @code
-MSCB(41): Float: ssTemp[3..0] : Board Temperature [C]   
-MSCB(1) : WORD : Error^2 : +6Vdigital error []
-MSCB(1) : WORD : Error^3 : +6Vanalog error  []
-MSCB(1) : WORD : Error^4 : -6Vanalog error  []
-MSCB(1) : WORD : Error^5 : -Ianalog error   []
-MSCB(1) : WORD : Error^6 : +Ianalog error   []
-MSCB(1) : WORD : Error^7 : +Idigital error  []
-MSCB(1) : WORD : Error^8 :  uCTemp error    []
-@endcode
-*/                         
+MSCB(1): Error     16bit U                      0 (0x0000) (RO)
+Qpump Voltage fault                                0x0001
+Qpump Current fault                                0x0002
++6Vdigital Voltage fault                           0x0004
++6Vanalog  Voltage fault                           0x0008
+-6Vanalog  Voltage fault                           0x0010
+-6Vanalog  Current fault                           0x0020
++6Vanalog  Current fault                           0x0040
++6Vdigital Voltage fault                           0x0080
+micro-controller Temperature fault                 0x0100
+Board Temperature fault                            0x0200
+FGD detector Temperature fault                     0x0400
+EEPROM  R/W error                                  0x0800
+SST protocol error                                 0x1000
 
-/*!<!----------------------------------------------------------------->*/
-/*!@page uimonitoring Vreg U/I Monitoring 
+MSCB(2): Control    8bit U               0 (0x00/00000000) (WO)
+Turn ON Card                                         0x01
+Turn ON Charge Pump Voltage                          0x02
+Toggle Asum counter                                  0x04
+Initiate self-calibration procedure                  0x08
+Save current setting to EEPAGEx                      0x10
+Restore EEPAGEx to memory                            0x20
+Clear EEPAGEx                                        0x40
+Manual Card shutdown                                 0x80
 
-@section monitoringpurpose Purpose
-Obtain continuous information regarding the FEB64 voltage and current regulators.
-This information is compared to pre-set parameters for possible actions.
+MSCB(3): Status     8bit U               3 (0x03/00000011) (RO)
+Card ON                                              0x01
+Charge Pump Voltage ON                               0x02
+Asum counter ON                                      0x04
+Self-calibration procedure in progress               0x08
+EEPAGEx save operation complete                      0x10
+EEPAGEx restore operation complete                   0x20
+System Shutdown                                      0x40
+Manual card shutdown                                 0x80
 
-@section VoltageMonSec Voltage monitoring
-* <center> Diagram and Equations for monitoring voltage:
-* \image html VoltageMon.jpg
-* </center> 
-
-<center> Table of values associated with VMon </center>
-@code
-Usource   R1       R2         Attenuation   #of bits       VREF,Vref    (VREF/# of bits)   Offset      ConverFactor (V/Byte)
-+AN_6V    18k/1%   6.04k/1%   0.2512479     10 bits(1024)  2.43V         0.002373          N/A         0.00944
--AN_6V    15k/1%   2.00k/1%   0.1176471     10 bits(1024)  2.43V,2.5V    0.002373          18.75V      0.02017
-+DIG_6V   18k/1%   6.04k/1%   0.2512479     10 bits(1024)  2.43V         0.002373          N/A         0.00944
-@endcode
-
-@section VMonExamples 
-* <center>
-*\image html VMonExample.jpg
-* </center>
-
-@section CurrentMonSec Current monitoring
-* <center> Diagram and equation for monitoring current:
-* \image html CurrentMon.jpg
-* </center> 
-
-
-<center>Table of values associated with IMon</center>
-@code 
-Isource    R1      1/Gain    #of bits          VREF      VREF/# of bits   ConversionFactor(mA/Byte)
-+AN_6V     0.1R    100       10 bits (1024)    2.43V     0.002373         237.3
--AN_6V     0.1R    100       10 bits (1024)    2.43V     0.002373         237.3
-+DIG_6V    0.05R   100       10 bits (1024)    2.43V     0.002373         474.6
+MSCB(4): EEPage     8bit U               0 (0x00/00000000) (WO)
+EEPAGE number                                      [0..2]
 @endcode
 
-@section IMonExamples 
-* <center>
-*\image html IMonExample.jpg
-* </center>
-
-@section Condition
- - +I6a >= 10A : Board shutdown
- -
-....
-
-@section DataSheets
-<a href=http://www.chipcatalog.com/Datasheet/A0392B99E733E7F9E0AD6CB4C8AC3C4E.htm >INA194AIDBVT</a>
+@section Location
+Local (FEB64 card)
 */
 
-/*!<!----------------------------------------------------------------->*/
+<!----------------------------------------------------------------->
+/*!@page uimonitoring Vreg U/I Monitoring
+
+@section monitoringpurpose Purpose
+Obtain continuous information on the temperature, regulator voltage and current of the card
+regardless of its current state. This information is compared to pre-set values for
+possible shutdown of the Charge pump and input voltages.
+The slow control voltage powering the micro-controller (uC) is neither monitored or interrupted.
+
+@section VoltageMonSec Voltage monitoring
+* <center> Voltage monitoring schematic for +6Vanalog, +6Vdigital, -6Vanalog
+* \image html VoltageMon.jpg
+* </center>
+<center> Table of values associated with VMon </center>
+@code
+Usource     R1       R2       Coeff    #of bits        VREF,Vref     V/DAC     Offset
++AN_6V    18k/1%   6.04k/1%   0.251    10 bits(1024)    2.43V        0.00945   N/A
+-AN_6V    15k/1%   2.00k/1%   0.021    10 bits(1024)    2.43V,2.5V   0.02017   18.75
++DIG_6V   18k/1%   6.04k/1%   0.251    10 bits(1024)    2.43V        0.00945   N/A
+@endcode
+
+@section CurrentMonSec Current monitoring
+* <center> Current monitoring schematic
+* \image html CurrentMon.jpg
+* </center>
+<center>Table of values associated with IMon</center>
+@code
+Isource    R1      A/V    #of bits          VREF       A/DAC
++AN_6V     0.05R   0.4    10 bits (1024)    2.43V     0.000949
+-AN_6V     0.2R    0.1    10 bits (1024)    2.43V     0.000237
++DIG_6V    0.2R    0.1    10 bits (1024)    2.43V     0.000237
+@endcode
+
+@section Condition
+Board shutdown in case of off-limit measurements.
+Currently only the low voltages regulators are taken in consideration.
+See @ref feb64_limits
+
+@section feb64-SST MSCB Registers
+@code
+MSCB(9) : pDVMon    32bit F     5.98363 volt        (RO)
+MSCB(10): pAVMon    32bit F     5.98363 volt        (RO)
+MSCB(11): nAVMon    32bit F    -6.05206 volt        (RO)
+
+MSCB(12): nAIMon    32bit F     0.0923875 ampere    (RO)
+MSCB(13): pAIMon    32bit F     0.6878 ampere       (RO)
+MSCB(14): pDIMon    32bit F     0.097375 ampere     (RO)
+
+MSCB(1): Error     16bit U               0 (0x0000) (RO)
++6Vdigital Voltage fault                    0x0004
++6Vanalog  Voltage fault                    0x0008
+-6Vanalog  Voltage fault                    0x0010
+-6Vanalog  Current fault                    0x0020
++6Vanalog  Current fault                    0x0040
++6Vdigital Voltage fault                    0x0080
+@endcode
+
+@section DataSheets
+<a href=http://focus.ti.com/lit/ds/symlink/ina193.pdf >Current monitoring INA194AIDBVT</a>
+*/
+
+<!----------------------------------------------------------------->
 /*!@page boardtemperatures Board Temperature monitoring
 
 @section Purpose
 Monitor periodically (~ 1Hz) the internal temperature of the micro-controller as well as the
-FEB64 board at the remote temperature location.
+FEB64 board temperature using @ref SSTProtocol
+
+@section Description
 For the uC, the temperature is readout through its internal ADC[8].
-For board temperature, dedicated device ADT7486A used for the remote temperature has an internal 
-sensor. This device uses a particular @ref SSTProtocol. 
+For board temperature, dedicated device ADT7486A used for the remote temperature has an internal
+sensor. This device uses a particular @ref SSTProtocol.
 
 @section Condition
-- T > 60degC : Shutdown FEB64 card.
+Board shutdown in case of over limit measurements
+Around 50degC for the uC and the Board temperature
+See @ref feb64_limits
 
 @section feb64-SST MSCB Registers
 @code
-MSCB(41)  : Float : ssTemp[3..0] : The FEB64 board temperature
-MSCB(16)  : Float : uCTemp       : The SC's micro-controller internal temperature
-MSCB(1)   : Word  : Error^8      : The micro-controller internal temperature exceeded its threshold
-MSCB(1)   : Word  : Error^9      : The FEB64 board temperature exceeded its threshold
+MSCB(15): uCTemp    32bit F     33.4 deg. celsius        (RO)
+
+MSCB(40): ssTemp0   32bit F     28.0806 deg. celsius     (RO)
+MSCB(41): ssTemp1   32bit F     28.2681 deg. celsius     (RO)
+MSCB(42): ssTemp2   32bit F     27.69 deg. celsius       (RO)
+MSCB(43): ssTemp3   32bit F     28.0181 deg. celsius     (RO)
+
+MSCB(1): Error     16bit U               0 (0x0000)      (RO)
+micro-controller Temperature fault          0x0100
+Board Temperature fault                     0x0200
+SST protocol error                          0x1000
 @endcode
+
+@section DataSheets
+<a href=http://www.onsemi.com/pub_link/Collateral/ADT7484A-86A-D.PDF >Digital Temperature Sensor ADT7484A</a>
 */
 
 /*!<!----------------------------------------------------------------->*/
@@ -182,273 +295,444 @@ MSCB(1)   : Word  : Error^9      : The FEB64 board temperature exceeded its thre
 
 @section Purpose
 Monitor periodically (~1HZ) the temperature within the FGD detector at the bus board
-position using the @ref SSTProtocol .
+position using the @ref SSTProtocol.
 
-@section Location
-On the perimeter of the FGD each section one temperature sensor for every 8 
-consecutive MPPC.
-
-@section Condition
-- T > 60degC : Shutdown FEB64 card.
+@section Description
+same physical device used for the baord temperature.
 
 @section tempmscb MSCB Registers
 @code
-MSCB(24..17) : Float : Temp[7..0] : Bus board Temperature [C]   
-MSCB(1)      : Word  : Error^10   : Bus board Temperature exceeded its threshold
+MSCB(16): Temp0     32bit F         21.7994 deg. celsius  (RO)
+MSCB(17): Temp1     32bit F         21.7994 deg. celsius  (RO)
+MSCB(18): Temp2     32bit F         21.8775 deg. celsius  (RO)
+MSCB(19): Temp3     32bit F         21.7212 deg. celsius  (RO)
+MSCB(20): Temp4     32bit F         21.8462 deg. celsius  (RO)
+MSCB(21): Temp5     32bit F         21.7212 deg. celsius  (RO)
+MSCB(22): Temp6     32bit F         21.8462 deg. celsius  (RO)
+MSCB(23): Temp7     32bit F          21.815 deg. celsius  (RO)
+
+MSCB(1): Error      16bit U               0 (0x0000) (RO)
+FGD detector Temperature fault               0x0400
+SST protocol error                           0x1000
 @endcode
+
+@section Condition
+Board shutdown in case of over limit measurements
+Around 30 degC.
+See @ref feb64_limits
+
+@section Location
+On the perimeter of the FGD each section one temperature sensor for every 8
+consecutive MPPC.
+
+@section DataSheets
+<a href=http://www.onsemi.com/pub_link/Collateral/ADT7484A-86A-D.PDF >Digital Temperature Sensor ADT7484A</a>
 */
 
-/*!<!----------------------------------------------------------------->*/
-/*!@page mppchv MPPC High Voltage 
+<!----------------------------------------------------------------->
+/*!@page mppchv MPPC High Voltage
 
 @section Puprose
-The MPPC HV is generated by a @ref qpumpdaq located on the FEB64 card.
-The slow control provides the necessary voltage control and monitoring
-of the local high voltage. 
+Provides control and monitoring of the MPPC high voltage (~48V to 73V).
 
-The Qpump voltage is then split in 8 branches feeding 8 consecutive MPPC.
-A HV switch allows disconnection of each of the branches. Voltage and current 
-monitoring is available as well. 
+@section Description
+The MPPC High Voltage is generated by a @ref qpumpdaq located on the FEB64 card.
+Voltage setting is done through two independent channel:
+- A common High Voltage generator (charge pump) for all the MPPC
+channels of the card (64).
+- The Bias voltage control, through individual DAC for all the 64 channels
+with a voltage span of 5V maximum.
+
+The slow control provides the necessary voltage control and monitoring
+of this local global @ref qpumpdaq and solely control (set) the 64 @ref biasvolt.
+The Qpump voltage (VBias) is then split in 8 branches feeding 8 consecutive MPPC
+(VBMon) each.
+A @ref channelsw allows disconnection of individual branch through a 8 bit switch
+(swBias). In addition the slow control has a global command to toggle the MPPC common
+high voltage (MSCB(2)/0x02).
+
+The voltage and current of the charge pump (V/IBias) and of the 8 Bias branches (V/IBMon) are periodically
+read for monitoring purpose. Possible procedure can be implement for voltage or current misbehaviour.
 
 @section mppcmscb MSCB Registers
 @code
-MSCB(2)     : Byte    : Control^1   : Toggle the Charge Pump Votlage 
-MSCB(3)     : Byte    : Status^1    : Qpump current state [on=1, off=0]
-MSCB(5)     : WORD    : rQpump      : Qpump DAQ which cause the Qpump output to be 48V-73V   
-MSCB(6)     : Byte    : swBias      : HV Switch Arm [7..0] (bitwise)
-MSCB(25..32): Float   : VBMon[7..0] : Channel Voltage monitoring [V]
-MSCB(8)     : Float   : VBias       : Qpump Voltage monitoring [V]
-MSCB(9)     : Float   : IBias       : Qpump Current monitoring [uA]
-MSCB(1)     : WORD    : Error^0     : Qpump Voltage error []
-MSCB(1)     : WORD    : Error^1     : Qpump Current error []
+MSCB(1): Error     16bit U               0 (0x0000)         (RO)
+Qpump Voltage fault                         0x0001
+Qpump Current fault                         0x0002
+
+MSCB(2): Control    8bit U               0 (0x00/00000000)  (WO)
+Turn ON Charge Pump Voltage                          0x02
+
+MSCB(3): Status     8bit U               3 (0x03/00000011)  (RO)
+Charge Pump Voltage ON                               0x02
+
+MSCB(5): swBias      8bit U             255 (0xFF/11111111) (WO)
+
+MSCB(6): rQpump     16bit U             906 (0x038A) byte   (WO)
+
+MSCB(7): VBias      32bit F         69.9437 volt            (RO)
+MSCB(8): IBias      32bit F          0.9975 milliampere     (RO)
+
+MSCB(24): VBMon0    32bit F         70.1584 volt            (RO)
+MSCB(25): VBMon1    32bit F         11.1906 volt            (RO)
+MSCB(26): VBMon2    32bit F          70.195 volt            (RO)
+MSCB(27): VBMon3    32bit F         70.1468 volt            (RO)
+MSCB(28): VBMon4    32bit F         70.1757 volt            (RO)
+MSCB(29): VBMon5    32bit F         69.4225 volt            (RO)
+MSCB(30): VBMon6    32bit F         70.2277 volt            (RO)
+MSCB(31): VBMon7    32bit F         70.1892 volt            (RO)
+
+MSCB(32): IBMon0    32bit F               0 microampere     (RO)
+MSCB(33): IBMon1    32bit F        0.786781 microampere     (RO)
+MSCB(34): IBMon2    32bit F               0 microampere     (RO)
+MSCB(35): IBMon3    32bit F        0.655651 microampere     (RO)
+MSCB(36): IBMon4    32bit F         47.0698 microampere     (RO)
+MSCB(37): IBMon5    32bit F         44.3995 microampere     (RO)
+MSCB(38): IBMon6    32bit F         15.5807 microampere     (RO)
+MSCB(39): IBMon7    32bit F         36.8834 microampere     (RO)
 @endcode
+
+@section Condition
+Status register will reports a successful charge pump conditon when the VBias
+is higher than a low limit set currently at 30V.
+Error condition procedure on the actual Vbias, IBias and V/IBMon[0..7]
+is not yet implemented.
+
+@section Location
+On the FEB64 board
+
+@section DataSheets
+<a href=http://www.standardics.nxp.com/products/pca/datasheet/pca9539.pca9539r.pdf > HV branch switch PCA9539PW-T</a>
+
+<a href=http://www.linear.com/pc/downloadDocument.do?navId=H0,C1,C1155,C1001,C1152,P36273,D19179 > U/I Bias ADC LTC2495</a>
+
+<a href=http://www.linear.com/pc/downloadDocument.do?navId=H0,C1,C1155,C1005,C1156,P1696,D3540 > Bias DAC LTC1665CGN\#PBF</a>
 */
 
-/*!<!----------------------------------------------------------------->*/
+<!----------------------------------------------------------------->
 /*!@page qpumpdaq Charge Pump Voltage
 
 @section Purpose
-Charge pump is an electronic circuit that uses capacitors as 
-energy storage element to create a higher voltage power source. 
+Active the charge pump voltage source, set the output voltage.
 
-@section QPump Operation
-There is a 10 bits DAQ (LTC1669) associated with the charge pump which can be controlled 
-by properly setting the MSCB(6). The communication with DAQ is done through the @ref smbus.
-The output voltage of Qpump is constantly provided
-to @ref qpumpmonitoring .
+@section Description
+A Charge pump is a circuit that generate a voltage larger
+than the supply voltage from which it operates (Dickson charge pump).
+Using a feedback loop on a fraction of the output voltage, the internal
+uC 8bit DAC can vary the charge output pump voltage within a range of
+~48V to ~73V.
 
-@section QPump Example
--# Setting MSCB(2) to 1 to turn on the FEB64 card   
--# Setting MSCB(2) to 2 to turn on the QPump
--# Setting MSCB(6) to 1023 to push the charge pump to its maximum output
-@code
-msc-nodex> w 2 2
-msc-nodex> w 6 1023
-@endcode
+Error report from the V/I Bias is not yet implemented.
 
 @section qpumpmscb MSCB Registers
 @code
-MSCB(6) : 2 WORDS : rQpump  : Qpump DAQ   
-MSCB(1) :   WORD  : Error^0 : QPump Voltage out of range
-MSCB(1) :   WORD  : Error^1 : QPump Current out of range
-@endcode
+MSCB(1): Error     16bit U               0 (0x0000)         (RO)
+Qpump Voltage fault                         0x0001
+Qpump Current fault                         0x0002
 
-@section DataSheet
-<a href=http://www.ortodoxism.ro/datasheets/lineartechnology/1669f.pdf >LTC1669CMS</a>
+MSCB(2): Control    8bit U               0 (0x00/00000000)  (WO)
+Turn ON Charge Pump Voltage                          0x02
+
+MSCB(3): Status     8bit U               3 (0x03/00000011)  (RO)
+Charge Pump Voltage ON                               0x02
+
+MSCB(6): rQpump    16bit U             906 (0x038A)         (WO)
+
+@endcode
 */
 
-/*!<!----------------------------------------------------------------->*/
+<!----------------------------------------------------------------->
 /*!@page qpumpmonitoring U/I QPump Monitoring
 
 @section Purpose
-Monitoring the global Bias voltage and Bias current. The VBias is equal to the output of the charge pump.
-The IBias is equal to the total current provided to the 8 channels.
+Monitors the global Bias voltage and Bias current.
 
+@section Description
+Two 10 bit channels of the uC internal ADCs provide readback of the charge pump
+voltage and current.
+
+@section VoltageMonSec Voltage monitoring
+* <center> Charge Pump Voltage monitoring schematic</center>
 * <center>
-* \image html QPump.jpg
-* </center> 
-
-<center>Table of values associated with the QPump measurements</center>
-@code 
-R1/%         R2/%        R3/%       R4/%        R5/%      #of bits       VREF    (VREF/1024)   1/Gain  Attenuation
-4.99k/0.1%   20R/0.1%    976k/0.1%  24.9k/0.1%  10k/0.1%  10 bits(1024)  2.43V    0.002373     0.05    0.0248776
+* \image html vQPump.jpg
+* </center>
+<center>Table of values associated with the Voltage QPump measurements</center>
+@code
+R1/%         R2/%       #of bits       VREF    1/Gain   ADCgain    V/DAC
+1M/0.1%   10K/0.1%     10 bits(1024)  2.43V     101       2        0.1198
 @endcode
 
-@section Example
+@section CurrentMonSec Voltage monitoring
+* <center> Charge Pump Current monitoring schematic </center>
 * <center>
-* \image html QPump_Example.jpg
+* \image html iQPump.jpg
 * </center>
 
+<center>Table of values associated with the currrent QPump measurements</center>
+@code
+Isource    R1    A/V    #of bits          VREF       A/DAC
+IBias     100R    1.    10 bits (1024)    2.43V     0.00002373
+@endcode
+
 @section DataSheet
-<a href=http://www.digchip.com/datasheets/download_datasheet.php?id=1109077&part-number=LTC6102 >LTC6102</a>
+<a href=http://www.supertex.com/pdf/datasheets/HV7800.pdf >Current monitor HV7800</a>
 */
 
-/*!<!----------------------------------------------------------------->*/
+<!----------------------------------------------------------------->
 /*!@page channelsw Bias 8 Branches Switch
 
 @section Purpose
-Upon turning on the switches , the charge pump voltage will be placed at the output of the switches. 
-This voltage will be monitored regularly. This voltage will be provided to the Change Division Circuit.
+Enable individual High Voltage branches to the charge pump voltage.
 
-@section Operation
-After the Qpump has been turned on, each HV branch can be set by the appropriate bit setting of
-the MSCB(6). The switches are controlled by PCA9539PW-T device which uses the @ref smbus.
+@section Description
+Allows partial MPPC high voltage disconnection in the case of misbehaving MPPC left in a short circuit state.
+Each bit corresponds to one of the 8 Voltage Bias branches.
 
 @section vbiasmscb MSCB Registers
 @code
-MSCB(5) : WORD  : swBias :  Switch Bias (bitwise).
+MSCB(5): swBias      8bit U             255 (0xFF/11111111) (WO)
 @endcode
 
 @section DataSheet
-<a href=http://.... >PCA9539PW-T</a>
+<a href=http://www.standardics.nxp.com/products/pca/datasheet/pca9539.pca9539r.pdf > HV branch switch PCA9539PW-T</a>
 */
 
-/*!<!----------------------------------------------------------------->*/
-/*!@page afterchip ASIC AFTER circuit
-
-The cards contains 2 AFTER SCA chips recording 2 signal shape from the 
-same input under 2 different amplification setting. 
-*/
-
-
-/*!<!----------------------------------------------------------------->*/
+<!----------------------------------------------------------------->
 /*!@page channelmonitoring U/I 8 Branches Monitoring
 
 @section Purpose
-Monitors each channel's voltage/current and compare them with the global Voltage and 
+Monitors each channel's voltage/current and compare them with the global Voltage and
 current Bias. The sum of the channels' currents should match the Qpump current value.
 When each channel is turned on, its voltage should also be approximately equal
 to the VBias. Any discrepancy indicates a potential current leak or disconnection.
 
-* <center> Diagram and Equations for monitoring 8 channels' voltage and current
-* \image html HV7800.jpg
+<b> Presently the procedure described above is not yet implemented </b>
 
-* \image html HV7800_equ.jpg
+* <center> Diagram and Equations for monitoring 8 channels' voltage and current
+* \image html V-IMon.jpg
 * </center>
 
 <center>Table of values associated with the 8 channels V/I measurements</center>
 @code
 R1/%       R2/%        R3/%        #of bits        VREF     (VREF/1024)    Attenuation
-100k/0.1%  976k/0.1%   24.9k/0.1%  10 bits(1024)   2.43V     0.002373      0.0248776
+100R/0.1%  976k/0.1%   24.9k/0.1%  10 bits(1024)   2.43V     0.002373      0.0248776
+
+           R1    A/V      #of bits          VREF       A/DAC
+IBMon     100R    1.    16 bits (65536)    1.25V      5.96E-9
 @endcode
 
-@section Example
-* <center>
-* \image html HV7800_Example.jpg
-* </center>
-
 @section DataSheet
-<a href=http://www.supertex.com/pdf/datasheets/HV7800.pdf >HV7800</a>
+<a href=http://www.supertex.com/pdf/datasheets/HV7800.pdf >Current monitor HV7800</a>
+
+<a href=http://www.linear.com/pc/downloadDocument.do?navId=H0,C1,C1155,C1001,C1152,P36273,D19179 >16bit ADC LTC2495<a/>
 */
 
-/*!<!----------------------------------------------------------------->*/
+<!----------------------------------------------------------------->
 /*!@page biasvolt Bias Voltage 0..5V
 
 @section Purpose
-Dedicated DAC provide a fine tuning of the MPPC voltage by reducing the overall voltage
-across the device on its anode side. The DAQs output can be set with a effective range from
-0 to 5V. The voltage resolution is of 20mV (8-bits). 
-When the DAQ output is set at 0V, the voltage across the corresponding MPPC is at its maximum value.
+Dedicated DAC providing a fine tuning of the MPPC voltage by offsetting its anode voltage.
 
-@section Operation 
-Setting the MSCB(116..53) will set the corresponding DAQ and in return would change the voltage across
-the corresponding MPPC. The communication with the DAQ is performed through the @ref spiprotoc.
+@section Description
+The DAQs output controlling the MPPC anode offset has an effective range of 5V.
+The equivalent voltage resolution is then 20mV (8-bits).
+When the DAQ output is set at 0V, the voltage across the corresponding MPPC is at its maximum value.
 
 @section biasscb MSCB Registers
 @code
-MSCB(116..53): BYTE : rbias[63..0] : DAC Bias Voltage 0..5V   
+MSCB(52):  rBias00    8bit U              30 (0x1E/00011110) (RO)
+MSCB(53):  rBias01    8bit U              26 (0x1A/00011010) (RO)
+MSCB(54):  rBias02    8bit U              24 (0x18/00011000) (RO)
+MSCB(55):  rBias03    8bit U              24 (0x18/00011000) (RO)
+MSCB(56):  rBias04    8bit U              26 (0x1A/00011010) (RO)
+MSCB(57):  rBias05    8bit U              27 (0x1B/00011011) (RO)
+MSCB(58):  rBias06    8bit U              29 (0x1D/00011101) (RO)
+MSCB(59):  rBias07    8bit U              34 (0x22/00100010) (RO)
+MSCB(60):  rBias08    8bit U              21 (0x15/00010101) (RO)
+MSCB(61):  rBias09    8bit U              31 (0x1F/00011111) (RO)
+MSCB(62):  rBias10    8bit U              31 (0x1F/00011111) (RO)
+MSCB(63):  rBias11    8bit U              37 (0x25/00100101) (RO)
+MSCB(64):  rBias12    8bit U              24 (0x18/00011000) (RO)
+MSCB(65):  rBias13    8bit U              27 (0x1B/00011011) (RO)
+MSCB(66):  rBias14    8bit U              11 (0x0B/00001011) (RO)
+MSCB(67):  rBias15    8bit U              22 (0x16/00010110) (RO)
+MSCB(68):  rBias16    8bit U              28 (0x1C/00011100) (RO)
+MSCB(69):  rBias17    8bit U              29 (0x1D/00011101) (RO)
+MSCB(70):  rBias18    8bit U              21 (0x15/00010101) (RO)
+MSCB(71):  rBias19    8bit U               5 (0x05/00000101) (RO)
+MSCB(72):  rBias20    8bit U              36 (0x24/00100100) (RO)
+MSCB(73):  rBias21    8bit U              15 (0x0F/00001111) (RO)
+MSCB(74):  rBias22    8bit U              13 (0x0D/00001101) (RO)
+MSCB(75):  rBias23    8bit U              24 (0x18/00011000) (RO)
+MSCB(76):  rBias24    8bit U               7 (0x07/00000111) (RO)
+MSCB(77):  rBias25    8bit U              20 (0x14/00010100) (RO)
+MSCB(78):  rBias26    8bit U              16 (0x10/00010000) (RO)
+MSCB(79):  rBias27    8bit U              16 (0x10/00010000) (RO)
+MSCB(80):  rBias28    8bit U              10 (0x0A/00001010) (RO)
+MSCB(81):  rBias29    8bit U              12 (0x0C/00001100) (RO)
+MSCB(82):  rBias30    8bit U              24 (0x18/00011000) (RO)
+MSCB(83):  rBias31    8bit U              34 (0x22/00100010) (RO)
+MSCB(84):  rBias32    8bit U              26 (0x1A/00011010) (RO)
+MSCB(85):  rBias33    8bit U              27 (0x1B/00011011) (RO)
+MSCB(86):  rBias34    8bit U              16 (0x10/00010000) (RO)
+MSCB(87):  rBias35    8bit U              30 (0x1E/00011110) (RO)
+MSCB(88):  rBias36    8bit U              28 (0x1C/00011100) (RO)
+MSCB(89):  rBias37    8bit U              19 (0x13/00010011) (RO)
+MSCB(90):  rBias38    8bit U              20 (0x14/00010100) (RO)
+MSCB(91):  rBias39    8bit U              24 (0x18/00011000) (RO)
+MSCB(92):  rBias40    8bit U              12 (0x0C/00001100) (RO)
+MSCB(93):  rBias41    8bit U              23 (0x17/00010111) (RO)
+MSCB(94):  rBias42    8bit U              20 (0x14/00010100) (RO)
+MSCB(95):  rBias43    8bit U              34 (0x22/00100010) (RO)
+MSCB(96):  rBias44    8bit U              24 (0x18/00011000) (RO)
+MSCB(97):  rBias45    8bit U              13 (0x0D/00001101) (RO)
+MSCB(98):  rBias46    8bit U              28 (0x1C/00011100) (RO)
+MSCB(99):  rBias47    8bit U              23 (0x17/00010111) (RO)
+MSCB(100): rBias48    8bit U              24 (0x18/00011000) (RO)
+MSCB(101): rBias49    8bit U              29 (0x1D/00011101) (RO)
+MSCB(102): rBias50    8bit U              17 (0x11/00010001) (RO)
+MSCB(103): rBias51    8bit U               8 (0x08/00001000) (RO)
+MSCB(104): rBias52    8bit U              29 (0x1D/00011101) (RO)
+MSCB(105): rBias53    8bit U              20 (0x14/00010100) (RO)
+MSCB(106): rBias54    8bit U              23 (0x17/00010111) (RO)
+MSCB(107): rBias55    8bit U              33 (0x21/00100001) (RO)
+MSCB(108): rBias56    8bit U              31 (0x1F/00011111) (RO)
+MSCB(109): rBias57    8bit U              32 (0x20/00100000) (RO)
+MSCB(110): rBias58    8bit U              29 (0x1D/00011101) (RO)
+MSCB(111): rBias59    8bit U              31 (0x1F/00011111) (RO)
+MSCB(112): rBias60    8bit U              26 (0x1A/00011010) (RO)
+MSCB(113): rBias61    8bit U               7 (0x07/00000111) (RO)
+MSCB(114): rBias62    8bit U               8 (0x08/00001000) (RO)
+MSCB(115): rBias63    8bit U              31 (0x1F/00011111) (RO)
 @endcode
+
 @section DataSheet
-<a href=http://www.digchip.com/datasheets/download_datasheet.php?id=537292&part-number=LTC1665CGN >LTC1655CGN</a>
+<a href=http://www.linear.com/pc/downloadDocument.do?navId=H0,C1,C1155,C1005,C1156,P1696,D3540 > Bias DAC LTC1665CGN\#PBF</a>
 */
 
-/*!<!----------------------------------------------------------------->*/
-/*!@page asumcircuit ASUM circuit 
+<!----------------------------------------------------------------->
+/*!@page asumcircuit ASUM circuit
 @section Purpose
+Analog Signal Sum threshold setting.
+
+@section Description
 An analog sum of 8 consecutive MPPC channels is compared to a ASUM DAC (total 8 DACs).
 The 8 logical signals from the 8 sums is then serialized and sent to the CMB for further processing.
-The 8 ASUM Threshold DAC are available in the Slow Control.
 
 @section asummscb MSCB Registers
 @code
-MSCB(52..45): BYTE : rAsum[7..0] : ASUM Threshold DAC   
+MSCB(44): rAsum0    16bit U               0 (0x0000) (WO)
+MSCB(45): rAsum1    16bit U               0 (0x0000) (WO)
+MSCB(46): rAsum2    16bit U               0 (0x0000) (WO)
+MSCB(47): rAsum3    16bit U               0 (0x0000) (WO)
+MSCB(48): rAsum4    16bit U               0 (0x0000) (WO)
+MSCB(49): rAsum5    16bit U               0 (0x0000) (WO)
+MSCB(50): rAsum6    16bit U               0 (0x0000) (WO)
+MSCB(51): rAsum7    16bit U               0 (0x0000) (WO)
 @endcode
+
+@section DataSheet
+<a href=http://www.linear.com/pc/downloadDocument.do?navId=H0,C1,C1155,C1005,C1156,P2289,D1753 > Asum DAC LTC2600CGN\#PBF</a>
 */
 
-/*!<!----------------------------------------------------------------->*/
+<!----------------------------------------------------------------->
+/*!@page afterchip ASIC AFTER circuit
+
+The cards contains 2 AFTER SCA chips recording 2 signal shape from the
+same input under 2 different amplification setting. No specific slow control
+is provided. Refer to the @ref CMB for further information.
+*/
+
+<!----------------------------------------------------------------->
 /*!@page eeprom Config Memory
 
 @section Purpose
-The FEB 64 board contains a 64K (8192 x 8) external memory. Quarter of
-memory is assigned as a protected area which will be used to store:
- 
-- Board serial number.
-- Threshold values associated with the global/channels monitoring voltages/currents 
-- micro-controller internal and external temperature threshold.
+Manage access to the External Electrically Erasable Programmable Memory.
 
-The rest of the memory is subdivised in equal size R/W pages (page 1..5) for the user. The content
-of the R/W page is:
-- Qpump DAC value
-- Branch switch setting
-- 64 Bias DAC values
-- 8 ASUM Threshold DAC value
+@section Description
+The FEB 64 board contains a 64K (8192 x 8) external memory, which one quarter of
+this memory is defined as a protected area.
+The standard FEB64 firmware doesn't contain any code for Write access to the protected memory
+ensuring a safe storage method for the main parameter i.e: Serial Number (S/N).
+To simplify the handling of this eepage, a unique structure maps all the necessary parameters
+following the S/N located as first element of the structure. The size of the structure can therefore
+not be larger then a quarter of the total memory providing a maximum of 3 R/W accessible pages.
 
-The protected page (page 0) will be accessible during operation only for restoring default values.
-The initial page loaded at boot time (page 1) is R/W accessible through a particular procedure.
+The current structure is:
+@code
+// EEPROM structure
+struct EEPAGE {
+unsigned long SerialN;
+unsigned int structsze;
+unsigned int rasum[8];
+unsigned int rqpump;
+unsigned int SWbias;
+unsigned int calQpump;
+unsigned char rbias [64];
+//
+// back door access starts @ 92 ->offset=23 (0x17)
+float lVIlimit[8]; // vQ iQ +6Vd +6Va -6Va -6Ia +6Ia +6Id
+float uVIlimit[8];
+float luCTlimit, uuCTlimit;
+float lSSTlimit, uSSTlimit;
+float lVQlimit,  uVQlimit;
+float lIQlimit,  uIQlimit;
+float lVBiaslimit, uVBiaslimit;
+float lIBiaslimit, uIBiaslimit;
+float ext1offset[4];
+float ext2offset[4];
+float iBiasOffset[8];
+float vBiasOffset[8];
+};
+@endcode
 
-@section Operation
-- Defining the page number (1..N ) on which the R/W operation should be done.
-- Active R/W operation
-
-The W operation requires extra time. The completion of the Write operation is confirmed
+The Write operation requires extra time. The completion of the Write operation is confirmed
 when and only when the control bit is turned off.
 
 @section feb64-eeprom MSCB Registers
 @code
-MSCB(1)   : WORD  : Error   ^11 : eeprom error 
-MSCB(3)   : BYTE  : control ^4  : Save eeprom page
-MSCB(3)   : BYTE  : control ^5  : Restore eeprom page
-MSCB(3)   : BYTE  : control ^6  : Clear eeprom page
-MSCB(4)   : BYTE  : EEPage      : eeprom page number
+MSCB(1): Error     16bit U               0 (0x0000)        (RO)
+EEPROM  R/W error                           0x0800
+MSCB(2): Control    8bit U               0 (0x00/00000000) (WO)
+Save current setting to EEPAGEx                      0x10
+Restore EEPAGEx to memory                            0x20
+MSCB(3): Status     8bit U               3 (0x03/00000011) (RO)
+EEPAGEx save operation complete                      0x10
+EEPAGEx restore operation complete                   0x20
+MSCB(4): EEPage     8bit U               0 (0x00/00000000) (WO)
+EEPAGE number                                       [0..2]
 @endcode
 
-@section Example
+@section Operation
 The following steps will be used to store data into the page 2 of the external EEPROM.
--# Write 2 into MSCB(4)
--# Write 0x10 into MSCB(2)
--# Wait for control bit turned off.
+-# w 4 2      // Set EEpage to access
+-# w 2 0x10   // Initiate Save command
+-# Wait for control bit turned off and status turned on.
 
 @section DataSheet
-<a href=http://www.digchip.com/datasheets/download_datasheet.php?id=161550&part-number=AT25080A >AT2508A</a>
+<a href=http://www.atmel.com/dyn/resources/prod_documents/doc3347.pdf > EEPROM AT2508A</a>
 */
 
 /*!<!----------------------------------------------------------------->*/
 /*!@page feb64_limits FEB64 Limit parameters
 
 @section Purpose
-The parameter limits are accessible by expert opertation, If change is required, please contact FGD-Slow Control Software team (midas@triumf.ca)...
+The parameter limits are accessible by expert operation, If change is required,
+please contact FGD-Slow Control Software team (midas@triumf.ca)...
 
 @section Limits
-<center>
-The limits associated with each parameter is as follow:
-(L:Lower limit,H:Higher limit,p:Positive,n:Negative,d:Digital,a:Analog)
-</center>
+<b>Limits given below are the initial values, may not reflect the current implemented limits.</b>
+
+<br>(L:Lower limit,H:Higher limit,p:Positive,n:Negative,d:Digital,a:Analog)
 @code
-LvQ   LiQ   Lp6Vd  Lp6Va Ln6Va  Lp6Ia Lp6Ia  Lp6Id 
-30.0  0.0   5.5    5.5  -6.5    20.0  5.0    5.0
-HvQ   HiQ   Hp6Vd  Hp6Va Hp6Va  Hp6Ia Hp6Ia  Hp6Id 
-73.0  0.1   6.5    6.5  -5.5    1.0   100.0  200.0
-
-LuC Temperature   HuC Temperature(C)    LSST Temperature  LSST Temperature(C)
-23.0              45.0                  20.0              30.0
-
-LVQ     HVQ(V)     LIQ     HIQ(uA)
--1.0    1.0        -0.1    1.0
-
-LVBias  HVBias(V)  LIBias  LVBias(uA)
-0.0     73.0       0.0     10.0
+// Unit in Volt, Ampere, Celsius deg.
+// 0x17 - LvQ, LiQ,  Lp6Vd, Lp6Va, Ln6Va , Lp6Ia, Lp6Ia , Lp6Id
+       ,30.0, 0.0, 5.5, 5.5, -6.5, 0.0, 0.0, 0.0
+// 0x1F - HvQ, HiQ, Hp6Vd, Hp6Va, Hp6Va,  Hp6Ia, Hp6Ia,  Hp6Id
+       ,73.0, 0.1, 6.5, 6.5, -5.5, 0.2, 0.8, 0.2
+// 0x27 - LuC Temperature,  HuC Temperature
+        ,18., 50.
+// 0x29 - LSST Temperature,  HSST Temperature
+        ,18. ,30.
 @endcode
 */
-
-#The values are constantly compared against specified threshold and proper action
-#(shut down) will take place in cases where out of range voltage or current has been detected.

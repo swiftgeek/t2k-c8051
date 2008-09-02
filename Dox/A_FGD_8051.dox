@@ -9,10 +9,10 @@ The <a href=http://ladd00.triumf.ca/viewcvs/fgddaq/trunk/slowcontrol/c8051 >SVN<
 repository is organized as follow:
 @code
 - C8051/
-  - FEB64 : Frontend Board 64 channels
-  - CMB : Crate Master Board
-  - LPB : Light Pulser Board
-  - GSCIO : General Slow Control IO
+  - FEB64  : Frontend Board 64 channels
+  - CMB    : Crate Master Board
+  - LPB    : Light Pulser Board
+  - GSCIO  : General Slow Control IO
   - LOADER : Initial micro-Controlled (uC) firmware
 - Devices/
   - All FEB64, CMB, LPB device drivers
@@ -21,11 +21,9 @@ repository is organized as follow:
 - Support/
   - Supporting files for this documentation
 - Dox/
-  - This plain documentation
-- Images/
-  - Those necessary images
+  - The plain ASCII documentation
 - html/
-  - This web based documentation
+  - The web based documentation
 - Projects
   - private development area 
 @endcode
