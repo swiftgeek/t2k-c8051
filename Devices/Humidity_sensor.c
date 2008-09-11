@@ -1,5 +1,5 @@
      /**********************************************************************************\
-  Name:			Humidity_sensor.c
+  Name:			  Humidity_sensor.c
   Author:   	Bahman Sotoodian 	
   Created: 		March 28, 2008
   Description:	Humidity and Temperature measurements
@@ -31,42 +31,45 @@ void HumiSensor_Init(int humsen){
 unsigned char HumidSensor_Cmd (unsigned int *rhumidity,unsigned int *rtemperature, 
 float *humidity, float *temperature,unsigned char *OrigFCS, unsigned char *DeviceFCS, int humsen){
 	
-	float xdata temp_humi, temp_tempe;
+	float         xdata temp_humi, temp_tempe;
 	unsigned char xdata TempStatus,HumiStatus;
-	unsigned int xdata rtemp,rhumi;
+	unsigned int  xdata rtemp,rhumi;
 	unsigned char xdata temp_FCSOrig,temp_FCSDevice;
 	
 	SHT7x_ConnectionReset(humsen);
-	HumiStatus = SHT7x_Measure(&rtemp,TEMP,&temp_FCSOrig,&temp_FCSDevice, humsen); //measure temperature
+	HumiStatus = SHT7x_Measure(&rtemp, TEMP, &temp_FCSOrig, &temp_FCSDevice, humsen); //measure temperature
 	SHT7x_ConnectionReset(humsen);
-	TempStatus = SHT7x_Measure(&rhumi,HUMI,&temp_FCSOrig,&temp_FCSDevice, humsen); //measure humidity
+	TempStatus = SHT7x_Measure(&rhumi, HUMI, &temp_FCSOrig, &temp_FCSDevice, humsen); //measure humidity
 	
 	*DeviceFCS = temp_FCSDevice;
 	*OrigFCS = temp_FCSOrig;
 	*rtemperature = rtemp;
 	*rhumidity = rhumi;
 
-	   temp_humi  = (float) rhumi;	
-	   temp_tempe = (float) rtemp;
-		SHT7x_Correction(&temp_humi,&temp_tempe); 			//calculate humidity, temperature
-		*humidity = temp_humi;
-		*temperature = temp_tempe;								
-	
+  temp_humi  = (float) rhumi;	
+  temp_tempe = (float) rtemp;
+  SHT7x_Correction(&temp_humi,&temp_tempe); 			//calculate humidity, temperature
+  *humidity = temp_humi;
+  *temperature = temp_tempe;								
+
 	if((TempStatus == ERROR)||(HumiStatus == ERROR)){ 
 		SHT7x_ConnectionReset(humsen); //in case of an error: connection reset
-		delay_ms(800);
+		// delay_ms(800);
 		return ERROR;
 	} 
 	//wait approx. 0.8s to avoid heating up SHTxx
-	delay_ms(800);
+  //delay_ms(800);
 	return DONE;
 }
 
 //----------------------------------------------------------------------------------------
 // Makes a measurement (Humidity/Temperature) with checksum
 //----------------------------------------------------------------------------------------
-signed char SHT7x_Measure(unsigned int *DataToSend,
-unsigned char flag, unsigned char *FCSoriginator, unsigned char *FCSclient, int humsen)
+signed char SHT7x_Measure(unsigned int *DataToSend
+                        , unsigned char flag
+                        , unsigned char *FCSoriginator
+                        , unsigned char *FCSclient
+                        , int humsen)
 {
 	unsigned char xdata check_flag,status = DONE;
 	unsigned char xdata FCSdevice,FCSorig,MSBdata,LSBdata;
@@ -76,8 +79,7 @@ unsigned char flag, unsigned char *FCSoriginator, unsigned char *FCSclient, int 
 	
 //	SHT7x_TransStart();						 //transmission start
 	
-	switch(flag){ 								 //send command to sensor
-		
+	switch(flag) { 								 //send command to sensor
 		case TEMP: 
 			status = SHT7x_WriteByte(MEASURE_TEMP, humsen); 
 			check_flag = MEASURE_TEMP;
@@ -94,18 +96,16 @@ unsigned char flag, unsigned char *FCSoriginator, unsigned char *FCSclient, int 
 	
 	SHT_time = uptime();
 
-	do{
-		if(humsen==1)
-		{
-			if(SHT7x_DATA1 == 0){
+	do {
+		if(humsen==1) {
+			if(SHT7x_DATA1 == 0) {
 				temp_check = 1; 
 				break; //wait until sensor has finished the measurement
 		 	}
 		}
 #ifdef MORETHANONEHUM
-		else if(humsen==2)
-		{
-			if(SHT7x_DATA2 == 0){
+		else if(humsen==2) {
+			if(SHT7x_DATA2 == 0) {
 				temp_check = 1; 
 				break; //wait until sensor has finished the measurement
 		 	}			
@@ -127,10 +127,10 @@ unsigned char flag, unsigned char *FCSoriginator, unsigned char *FCSclient, int 
 	FCSdevice = ReverseByte (FCSdevice);
 	
 	//Calculate originator's side write FCS
-  	 	  FCSorig = SHT7x_FCS_Step(LSBdata
-    	, SHT7x_FCS_Step(MSBdata
-    	, SHT7x_FCS_Step(check_flag
-    	, 0x00)));	
+  FCSorig = SHT7x_FCS_Step(LSBdata
+          , SHT7x_FCS_Step(MSBdata
+          , SHT7x_FCS_Step(check_flag
+          , 0x00)));	
 
 	*FCSclient = FCSdevice;
 	*FCSoriginator = FCSorig;
