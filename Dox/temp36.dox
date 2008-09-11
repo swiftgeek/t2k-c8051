@@ -1,7 +1,8 @@
 /*!\page TEMP36 TEMP36 board 
 
-\section temp36purpose Purpose
-The main objective of the temp36 board is to measure tempearture at 36 different locations using 18 ADT7486A. The ADT7486A is a digital temperature
+@section temp36purpose Purpose
+The TEMP36 board provide readout of 36 individual remote temperature sensor, 
+8 ADC channels, 8 DAC channels and 8 general purpose I/O. Its main objective is to of the temp36 board is to measure tempearture at 36 different locations using 18 ADT7486A. The ADT7486A is a digital temperature
 sensor chip that is capable of measuring temperature with a resolution of 0.016 degrees Celsius. Each ADT7486A is connected to two diodes that can be
 placed in remote locations and due to properties of the diode and a combination of the chip itself each one will deviate from each other in terms of 
 absolute temperature. The ADT7486A contains a register to compensates for this offet. The absolute temperature of the diodes are calibrated with an extremely 
@@ -14,7 +15,7 @@ ADT7486A during initization. In addition, the temp36 board also contains a real 
 - @ref rtc : Real Time Clock
 - @ref dac : DAC
 */
- 
+
  /*!\page exttemp Temperature Sensors
  \section Purpose
 ADT7486A is a digital temperature sensor chip that is capable of measuring temperature with a resolution of 0.016 degrees Celsius. 
@@ -35,12 +36,9 @@ MSCB registers are shown in the MSCB Registers section. In addition, if there is
 be set. For example, if there is a temperature reading error for temp04 the TE01-08 variable will show 0000 1000(assuming the other temperature sensors are 
 reading correctly).   
 
-
 *\image html temp36-adt7486a.gif
 
-
 *\image html temperaturereading.gif
-
 
 \section MSCB Registers
 \code
@@ -64,19 +62,20 @@ hence, this will require a transmission delay. Refer to the sections below for t
 \section Operation
 - Write the desired offset value in the eepValue register (MSCB 45) to change the default value 
 - Write the correct key in the eeCtrSet register (MSCB 46) to modify or read the EEPAGE array 
-	-0x3Cxx00yy
-	-3C is the key for writing/reading EEPAGE array 
-	-Set xx to 11 for reading from the EEPAGE array and 22 for writing to it
-	-Set yy to be the particular index value to be modified or read from	
+ -0x3Cxx00yy
+ -3C is the key for writing/reading EEPAGE array 
+ -Set xx to 11 for reading from the EEPAGE array and 22 for writing to it
+ -Set yy to be the particular index value to be modified or read from 
 - Write (0..5) to the eepage register(MSCB 5) to specify the page in the EEPROM to write or read 
 - Set the appropriate bit of control register (MSCB 1), and this will initiate 
-	-Set a 1 for writing to the PAGE
-	-Set a 2 for reading from the PAGE
-	-Set a 4 for clearing the PAGE 
+ -Set a 1 for writing to the PAGE
+ -Set a 2 for reading from the PAGE
+ -Set a 4 for clearing the PAGE 
 - Wait for the appropriate bit of the status register(MSCB 2) to be set
-	-1 for writing and clearing 
-	-2 for reading
-	
+ -1 for writing and clearing 
+ -2 for reading
+ 
+
 \section Example
 The following steps store data into the page 2 of the external EEPROM.
 -# Write 1 into MSCB(45) (Temperature offset value)
@@ -85,11 +84,11 @@ The following steps store data into the page 2 of the external EEPROM.
 -# Write 1 into MSCB(1) (Write the default values and the change to page 2)
 \section temp36-eeprom MSCB Registers
 \code
-MSCB(1)	: Byte : Control    	: eeprom control
-MSCB(4)	: Byte : EEPage		: eeprom page
+MSCB(1) : Byte : Control     : eeprom control
+MSCB(4) : Byte : EEPage  : eeprom page
 MSCB(2) : Byte : Status         : eeprom status
-MSCB(45): Float: eepValue 	: eeprom value
-MSCB(46): Byte : eeCtrSet	: eeprom set 
+MSCB(45): Float: eepValue  : eeprom value
+MSCB(46): Byte : eeCtrSet : eeprom set 
 \endcode
 */
 
@@ -112,18 +111,3 @@ value and in return the voltage will change to that level.
 MSCB(59..66) : Int :DAC[0..7]  : Digital to Analog Raw Data 
 \endcode
 */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
