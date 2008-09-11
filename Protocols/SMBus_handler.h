@@ -1,8 +1,8 @@
 /**********************************************************************************\
-  Name:			SMBus_handler.h
-  Author:   	Bryerton Shaw 	
-  Created: 		March 11, 2008
-  Description:	SMBus protocol using interrupts, created for FEB64 board
+  Name:      SMBus_handler.h
+  Author:     Bryerton Shaw
+  Created:     March 11, 2008
+  Description:  SMBus protocol using interrupts, created for FEB64 board
 
   $Id$
 \**********************************************************************************/
@@ -13,27 +13,27 @@
 #define  _SMBUS_HANDLER_H
 
 
-#define SMB_WRITE	0x00
-#define SMB_READ	0x01
+#define SMB_WRITE  0x00
+#define SMB_READ  0x01
 
 #define SMB_MAX_BUFF_SIZE 8
 
-#define SMB_MTSTA		0xE0
-#define SMB_MTDB		0xC0	
-#define SMB_MRDB		0x80
- 
-#define SMB_STATE_START 				0x08
-#define SMB_STATE_REP_START 			0x10
+#define SMB_MTSTA    0xE0
+#define SMB_MTDB     0xC0
+#define SMB_MRDB     0x80
 
-#define SMB_STATE_MT_SLAVE_ACK		0x18
-#define SMB_STATE_MT_SLAVE_NACK		0x20
-#define SMB_STATE_MT_DATA_ACK			0x28
-#define SMB_STATE_MT_DATA_NACK		0x30
+#define SMB_STATE_START           0x08
+#define SMB_STATE_REP_START       0x10
 
-#define SMB_STATE_MR_SLAVE_ACK		0x40
-#define SMB_STATE_MR_SLAVE_NACK		0x48
-#define SMB_STATE_MR_DATA_ACK			0x50
-#define SMB_STATE_MR_DATA_NACK		0x58
+#define SMB_STATE_MT_SLAVE_ACK    0x18
+#define SMB_STATE_MT_SLAVE_NACK   0x20
+#define SMB_STATE_MT_DATA_ACK     0x28
+#define SMB_STATE_MT_DATA_NACK    0x30
+
+#define SMB_STATE_MR_SLAVE_ACK    0x40
+#define SMB_STATE_MR_SLAVE_NACK   0x48
+#define SMB_STATE_MR_DATA_ACK     0x50
+#define SMB_STATE_MR_DATA_NACK    0x58
 
 
 // SMBus Global Variables
@@ -51,10 +51,10 @@ extern bit SMB_ACKPOLL;
 
 
 /***
- * Function:	SMBus_Init
- * Purpose:		Initialize SMBus Protocol
+ * Function:  SMBus_Init
+ * Purpose:    Initialize SMBus Protocol
  *
- * Notes:		Configures Timer3, assumes Timer1 is set properly
+ * Notes:    Configures Timer3, assumes Timer1 is set properly
  */
 void SMBus_Init(void);
 
