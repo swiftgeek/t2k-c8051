@@ -479,7 +479,10 @@ void switchonoff(unsigned char command)
     //Ram_CSn maintained in PP
     // P3.7:RAMCSn .6:CSn6 .5:CSn4 .4:SPARE5 .3:SPARE4 .2:REG_EN .1:CSn3 .0:CSn2 
     P3MDOUT = 0x80;
-    REG_EN  = ON;   // Shutdown All Regulators 
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // Needs to stay on for JTAG debug access!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    REG_EN  = OFF;   // Shutdown All Regulators 
 
     //SPI communication for EEPROM is maintained
     // P2.7:SPARE1 .6:CSn7 .5:CSn6 .4:SPIMOSI .3:SPISCK .2:RAMHLDn .1:SPIMISO .0:RAMWPn 
@@ -610,11 +613,6 @@ void user_init(unsigned char init)
 #endif
 
   //
-  //Turn off the card before the timer expires
-  //-----------------------------------------------------------------------------
-  switchonoff(OFF);
-
-  //
   // EEPROM memory Initialization/Retrieval
   //-----------------------------------------------------------------------------
 #ifdef _ExtEEPROM_
@@ -674,6 +672,11 @@ void user_init(unsigned char init)
     delay_us(100);
   }
 #endif
+  //
+  //Turn off the card before the timer expires
+  //-----------------------------------------------------------------------------
+  switchonoff(OFF);
+
   //
   // Final steps
   //-----------------------------------------------------------------------------
@@ -841,7 +844,7 @@ void user_loop(void) {
   float* xdata eep_address;
   unsigned long xdata mask;
   signed long xdata result;
-  unsigned int xdata eeptemp_addr,*rpfData,rvolt;
+  unsigned int xdata eeptemp_addr, *rpfData, rvolt, i;
   //NW make sure eeptemp_source is stored in xdata
   unsigned char* xdata eeptemp_source;
   unsigned char xdata swConversion;
@@ -1300,6 +1303,17 @@ void user_loop(void) {
     //Check if we are here for the first time
     if (!eeprom_flag) {  // first in
       rCSR = user_data.status;
+
+      // Update eepage with the current user_data variables
+      // expected to be found in the eepage
+      for(i=0;i<8;i++)
+        eepage.rasum[i] = user_data.rAsum[i];
+      for(i=0;i<64;i++) {
+        eepage.rbias[i] = user_data.rBias[i];
+      }
+      eepage.rqpump = user_data.rQpump;
+      eepage.SWbias = user_data.swBias;
+
       //Temporary store the first address of page
       eeptemp_addr = PageAddr[(unsigned char)(user_data.eepage & 0x07)];
       //Temporary store the first address of data which has to be written
