@@ -15,7 +15,7 @@
 #ifdef _LTC2495_
 
 #define LTC2495_CMD_IGNORE 	0x00 	// Don't care/leave alone
-#define LTC2495_CMD_SELECT		0xA0	// Select an Input Channel command
+#define LTC2495_CMD_SELECT	0xA0	// Select an Input Channel command
 #define LTC2495_CMD_SGL			0x10	// Single Ended (non-differential)
 #define LTC2495_ENABLE2			0x80
 
@@ -30,8 +30,10 @@ void LTC2495_StartConversion(unsigned char addr, unsigned char channel, unsigned
 
 //
 //------------------------------------------------------------------------
-unsigned char  LTC2495_ReadConversion(unsigned char addr, unsigned char channel, 
-signed long *pResult, unsigned char gain);
+unsigned char  LTC2495_ReadConversion(unsigned char addr
+                                    , unsigned char channel
+                                    , signed long *pResult
+                                    , unsigned char gain);
 void dowhile(char *busy, char location);
 
 #endif

@@ -91,7 +91,6 @@ unsigned char channel, signed long *pResult, unsigned char gain) {
 //   while(SMB_BUSY);
 	dowhile(&SMB_BUSY, 5);
 	SMB_BUSY = 1;
-
 	SMB_RW = SMB_WRITE;
 	SMB_ACKPOLL = 1; // keep trying until success!
 
