@@ -3,10 +3,8 @@ Name:         feb64.c
 Created by:   Bahman Sotoodian                Feb/11/2008
 Modified  :   Noel Wu                         .. Aug 2008
 
-
 Contents:     Application specific (user) part of
-Midas Slow Control Bus protocol
-for FEB64 board
+Midas Slow Control Bus protocol for FEB64 board
 
 SMB      _PCA9539_      : Bias switches and Backplane readback
 SST      _ADT7486A_     : SST Temperature
@@ -14,20 +12,23 @@ SMB      _LTC1669_      : Q pump DAC
 SPI      _LTC1665_      : SiPm_DACs
 SPI      _LTC2600_      : Asum DAC
 
-Memory usage:
-define(FEB64) define(_SPI_PROTOCOL_) define(_LTC1665_)
-define(_SMB_PROTOCOL_) define (_LTC1669_)  define(_LTC2600_)
-define(_SST_PROTOCOL_) define(_ADT7486A_)
+define(FEB64)     define(_LTC1665_)   define (_LTC1669_) 
+define(_LTC2600_) define(_ADT7486A_)  define(_PCA9539_)
+define(_LTC2495_) define(_ExtEEPROM_) define(FEB64REV1) 
 
+Memory usage:
 Program Size: data=139.6 xdata=274 code=13497
 Program Size: data=150.2 xdata=711 code=15134
 Program Size: data=160.0 xdata=523 code=14686
 Program Size: data=166.5 xdata=1309 code=22083 - Aug 20/2008
 Program Size: data=167.4 xdata=1483 code=23701 - Sep 06/2008
 
-CODE: 16KB(0x4000), paging in 512B(0x200)
-CODE(?PR?UPGRADE?MSCBMAIN (0xF600))
+CODE(?PR?UPGRADE?MSCBMAIN (0xD000)) 
 
+// P3.7:RAMCSn   .6:CSn6      .5:CSn4     .4:SPARE5  | .3:SPARE4  .2:REG_EN   .1:CSn3    .0:CSn2 
+// P2.7:SPARE1   .6:CSn7      .5:CSn6     .4:SPIMOSI | .3:SPISCK  .2:RAMHLDn  .1:SPIMISO .0:RAMWPn 
+// P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn | .3:ResetN  .2:SPARE2   .1:SPARE3  .0:SST_DRV 
+// P0.7:CSn1     .6:CSn0      .5:485TXEN  .4:QPUMPCLK| .3:SMBCLK  .2:SMBDAT   .1:Rx      .0:Tx 
 
 $Id$
 \********************************************************************/
@@ -472,22 +473,28 @@ void switchonoff(unsigned char command)
   {
     pca_operation(Q_PUMP_OFF);   // Initially turn it off
 
-    REG_EN = OFF;   // Shutdown All Regulators 
-
+    // Switch all the ports to open drain except for...
     SFRPAGE  = CONFIG_PAGE;
-    // Switch all the ports to open drain except for
-    // mscb communication
-    P0MDOUT &= 0x23;
-    //    P0 &= 0x23;
-    //SST and RESETN stay ON
-    P1MDOUT &= 0x09;
-    //    P1 &=0x01;
-    //SPI communication to EEPROM is maintained
+
+    //Ram_CSn maintained in PP
+    // P3.7:RAMCSn .6:CSn6 .5:CSn4 .4:SPARE5 .3:SPARE4 .2:REG_EN .1:CSn3 .0:CSn2 
+    P3MDOUT = 0x80;
+    REG_EN  = ON;   // Shutdown All Regulators 
+
+    //SPI communication for EEPROM is maintained
+    // P2.7:SPARE1 .6:CSn7 .5:CSn6 .4:SPIMOSI .3:SPISCK .2:RAMHLDn .1:SPIMISO .0:RAMWPn 
     P2MDOUT &= 0x1F;
     //    P2 &= 0x1F;
-    //Ram_CSn is maintained
-    P3MDOUT &= 0x80;
-    //  P3 &= 0x80;
+
+    //SST and RESETN is maintained
+    // P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn .3:ResetN .2:SPARE2 .1:SPARE3 .0:SST_DRV 
+    P1MDOUT &= 0x09;
+    RESETN = 1;
+
+    // mscb communication
+    // P0.7:CSn1 .6:CSn0 .5:485TXEN .4:QPUMPCLK .3:SMBCLK .2:SMBDAT .1:Rx .0:Tx 
+    P0MDOUT &= 0x23;
+    // P0 &= 0x23;
   }
 }
 
@@ -750,8 +757,8 @@ void user_write(unsigned char index) reentrant
   if ((index >= FIRST_ASUM) && (index < LAST_ASUM)) {
     AsumIndex = (index - FIRST_ASUM);
 #ifdef _LTC2600_
-    // Update Bias Dac voltages as requested by bit5 of control register
-    if (!SsS) LTC2600_Flag = 1;  // !Shutdown
+  // Update Bias Dac voltages as requested by bit5 of control register
+  if (!SsS) LTC2600_Flag = 1;  // !Shutdown
 #endif
   }
   //
@@ -950,6 +957,7 @@ void user_loop(void) {
   if (CPup) {
     watchdog(6);
     rCSR = user_data.status;
+    rESR = 0x0000;   // Reset error status at each Power UP
     // Clear Status
     SsS = OFF;
     DISABLE_INTERRUPTS;
