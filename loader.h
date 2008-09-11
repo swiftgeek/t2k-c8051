@@ -17,8 +17,8 @@
 #define CLEAR				  0x01
 #define WRITE				  0x00
 
-//Defining the page mapping     Protected  Non protected
-unsigned int xdata page_addr[]={0x600,     0x0,0x200,0x400};
+//Defining the page mapping      NP[0..2]  0x600 Protected
+unsigned int xdata page_addr[] = {0x000,0x200,0x400,0x600};
 
 #define ADDR_PCA9539   0x74
 // PCA9539 Macro Definitions

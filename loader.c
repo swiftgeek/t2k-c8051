@@ -187,7 +187,7 @@ void user_loop(void)
 			ENABLE_INTERRUPTS;
 		}
 		//Write to Page 0
-	   FAILED =ExtEEPROM_Write_Clear (page_addr[1],(unsigned char*)&eepage, PAGE_SIZE, WRITE);
+	   FAILED =ExtEEPROM_Write_Clear (page_addr[0],(unsigned char*)&eepage, PAGE_SIZE, WRITE);
 		if(!FAILED)
 		{
 			DISABLE_INTERRUPTS;
@@ -195,7 +195,7 @@ void user_loop(void)
 			ENABLE_INTERRUPTS;
 		}
 		//For testing purpose...
-      FAILED=ExtEEPROM_Read  (page_addr[1],(unsigned char*)&eepage2, PAGE_SIZE);
+      FAILED=ExtEEPROM_Read  (page_addr[0],(unsigned char*)&eepage2, PAGE_SIZE);
 		if(!FAILED && (user_data.serialN == eepage2.SerialN))
 		{
 			DISABLE_INTERRUPTS;
