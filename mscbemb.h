@@ -620,6 +620,10 @@ sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
 #define MSCB_SYNC     P1 ^ 1
 #define MSCB_SPI_MISO P2 ^ 1
 
+//SHT
+#define SHT_DATA1 P1^4
+#define SHT_SCK1  P1^5
+
 sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
 /*--------------------------------*/
 #elif defined(GPIB_TEST)
