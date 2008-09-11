@@ -66,9 +66,9 @@
  //DAC variables
  unsigned char xdata DACIndex;
  unsigned char xdata LTC2600_LOAD[] = {LTC2600_LOAD_A,LTC2600_LOAD_B
- 												  ,LTC2600_LOAD_C,LTC2600_LOAD_D
-												  ,LTC2600_LOAD_E,LTC2600_LOAD_F
-												  ,LTC2600_LOAD_G,LTC2600_LOAD_H};
+                          ,LTC2600_LOAD_C,LTC2600_LOAD_D
+                          ,LTC2600_LOAD_E,LTC2600_LOAD_F
+                          ,LTC2600_LOAD_G,LTC2600_LOAD_H};
  // Get sysinfo if necessary
  extern SYS_INFO sys_info;          // For address setting
 
@@ -80,7 +80,7 @@
    1, UNIT_BYTE,            0, 0,           0, "Control",      &user_data.control,     //1 
    1, UNIT_BYTE,            0, 0,           0, "Status",       &user_data.status,      //2 
    1, UNIT_BYTE,            0, 0,           0, "EEPage",       &user_data.eepage,      //3 
-   2, UNIT_BYTE,            0, 0,           0, "Navg",         &user_data.navg,		   //4     
+   2, UNIT_BYTE,            0, 0,           0, "Navg",         &user_data.navg,      //4     
    1, UNIT_BYTE,            0, 0,           0, "TE01-08",      &user_data.terror[0],   //5 
    1, UNIT_BYTE,            0, 0,           0, "TE09-16",      &user_data.terror[1],   //6 
    1, UNIT_BYTE,            0, 0,           0, "TE17-24",      &user_data.terror[2],   //7 
@@ -123,13 +123,13 @@
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp35",       &user_data.Temp[34],    //44
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp36",       &user_data.Temp[35],    //45
 
-	4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,"eepValue",      &user_data.eepValue,    //46
+  4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,"eepValue",      &user_data.eepValue,    //46
    4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,"eeCtrSet",      &user_data.eeCtrSet,    //47
 
-   4, UNIT_CELSIUS,         0, 0,MSCBF_HIDDEN|MSCBF_FLOAT, "SHTtemp",	   &user_data.SHTtemp1,    //48
-   4, 10,				       0, 0,MSCBF_HIDDEN|MSCBF_FLOAT, "SHThumi",	   &user_data.SHThumi1,    //49  	
-   4, UNIT_CELSIUS,         0, 0,MSCBF_HIDDEN|MSCBF_FLOAT, "SHTtemp2",	   &user_data.SHTtemp2,    //50
-   4, 10,				       0, 0,MSCBF_HIDDEN|MSCBF_FLOAT, "SHThumi2",	   &user_data.SHThumi2,    //51  
+   4, UNIT_CELSIUS,         0, 0,MSCBF_HIDDEN|MSCBF_FLOAT, "SHTtemp",    &user_data.SHTtemp1,    //48
+   4, 10,              0, 0,MSCBF_HIDDEN|MSCBF_FLOAT, "SHThumi",     &user_data.SHThumi1,    //49   
+   4, UNIT_CELSIUS,         0, 0,MSCBF_HIDDEN|MSCBF_FLOAT, "SHTtemp2",     &user_data.SHTtemp2,    //50
+   4, 10,              0, 0,MSCBF_HIDDEN|MSCBF_FLOAT, "SHThumi2",    &user_data.SHThumi2,    //51  
    2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC0",         &user_data.DAC[0],      //52
    2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC1",         &user_data.DAC[1],      //53
    2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC2",         &user_data.DAC[2],      //54
@@ -137,8 +137,8 @@
    2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC4",         &user_data.DAC[4],      //56
    2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC5",         &user_data.DAC[5],      //57
    2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC6",         &user_data.DAC[6],      //58
-   2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC7",         &user_data.DAC[7],      //59	
-	
+   2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC7",         &user_data.DAC[7],      //59 
+  
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg01",       &user_data.AT[0],       //60
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg02",       &user_data.AT[1],       //61
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg03",       &user_data.AT[2],       //62
@@ -176,43 +176,43 @@
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg35",       &user_data.AT[34],      //94
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg36",       &user_data.AT[35],      //95
    
-	4, UNIT_CELSIUS,			 0, 0, MSCBF_FLOAT, "REF",				&user_data.ref	  ,      //96
-	0
+  4, UNIT_CELSIUS,       0, 0, MSCBF_FLOAT, "REF",        &user_data.ref    ,      //96
+  0
  };
  
  MSCB_INFO_VAR *variables = vars;   // Structure mapping
 
 void autocalibration(float reference)
 {
-	float buffer;
-	int offset, i;
-	for(i=0;i<18; i++){
-		//offset channel 2
-	   buffer=reference-user_data.AT[2*i];
-	   //Every increment of 16 corresponds to a quarter degree change
-	   buffer*=4;
-	   offset=(int)(buffer*16);
-		eepage.ext2offset[i]=offset;	
-		//offset channel 1
-	   buffer=reference-user_data.AT[2*i+1];
-	   //Every increment of 16 corresponds to a quarter degree change
-	   buffer*=4;
-	   offset=(int)(buffer*16);		
-		eepage.ext1offset[i]=offset;
-	}
-	return;
+  float buffer;
+  int offset, i;
+  for(i=0;i<18; i++){
+    //offset channel 2
+     buffer=reference-user_data.AT[2*i];
+     //Every increment of 16 corresponds to a quarter degree change
+     buffer*=4;
+     offset=(int)(buffer*16);
+    eepage.ext2offset[i]=offset;  
+    //offset channel 1
+     buffer=reference-user_data.AT[2*i+1];
+     //Every increment of 16 corresponds to a quarter degree change
+     buffer*=4;
+     offset=(int)(buffer*16);   
+    eepage.ext1offset[i]=offset;
+  }
+  return;
 }
 //converts channel index to eepage structure offset address
 int eepageAddrConvert(unsigned int index)
 {
-	int add;
-	//if index is even
-	if(!(index%2))
-		add=index/2+18;
-		//if index is odd
-	else
-		add=index/2;
-	return add;
+  int add;
+  //if index is even
+  if(!(index%2))
+    add=index/2+18;
+    //if index is odd
+  else
+    add=index/2;
+  return add;
 }
 /*---- User init function ------------------------------------------*/
 void user_init(unsigned char init)
@@ -221,8 +221,8 @@ void user_init(unsigned char init)
 
    /* Format the SVN and store this code SVN revision into the system */
    for (i=0;i<4;i++) {
-  	  if (svn_rev_code[6+i] < 48) {
-	     svn_rev_code[6+i] = '0';
+      if (svn_rev_code[6+i] < 48) {
+       svn_rev_code[6+i] = '0';
      }
    }
 
@@ -240,22 +240,22 @@ void user_init(unsigned char init)
    P2MDOUT &= 0xFB; // Setting the RAM_WPn to open drain
    ExtEEPROM_Init();
 
-	//Get serial number from write protected area 
+  //Get serial number from write protected area 
    ExtEEPROM_Read  (WP_START_ADDR
-	                ,(unsigned char*)&eepage
-						 ,PAGE_SIZE);
+                  ,(unsigned char*)&eepage
+             ,PAGE_SIZE);
    DISABLE_INTERRUPTS;
-	user_data.SerialN = (float)eepage.SerialN;
+  user_data.SerialN = (float)eepage.SerialN;
    ENABLE_INTERRUPTS;
 
-	//Refer to the first Page of the non_protected area
+  //Refer to the first Page of the non_protected area
    ExtEEPROM_Read  (PageAddr[0]
-	                ,(unsigned char*)&eepage
-						 ,PAGE_SIZE);
-	DISABLE_INTERRUPTS;
-	user_data.control = (char)eepage.control;
-	rCTL=eepage.control;
-	ENABLE_INTERRUPTS;
+                  ,(unsigned char*)&eepage
+             ,PAGE_SIZE);
+  DISABLE_INTERRUPTS;
+  user_data.control = (char)eepage.control;
+  rCTL=eepage.control;
+  ENABLE_INTERRUPTS;
 
 #endif
    //ADT7486A Init
@@ -268,53 +268,53 @@ void user_init(unsigned char init)
    SFRPAGE  = CPT0_PAGE;
    CPT0CN  |= 0x80; // Enable the Comparator 0
    CPT0MD   = 0x03; //Comparator0 Mode Selection
-   //Use default, adequate TYP (CP1 Response Time, no edge triggered interrupt)	  
+   //Use default, adequate TYP (CP1 Response Time, no edge triggered interrupt)   
    ADT7486A_Init(SST_LINE1); //Temperature measurements related initialization
    ADT7486A_Init(SST_LINE2); 
 
-	//Setting the offset for the temperature sensors
+  //Setting the offset for the temperature sensors
    for (channel=0;channel < 9; channel++){
-		//Set the offset for the temp01,03...17 sensors 
+    //Set the offset for the temp01,03...17 sensors 
       ADT7486A_Cmd(ADT7486A_addrArray[channel]
-		           , SetExt2Offset
-					  , (eepage.ext2offset[channel]>>8)
-					  , eepage.ext2offset[channel]
-					  , SST_LINE1
-					  , &temperature);
+               , SetExt2Offset
+            , (eepage.ext2offset[channel]>>8)
+            , eepage.ext2offset[channel]
+            , SST_LINE1
+            , &temperature);
       delay_us(100); //wait for ADT7486A
    }
    delay_us(300);
    for (channel=9;channel < 18; channel++){
-		//Set the offset for the temp19,21...35 sensors
-	   ADT7486A_Cmd(ADT7486A_addrArray[channel-9]
-		           , SetExt2Offset
-					  , (eepage.ext2offset[channel]>>8)
-					  , eepage.ext2offset[channel]
-					  , SST_LINE2
-					  , &temperature);      
+    //Set the offset for the temp19,21...35 sensors
+     ADT7486A_Cmd(ADT7486A_addrArray[channel-9]
+               , SetExt2Offset
+            , (eepage.ext2offset[channel]>>8)
+            , eepage.ext2offset[channel]
+            , SST_LINE2
+            , &temperature);      
       delay_us(100); //wait for ADT7486A
    }                                                                   
    delay_us(300);
    for (channel=0;channel < 9; channel++){
-		//Set the offset for the temp02,04...18 sensors
+    //Set the offset for the temp02,04...18 sensors
       ADT7486A_Cmd(ADT7486A_addrArray[channel]
-		           , SetExt1Offset
-					  , (eepage.ext1offset[channel]>>8)
-					  , eepage.ext1offset[channel]
-					  , SST_LINE1
-					  , &temperature);
+               , SetExt1Offset
+            , (eepage.ext1offset[channel]>>8)
+            , eepage.ext1offset[channel]
+            , SST_LINE1
+            , &temperature);
       delay_us(100); //wait for ADT7486A
    }
    delay_us(300);
    for (channel=9;channel < 18; channel++){
-		//Set the offset for the temp20,22...36 sensors
+    //Set the offset for the temp20,22...36 sensors
       ADT7486A_Cmd(ADT7486A_addrArray[channel-9]
-		           , SetExt1Offset
-					  , (eepage.ext1offset[channel]>>8)
-					  , eepage.ext1offset[channel]
-					  , SST_LINE2
-					  , &temperature);
-		delay_us(100); //wait for ADT7486A
+               , SetExt1Offset
+            , (eepage.ext1offset[channel]>>8)
+            , eepage.ext1offset[channel]
+            , SST_LINE2
+            , &temperature);
+    delay_us(100); //wait for ADT7486A
    }
    delay_us(300);
 #endif
@@ -325,43 +325,43 @@ void user_init(unsigned char init)
    user_data.terror[2]=0;
    user_data.terror[3]=0;
    user_data.terror[4]=0;
-	user_data.status=0;
+  user_data.status=0;
 
-	//temporary humidity sensor
-	user_data.SHTtemp1 = 0;
-	user_data.SHThumi1 = 0;
-	user_data.SHTtemp2 = 0;
-	user_data.SHThumi2 = 0;
+  //temporary humidity sensor
+  user_data.SHTtemp1 = 0;
+  user_data.SHThumi1 = 0;
+  user_data.SHTtemp2 = 0;
+  user_data.SHThumi2 = 0;
 
    for (i=0; i<36;i ++)
       user_data.Temp[i] = 0.0;
-	user_data.eepage=0;
-	user_data.navg=0;
-	for(i=0; i<36; i++)
-	{
-		user_data.AT[i]=0;
-	}
-	
-	user_data.ref=0;
+  user_data.eepage=0;
+  user_data.navg=0;
+  for(i=0; i<36; i++)
+  {
+    user_data.AT[i]=0;
+  }
+  
+  user_data.ref=0;
 
    ENABLE_INTERRUPTS
    //General Variables initialization
-	EEP_CTR_FLAG=0;
-	rCSR=0;
+  EEP_CTR_FLAG=0;
+  rCSR=0;
 
 //Humidity sensor initialization
 #ifdef _HUMSEN_
-	SFRPAGE  = CONFIG_PAGE;
+  SFRPAGE  = CONFIG_PAGE;
    P1MDOUT |= 0xBB;
-	SHT_VDD1=1;
-	SHT_GND1=0;
-	// Initializing the SHTxx communication
+  SHT_VDD1=1;
+  SHT_GND1=0;
+  // Initializing the SHTxx communication
    HumiSensor_Init(humsen1);
 #ifdef MORETHANONEHUM
-	SHT_VDD2=1;
-	SHT_GND2=0;
-	HumiSensor_Init(humsen2);
-#endif	 
+  SHT_VDD2=1;
+  SHT_GND2=0;
+  HumiSensor_Init(humsen2);
+#endif   
 #endif
 //DAC initialization
 #ifdef _LTC2600_
@@ -376,29 +376,29 @@ void user_init(unsigned char init)
 /*---- User write function -----------------------------------------*/
 void user_write(unsigned char index) reentrant
 {
-	if(index==IDXCTL)
-		rCTL=user_data.control;
+  if(index==IDXCTL)
+    rCTL=user_data.control;
    if (index == IDXEEP_CTL)
       EEP_CTR_FLAG = SET;
 
    if ((index >= First_DACIndex) && (index <= Last_DACIndex)) {
       DACIndex = (index - First_DACIndex);
-    	#ifdef _LTC2600_
+      #ifdef _LTC2600_
        // Update Bias Dac voltages as requested by bit5 of control register
       LTC2600_FLAG = SET;
-    	#endif
+      #endif
    }
-	if(index==IDXNAVG) {
-		cavg=0;
-		numavg=0;
-	}		
+  if(index==IDXNAVG) {
+    cavg=0;
+    numavg=0;
+  }   
 }
 
 /*---- User read function ------------------------------------------*/
 unsigned char user_read(unsigned char index)
 {
-	if(index);
-	return 0;
+  if(index);
+  return 0;
 }
 
 /*---- User function called vid CMD_USER command -------------------*/
@@ -415,129 +415,129 @@ unsigned char user_func(unsigned char *data_in, unsigned char *data_out)
 void user_loop(void)
 {
 #ifdef _ADT7486A_
-	//Read the external temperature from each chip that is connected to SST_LINE1
-	//Corresponds to Temp01,03,05...17
+  //Read the external temperature from each chip that is connected to SST_LINE1
+  //Corresponds to Temp01,03,05...17
    for (channel=0;channel < 9; channel++){
       if(!ADT7486A_Cmd(ADT7486A_addrArray[channel]
-		               , GetExt2Temp
-							, SST_LINE1
-							, &temperature)){
+                   , GetExt2Temp
+              , SST_LINE1
+              , &temperature)){
          //Clear the bit if there is no error 
          DISABLE_INTERRUPTS;
          user_data.Temp[channel*2] = temperature;
-			if(channel<4)
+      if(channel<4)
             user_data.terror[0]   &= Terrorclear[2*channel];
-			else if(channel<8)
-				user_data.terror[1]   &= Terrorclear[2*(channel-4)];
-			else 
-				user_data.terror[2]   &= Terrorclear[2*(channel-8)];
+      else if(channel<8)
+        user_data.terror[1]   &= Terrorclear[2*(channel-4)];
+      else 
+        user_data.terror[2]   &= Terrorclear[2*(channel-8)];
          ENABLE_INTERRUPTS;
       }
       else{
-			//Set the bit if there is an error
+      //Set the bit if there is an error
          DISABLE_INTERRUPTS;
-			if(channel<4)
+      if(channel<4)
             user_data.terror[0]   |= Terrorset[2*channel];
-			else if(channel<8)
-				user_data.terror[1]   |= Terrorset[2*(channel-4)];
-			else 
-				user_data.terror[2]   |= Terrorset[2*(channel-8)];
+      else if(channel<8)
+        user_data.terror[1]   |= Terrorset[2*(channel-4)];
+      else 
+        user_data.terror[2]   |= Terrorset[2*(channel-8)];
          ENABLE_INTERRUPTS;
-      }	
+      } 
    }
-	//Read the external temperature from each chip that is connected to SST_LINE2
+  //Read the external temperature from each chip that is connected to SST_LINE2
    //Corresponds to Temp19,21...35
-	for (channel=9;channel < 18; channel++){
+  for (channel=9;channel < 18; channel++){
       if(!ADT7486A_Cmd(ADT7486A_addrArray[channel-9]
-		               , GetExt2Temp
-							, SST_LINE2
-							, &temperature)){
+                   , GetExt2Temp
+              , SST_LINE2
+              , &temperature)){
          
          DISABLE_INTERRUPTS;
          user_data.Temp[channel*2] = temperature;
- 			if(channel<12)
+      if(channel<12)
             user_data.terror[2]   &= Terrorclear[2*(channel-8)];
-			else if(channel<16)
-				user_data.terror[3]   &= Terrorclear[2*(channel-12)];
-			else 
-				user_data.terror[4]   &= Terrorclear[2*(channel-16)];
+      else if(channel<16)
+        user_data.terror[3]   &= Terrorclear[2*(channel-12)];
+      else 
+        user_data.terror[4]   &= Terrorclear[2*(channel-16)];
          ENABLE_INTERRUPTS;
       }
       else{
          DISABLE_INTERRUPTS;
-			if(channel<12)
+      if(channel<12)
             user_data.terror[2]   |= Terrorset[2*(channel-8)];
-			else if(channel<16)
-				user_data.terror[3]   |= Terrorset[2*(channel-12)];
-			else 
-				user_data.terror[4]   |= Terrorset[2*(channel-16)];
+      else if(channel<16)
+        user_data.terror[3]   |= Terrorset[2*(channel-12)];
+      else 
+        user_data.terror[4]   |= Terrorset[2*(channel-16)];
          ENABLE_INTERRUPTS;
       }
    }
-	//Read the second external temperature from each chip that is connected to SST_LINE1
+  //Read the second external temperature from each chip that is connected to SST_LINE1
    //Corresponds to Temp02,04...18  
    for (channel=0;channel < 9; channel++){
       if(!ADT7486A_Cmd(ADT7486A_addrArray[channel]
-		               , GetExt1Temp
-							, SST_LINE1
-							, &temperature)){
+                   , GetExt1Temp
+              , SST_LINE1
+              , &temperature)){
          DISABLE_INTERRUPTS;
          user_data.Temp[(channel*2)+1] = temperature;
-			if(channel<4)
+      if(channel<4)
             user_data.terror[0]   &= Terrorclear[2*channel+1];
-			else if(channel<8)
-				user_data.terror[1]   &= Terrorclear[2*(channel-4)+1];
-			else 
-				user_data.terror[2]   &= Terrorclear[2*(channel-8)+1];
+      else if(channel<8)
+        user_data.terror[1]   &= Terrorclear[2*(channel-4)+1];
+      else 
+        user_data.terror[2]   &= Terrorclear[2*(channel-8)+1];
          ENABLE_INTERRUPTS;
       }
       else{
          DISABLE_INTERRUPTS;
-			if(channel<4)
+      if(channel<4)
             user_data.terror[0]   |= Terrorset[2*channel+1];
-			else if(channel<8)
-				user_data.terror[1]   |= Terrorset[2*(channel-4)+1];
-			else 
-				user_data.terror[2]   |= Terrorset[2*(channel-8)+1];
+      else if(channel<8)
+        user_data.terror[1]   |= Terrorset[2*(channel-4)+1];
+      else 
+        user_data.terror[2]   |= Terrorset[2*(channel-8)+1];
          ENABLE_INTERRUPTS;
       }
    }
-	//Read the second external temperature from each chip that is connected to SST_LINE2
+  //Read the second external temperature from each chip that is connected to SST_LINE2
    //Corresponds to Temp20,22,...36
-	for (channel=9;channel < 18; channel++){
+  for (channel=9;channel < 18; channel++){
       if(!ADT7486A_Cmd(ADT7486A_addrArray[channel-9]
-		               , GetExt1Temp
-							, SST_LINE2
-							, &temperature)){
+                   , GetExt1Temp
+              , SST_LINE2
+              , &temperature)){
          DISABLE_INTERRUPTS;
          user_data.Temp[(channel*2)+1] = temperature;
- 			if(channel<12)
+      if(channel<12)
             user_data.terror[2]   &= Terrorclear[2*(channel-8)+1];
-			else if(channel<16)
-				user_data.terror[3]   &= Terrorclear[2*(channel-12)+1];
-			else 
-				user_data.terror[4]   &= Terrorclear[2*(channel-16)+1];
+      else if(channel<16)
+        user_data.terror[3]   &= Terrorclear[2*(channel-12)+1];
+      else 
+        user_data.terror[4]   &= Terrorclear[2*(channel-16)+1];
          ENABLE_INTERRUPTS;
       }
       else{
          DISABLE_INTERRUPTS;
-			if(channel<12)
+      if(channel<12)
             user_data.terror[2]   |= Terrorset[2*(channel-8)+1];
-			else if(channel<16)
-				user_data.terror[3]   |= Terrorset[2*(channel-12)+1];
-			else 
-				user_data.terror[4]   |= Terrorset[2*(channel-16)+1];
+      else if(channel<16)
+        user_data.terror[3]   |= Terrorset[2*(channel-12)+1];
+      else 
+        user_data.terror[4]   |= Terrorset[2*(channel-16)+1];
          ENABLE_INTERRUPTS;
       }
    }
-	//Calculating the rolling average
+  //Calculating the rolling average
    if(user_data.navg<=TAVGMAX && user_data.navg!=0){
       if(cavg==user_data.navg)
          cavg=1;
       else{
          cavg++;
-			if(numavg != user_data.navg)
-         	numavg=cavg;
+      if(numavg != user_data.navg)
+          numavg=cavg;
       }
       for(channel=0; channel<36; channel++){
          Taverage[channel][(cavg-1)] = user_data.Temp[channel];
@@ -546,40 +546,40 @@ void user_loop(void)
             average+=Taverage[channel][avgcount];
          average/=numavg;
          DISABLE_INTERRUPTS;
-	      user_data.AT[channel]=average;
+        user_data.AT[channel]=average;
          ENABLE_INTERRUPTS;
-      }	
+      } 
    }
 #endif
 #ifdef _ExtEEPROM_
    if (EEP_CTR_FLAG){
       //Checking for the special instruction
       if (user_data.eeCtrSet & EEP_CTRL_KEY){
-			//convert the index value to fit the address of the eepage structure, temp offset only
-			if(((int)(user_data.eeCtrSet & 0x000000ff))<TEMPOFF_LAST_INDX)
-	   		eep_address = (int*)(&eepage) + eepageAddrConvert((int)(user_data.eeCtrSet & 0x000000ff));
-   	   else
-				eep_address = (int*)(&eepage) + (int)(user_data.eeCtrSet & 0x000000ff);
-			//Checking for the write request
-			if (user_data.eeCtrSet & EEP_CTRL_WRITE){
-      		if ((user_data.eeCtrSet & 0x000000ff) <= ((SERIALN_ADD - WP_START_ADDR)/2))
-					*eep_address = user_data.eepValue;
-        	  //Checking for the read request
-        	} else if (user_data.eeCtrSet & EEP_CTRL_READ){
-					DISABLE_INTERRUPTS;
-           	 	user_data.eepValue = *eep_address;
-					ENABLE_INTERRUPTS;
-        	} else {
+      //convert the index value to fit the address of the eepage structure, temp offset only
+      if(((int)(user_data.eeCtrSet & 0x000000ff))<TEMPOFF_LAST_INDX)
+        eep_address = (int*)(&eepage) + eepageAddrConvert((int)(user_data.eeCtrSet & 0x000000ff));
+       else
+        eep_address = (int*)(&eepage) + (int)(user_data.eeCtrSet & 0x000000ff);
+      //Checking for the write request
+      if (user_data.eeCtrSet & EEP_CTRL_WRITE){
+          if ((user_data.eeCtrSet & 0x000000ff) <= ((SERIALN_ADD - WP_START_ADDR)/2))
+          *eep_address = user_data.eepValue;
+            //Checking for the read request
+          } else if (user_data.eeCtrSet & EEP_CTRL_READ){
+          DISABLE_INTERRUPTS;
+              user_data.eepValue = *eep_address;
+          ENABLE_INTERRUPTS;
+          } else {
 
-          	   // Tell the user that inappropriate task has been requested
-           	   DISABLE_INTERRUPTS;
-          	   user_data.eepValue = EEP_CTRL_INVAL_REQ;
-          	   ENABLE_INTERRUPTS;
+               // Tell the user that inappropriate task has been requested
+               DISABLE_INTERRUPTS;
+               user_data.eepValue = EEP_CTRL_INVAL_REQ;
+               ENABLE_INTERRUPTS;
          }
-	
-     	} else {
+  
+      } else {
 
-        	// Tell the user that invalid key has been provided
+          // Tell the user that invalid key has been provided
          DISABLE_INTERRUPTS;
          user_data.eepValue = EEP_CTRL_INVAL_KEY;
          ENABLE_INTERRUPTS;
@@ -587,14 +587,14 @@ void user_loop(void)
 
       EEP_CTR_FLAG = CLEAR;
    }
-	//Writing to the EEPROM
+  //Writing to the EEPROM
    if (CeeS){
        //Check if we are here for the first time
       if (!eeprom_flag){
          rCSR = user_data.status;
          //Temporary store the first address of page
          eeptemp_addr = PageAddr[(unsigned char)(user_data.eepage & 0x07)];
-         //Temporary store the first address of data which has to be written		
+         //Temporary store the first address of data which has to be written    
          eeptemp_source = (unsigned char *)&eepage;
       }
       //EPROM clear request
@@ -604,17 +604,17 @@ void user_loop(void)
          eep_request = WRITE_EEPROM;
       
       eeprom_wstatus = ExtEEPROM_Write_Clear (eeptemp_addr
-		                                    , &(eeptemp_source)														
-														, PAGE_SIZE
-														, eep_request       // W / Clear
-														, &eeprom_flag);    // Check to see if 
-																				  //everything has been written
+                                        , &(eeptemp_source)                           
+                            , PAGE_SIZE
+                            , eep_request       // W / Clear
+                            , &eeprom_flag);    // Check to see if 
+                                          //everything has been written
       if (eeprom_wstatus == DONE) {
          SeeS = DONE;
          eeprom_flag = CLEAR;
          CeeS = CLEAR;
       } 
-		else 
+    else 
          SeeS = FAILED;
  
       // Publish Registers state
@@ -623,7 +623,7 @@ void user_loop(void)
       user_data.status  = rCSR;
       ENABLE_INTERRUPTS;
    }
-	//Reading from the EEPROM
+  //Reading from the EEPROM
    if (CeeR) {
       rCSR = user_data.status;
       eeprom_rstatus = ExtEEPROM_Read  (eeptemp_addr,
@@ -632,7 +632,7 @@ void user_loop(void)
          CeeR = CLEAR;
          SeeR = DONE;
       } 
-		else
+    else
          SeeR = FAILED;
 
       // Publish Registers state
@@ -644,56 +644,56 @@ void user_loop(void)
 #endif
 
 #ifdef _HUMSEN_
-	//Measuring the humidity and temperature
+  //Measuring the humidity and temperature
    if(CHum){
       status = HumidSensor_Cmd (&rSHThumi1
-		                         ,&rSHTtemp1
-										 ,&humidity
-										 ,&htemperature
-										 ,&FCSorig1
-										 ,&FCSdevi1
-										 ,humsen1);
-      if (status == DONE){	 
-		  DISABLE_INTERRUPTS;
-	     user_data.SHThumi1 = humidity;
-	     user_data.SHTtemp1 = htemperature;
-		  ENABLE_INTERRUPTS;
+                             ,&rSHTtemp1
+                     ,&humidity
+                     ,&htemperature
+                     ,&FCSorig1
+                     ,&FCSdevi1
+                     ,humsen1);
+      if (status == DONE){   
+      DISABLE_INTERRUPTS;
+       user_data.SHThumi1 = humidity;
+       user_data.SHTtemp1 = htemperature;
+      ENABLE_INTERRUPTS;
       }
   
 #ifdef MORETHANONEHUM
       status = HumidSensor_Cmd (&rSHThumi2
-		                         ,&rSHTtemp2
-										 ,&humidity
-										 ,&htemperature
-										 ,&FCSorig2
-										 ,&FCSdevi2
-										 ,humsen2);	 
+                             ,&rSHTtemp2
+                     ,&humidity
+                     ,&htemperature
+                     ,&FCSorig2
+                     ,&FCSdevi2
+                     ,humsen2);  
       if (status == DONE){
-			DISABLE_INTERRUPTS;	 
-	      user_data.SHThumi2 = humidity;
-	      user_data.SHTtemp2 = htemperature;
-			ENABLE_INTERRUPTS;
+      DISABLE_INTERRUPTS;  
+        user_data.SHThumi2 = humidity;
+        user_data.SHTtemp2 = htemperature;
+      ENABLE_INTERRUPTS;
       }
 #endif
    }
 #endif 
 
 #ifdef _LTC2600_
-	//DAC
+  //DAC
    if(LTC2600_FLAG){
       LTC2600_Cmd(WriteTo_Update,LTC2600_LOAD[DACIndex], user_data.DAC[DACIndex]);
       LTC2600_FLAG = CLEAR;
    }
 #endif
-	
-	if(Cref){
-		autocalibration(user_data.ref);
-		Sref = 1;
-		Cref = 0;
-		DISABLE_INTERRUPTS;
-		user_data.status=rCSR;
-		user_data.control=rCTL;
-		ENABLE_INTERRUPTS; 
-	}
- 	led_blink(1, 1, 250);
+  
+  if(Cref){
+    autocalibration(user_data.ref);
+    Sref = 1;
+    Cref = 0;
+    DISABLE_INTERRUPTS;
+    user_data.status=rCSR;
+    user_data.control=rCTL;
+    ENABLE_INTERRUPTS; 
+  }
+  led_blink(1, 1, 250);
 }
