@@ -23,25 +23,7 @@
 #include "../mscbemb.h"
 #include "../Protocols/SMBus_handler.h"
 #include "LTC1669_dac.h"
-extern  unsigned long xdata smbdebug;
-static unsigned long xdata  lcounter=0;
 
-void dowhile(char *busy, char location)
-{
-	char timeout = 0;
-	while (*busy && (timeout < 100)) {
-     timeout++;
-	  delay_ms(5);
-	}
- 	if (timeout >= 100) {
-    SFRPAGE = 0;
-	  smbdebug =  ((unsigned long)location << 24) 
-                | ((lcounter++) <<  16)
-                | (SMB0DAT << 8) 
-                |  SMB0STA;
-     *busy = 0;
-   }
-}
 //
 //-------------------------------------------------------------------
 /**
