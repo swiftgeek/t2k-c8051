@@ -186,7 +186,7 @@ System Shutdown                                      0x40
 Manual card shutdown                                 0x80
 
 MSCB(4): EEPage     8bit U               0 (0x00/00000000) (WO)
-EEPAGE number                                      [0..2]
+EEPAGE number                                      [0..3]
 @endcode
 
 @section Location
@@ -656,7 +656,9 @@ The standard FEB64 firmware doesn't contain any code for Write access to the pro
 ensuring a safe storage method for the main parameter i.e: Serial Number (S/N).
 To simplify the handling of this eepage, a unique structure maps all the necessary parameters
 following the S/N located as first element of the structure. The size of the structure can therefore
-not be larger then a quarter of the total memory providing a maximum of 3 R/W accessible pages.
+not be larger then a quarter of the total memory providing a maximum of 3 R/W [0..2] accessible pages.
+
+<b>Note</b>  Protected page is accessible in ReadOnly at page [3].
 
 The current structure is:
 @code
@@ -687,7 +689,7 @@ float vBiasOffset[8];
 @endcode
 
 The Write operation requires extra time. The completion of the Write operation is confirmed
-when and only when the control bit is turned off.
+when and only when the control bit is turned off, status will reflect operation completion.
 
 @section feb64-eeprom MSCB Registers
 @code
@@ -700,12 +702,12 @@ MSCB(3): Status     8bit U               3 (0x03/00000011) (RO)
 EEPAGEx save operation complete                      0x10
 EEPAGEx restore operation complete                   0x20
 MSCB(4): EEPage     8bit U               0 (0x00/00000000) (WO)
-EEPAGE number                                       [0..2]
+EEPAGE number                                       [0..3]
 @endcode
 
 @section Operation
 The following steps will be used to store data into the page 2 of the external EEPROM.
--# w 4 2      // Set EEpage to access
+-# w 4 2      // Set EEpage 2 to access
 -# w 2 0x10   // Initiate Save command
 -# Wait for control bit turned off and status turned on.
 
