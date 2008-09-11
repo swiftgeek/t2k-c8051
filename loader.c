@@ -54,15 +54,15 @@
  /*---- User init function ------------------------------------------*/
  void user_init(unsigned char init)
  {
- 	char xdata add;
+	char xdata pca_add=0;
+ 	unsigned int xdata crate_add=0, board_address=0;
 
   if (init) {}
 
 	// Initialize control and status
   user_data.control = 0;
 	user_data.status = 0;
- 	add = cur_sub_addr();
-  sys_info.node_addr = 1;
+  sys_info.node_addr = cur_sub_addr();
 	EEPROM_FLAG=0;
  //
  // Initial setting for communication and overall ports (if needed).
@@ -92,17 +92,31 @@
    P2MDOUT |= 0x18; // Setting the SPI_MOSI and SPI_SCK to push pull
 	P2MDOUT &= 0xFE; // Setting the RAM_WPn to open drain
 #endif	
+
 #ifdef _PCA9539_
-   PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
-	 PCA9539_WriteByte(BACKPLANE_INPUT_ENABLE);
-	
-	// Physical backplane address retrieval
-	//-----------------------------------------------------------------------------
-  PCA9539_Read(BACKPLANE_READ, &add, 1);
-	sys_info.node_addr = add;
+  //
+  // Physical backplane address retrieval
+  //-----------------------------------------------------------------------------
+  SFRPAGE = CONFIG_PAGE;
+  P1MDOUT |= 0x08;
+  PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
+  delay_us(10);
+  //Write to the PCA register for setting 1.x to input
+  PCA9539_WriteByte(BACKPLANE_INPUT_ENABLE);
+  delay_us(10);
+  PCA9539_Read(BACKPLANE_READ, &pca_add, 1);
+  //C C C C C C 0 B B is the MSCB Addr[8..0], 9 bits
+  //Modifying what the board reads from the PCA
+  //Externally, the crate address are reversed
+  crate_add= ((~pca_add)<<1)  & 0x01F8;
+  //Internally, the board address are not reversed
+  board_address = crate_add | ((pca_add) & 0x0003);
+  sys_info.node_addr   = board_address;
 #endif
 	
+//
 // Adjust Node name based on the type of Board
+//-----------------------------------------------------------------------------
 #ifdef L_TEMP36
   sprintf(sys_info.node_name,"TEMP36");
 #elif defined(L_FEB64)
@@ -113,12 +127,13 @@
   sprintf(sys_info.node_name,"LPB");
 #endif
    
-  // Check if EEPROM size is lartge enough for structure
-	if(ExtEEPROM_Init(NUMBER_PAGES, PAGE_SIZE))
-	{
-	  user_data.status = (1<<7);
-	}
- }
+// Initialize EEPAGE access (SPI)
+	if(ExtEEPROM_Init(PAGE_SIZE)) {
+    DISABLE_INTERRUPTS;
+    user_data.status = 0xFF;
+    ENABLE_INTERRUPTS;
+  }
+}
 
 /*---- User write function -----------------------------------------*/
  #pragma NOAREGS
