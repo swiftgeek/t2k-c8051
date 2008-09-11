@@ -12,10 +12,13 @@
 #define _SHT7x_PROTOCOL_H
 
 sbit SHT7x_DATA1 = SHT_DATA1;
-sbit SHT7x_SCK1 = SHT_SCK1;
+sbit SHT7x_SCK1  = SHT_SCK1;
 
+#ifdef MORETHANONEHUM
 sbit SHT7x_DATA2 = SHT_DATA2;
-sbit SHT7x_SCK2 = SHT_SCK2;
+sbit SHT7x_SCK2  = SHT_SCK2;
+#endif
+
 //#define SHT7x_DELAY	1 //in us
 #define SHT7x_DELAY       5
 #define SHT7x_SHORT_DELAY 0.3
