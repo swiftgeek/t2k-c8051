@@ -1,7 +1,7 @@
 /*****************************************************************************
 /*
   Name:         LTC1665_dac.h
-  Created by:   Bahman Sotoodian  								Jan/21/2008
+  Created by:   Bahman Sotoodian  	          Jan/21/2008
 
 
   Contents:     LTC1665 DAC user interface
