@@ -1,36 +1,26 @@
 ### uVision2 Project, (C) Keil Software
 ### Do not modify !
 
-Target (temp36), 0x0000 // Tools: 'MCS-51'
+Target (Target 1), 0x0000 // Tools: 'MCS-51'
 
-Group (Source Group 1)
-Group (Protocols)
-Group (Header Files)
 Group (Devices)
+Group (Protocol)
+Group (Source)
 
-File 1,2,<.\STARTUP.A51><STARTUP.A51>
-File 1,1,<.\temp36.c><temp36.c>
-File 1,1,<.\mscbutil.c><mscbutil.c>
-File 1,1,<.\mscbmain.c><mscbmain.c>
+File 1,1,<.\Devices\AD5300.c><AD5300.c>
+File 1,1,<.\Devices\adc_internal.c><adc_internal.c>
+File 1,1,<.\Devices\ADT7486A_tsensor.c><ADT7486A_tsensor.c>
+File 1,1,<.\Devices\ExtEEPROM.c><ExtEEPROM.c>
+File 1,1,<.\Devices\Humidity_sensor.c><Humidity_sensor.c>
 File 2,1,<.\Protocols\SHT7x_protocol.c><SHT7x_protocol.c>
-File 2,5,<.\Protocols\SHT7x_protocol.h><SHT7x_protocol.h>
-File 2,1,<.\Protocols\SPI_handler.c><SPI_handler.c>
-File 2,5,<.\Protocols\SPI_handler.h><SPI_handler.h>
 File 2,1,<.\Protocols\SST_handler.c><SST_handler.c>
-File 2,5,<.\Protocols\SST_handler.h><SST_handler.h>
-File 3,5,<.\mscbemb.h><mscbemb.h>
-File 3,5,<.\temp36.h><temp36.h>
-File 4,1,<.\Devices\ADT7486A_tsensor.c><ADT7486A_tsensor.c>
-File 4,5,<.\Devices\ADT7486A_tsensor.h><ADT7486A_tsensor.h>
-File 4,1,<.\Devices\ExtEEPROM.c><ExtEEPROM.c>
-File 4,5,<.\Devices\ExtEEPROM.h><ExtEEPROM.h>
-File 4,1,<.\Devices\Humidity_sensor.c><Humidity_sensor.c>
-File 4,5,<.\Devices\Humidity_sensor.h><Humidity_sensor.h>
-File 4,1,<.\Devices\LTC2600_dac.c><LTC2600_dac.c>
-File 4,5,<.\Devices\LTC2600_dac.h><LTC2600_dac.h>
+File 2,1,<.\Protocols\SPI_handler.c><SPI_handler.c>
+File 3,1,<.\lpb.c><lpb.c>
+File 3,1,<.\mscbmain.c><mscbmain.c>
+File 3,1,<.\mscbutil.c><mscbutil.c>
 
 
-Options 1,0,0  // Target 'temp36'
+Options 1,0,0  // Target 'Target 1'
  Device (C8051F133)
  Vendor (Silicon Laboratories, Inc.)
  Cpu (IRAM(0-0xFF) XRAM(0-0x1FFF) IROM(0-0xFFFF) CLOCK(100000000) MDU_F120)
@@ -56,16 +46,16 @@ Options 1,0,0  // Target 'temp36'
  OrgReg (ÿCygnal\)
  TgStat=16
  OutDir (.\)
- OutName (temp36)
+ OutName (lpb)
  GenApp=1
  GenLib=0
- GenHex=1
+ GenHex=0
  Debug=1
  Browse=1
  LstDir (.\)
  HexSel=0
  MG32K=0
- TGMORE=1
+ TGMORE=0
  RunUsr 0 0 <>
  RunUsr 1 0 <>
  BrunUsr 0 0 <>
@@ -94,7 +84,7 @@ Options 1,0,0  // Target 'temp36'
  C51FL=21630224
  C51VA=0
  C51MSC ()
- C51DEF (TEMP36 _ADT7486A_ _ExtEEPROM_   _LTC2600_ _HUMSEN_ MORETHANONEHUM)
+ C51DEF (LPB _ADT7486A_  _AD5300_ _ExtEEPROM_ _HUMSEN_)
  C51UDF ()
  INCC5 ()
  AX51FL=4
@@ -137,10 +127,10 @@ Options 1,0,0  // Target 'temp36'
  LX51DAS ()
  LX51IDS ()
   OPTDL (S8051.DLL)()(DCYG.DLL)(-pCYGF133)(S8051.DLL)()(TCYG.DLL)(-pCYGF133)
-  OPTDBG 48126,8,()()()()()()()()()() (BIN\SiC8051F.dll)()()()
- FLASH1 { 1,0,0,0,0,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0 }
+  OPTDBG 48125,-1,()()()()()()()()()() ()()()()
+ FLASH1 { 0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0 }
  FLASH2 ()
- FLASH3 ("" ())
+ FLASH3 ()
  FLASH4 ()
 EndOpt
 
