@@ -350,17 +350,17 @@ float read_voltage(unsigned char channel,unsigned int *rvalue,  float coeff, flo
 //
 //-----------------------------------------------------------------------------
 //converts channel index to eepage structure offset address
-int eepageAddrConvert(unsigned int index)
-{
-  int add;
-  //if index is even
-  if(!(index%2))
-    add=index/2+4;
-  //if index is odd
-  else
-    add=index/2;
-  return add;
-}
+//int eepageAddrConvert(unsigned int index)
+//{
+//  int add;
+//  //if index is even
+//  if(!(index%2))
+//    add=index/2+4;
+//  //if index is odd
+//  else
+//    add=index/2;
+//  return add;
+//}
 //
 //
 //-----------------------------------------------------------------------------
@@ -460,7 +460,7 @@ void switchonoff(unsigned char command)
 
     // Activate 64 bias dac settings
     // user_data contains correct values, force update 
-    // by setting mirror to 0 
+    // by setting mirror to 0xff 
     for(i=0;i<64;i++) {
       ltc1665mirror[i] = 0xFF;
     }
@@ -1253,39 +1253,33 @@ void user_loop(void) {
 
   //
   //-----------------------------------------------------------------------------
-  //Checking the eeprom control flag
+  // Checking the eeprom control flag
   if (EEP_CTR_Flag) {
     watchdog(16);
     //Checking for the special instruction
     if (user_data.eeCtrSet & EEP_CTRL_KEY) {
-      //convert the index value to fit the address of the eepage structure (temperature offset only)
-      if((TEMPOFF_INDX<(int)(user_data.eeCtrSet & 0x000000ff))
-        && ((int)(user_data.eeCtrSet & 0x000000ff)<TEMPOFF_LAST_INDX))
-        eep_address = (float*)&eepage + eepageAddrConvert((int)(user_data.eeCtrSet & 0x000000ff));
-      else
+      // convert the index value to fit the address of the eepage structure
+      //
+      if( (int)(user_data.eeCtrSet & 0x000000ff) >= EEP_RW_IDX) {
+        // Float area from EEP_RW_IDX, count in Float size, No upper limit specified!
         eep_address = (float*)&eepage + (user_data.eeCtrSet & 0x000000ff);
+      }
+
       //Checking for the write request
       if (user_data.eeCtrSet & EEP_CTRL_WRITE){
-        //NW added (SERIALN_ADD - WP_START_ADDR) is divided by 4 because the pointer
-        // moves by 4 bytes for every increment
-        if ((user_data.eeCtrSet & 0x000000ff) <= ((SERIALN_ADD - WP_START_ADDR)/4))
           *eep_address = user_data.eepValue;
-        //Checking for the read request
-      }
-      else if (user_data.eeCtrSet & EEP_CTRL_READ) {
+      //Checking for the read request
+      } else if (user_data.eeCtrSet & EEP_CTRL_READ) {
         DISABLE_INTERRUPTS;
         user_data.eepValue = *eep_address;
         ENABLE_INTERRUPTS;
-      }
-      else {
+      } else {
         // Tell the user that inappropriate task has been requested
         DISABLE_INTERRUPTS;
         user_data.eepValue = EEP_CTRL_INVAL_REQ;
         ENABLE_INTERRUPTS;
       }
-
-    }
-    else {
+    }    else {
       // Tell the user that invalid key has been provided
       DISABLE_INTERRUPTS;
       user_data.eepValue = EEP_CTRL_INVAL_KEY;
@@ -1305,7 +1299,6 @@ void user_loop(void) {
       rCSR = user_data.status;
 
       // Update eepage with the current user_data variables
-      // expected to be found in the eepage
       for(i=0;i<8;i++)
         eepage.rasum[i] = user_data.rAsum[i];
       for(i=0;i<64;i++) {
@@ -1368,7 +1361,24 @@ void user_loop(void) {
     } else
       SeeR = FAILED;
 
-    // Publish Qpump state
+    // Publish user_data new settings
+    DISABLE_INTERRUPTS;
+    for(i=0;i<8;i++)
+      user_data.rAsum[i] = eepage.rasum[i];
+    for(i=0;i<64;i++) {
+      user_data.rBias[i] = ltc1665mirror[i] = eepage.rbias[i];
+    }
+    // Force a DAC Setting on next loop
+    bDacdoitNOW = ON;
+
+    user_data.rQpump = (char) (eepage.rqpump & 0xFF);
+    user_data.swBias = eepage.SWbias;
+
+    ENABLE_INTERRUPTS;
+
+    // Update adc2mscb_table[adcChannel].Offst values for current and offset
+    updateAdc2Table();
+    
     // Publish Registers state
     DISABLE_INTERRUPTS;
     user_data.control = rCTL;
