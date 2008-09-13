@@ -103,8 +103,8 @@ MSCB_INFO_VAR code vars[] = {
   1, UNIT_BYTE,      0, 0,           0, "watchdog",              &user_data.spare1,    // 28
   2, UNIT_BYTE,      0, 0,           0, "spare2",                &user_data.spare2,    // 29
 
-  4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "eepValue",        &user_data.eepValue,  // 30
-  4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "eeCtrSet",        &user_data.eeCtrSet,  // 31
+  4, UNIT_BYTE,      0, 0, MSCBF_FLOAT, "eepValue",              &user_data.eepValue,  // 30
+  4, UNIT_BYTE,      0, 0,           0, "eeCtrSet",              &user_data.eeCtrSet,  // 31
   0
 };
 
@@ -266,8 +266,14 @@ void user_init(unsigned char init)
   ADT7486A_Init(SST_LINE1); //NW modified ADT7486A to support more than one line
 
   ADT7486A_Cmd( ADT7486A_ADDR0, SetExt1Offset
-             , ((int)eepage.sstOffset[channel]>>8)
-             ,  (int)eepage.sstOffset[channel]
+             , ((int)eepage.sstOffset[0]>>8)
+             ,  (int)eepage.sstOffset[0]
+             , SST_LINE1
+             , &temperature); //NW
+
+  ADT7486A_Cmd( ADT7486A_ADDR0, SetExt2Offset
+             , ((int)eepage.sstOffset[0]>>8)
+             ,  (int)eepage.sstOffset[0]
              , SST_LINE1
              , &temperature); //NW
 #endif
@@ -464,34 +470,35 @@ void user_loop(void) {
   if (EEP_CTR_FLAG) {
     //Checking for the special instruction
     if (user_data.eeCtrSet & EEP_CTRL_KEY) {
-      // convert the index value to fit the address of the eepage structure
-      //
+      // Valid index range
       if( (int)(user_data.eeCtrSet & 0x000000ff) >= EEP_RW_IDX) {
         // Float area from EEP_RW_IDX, count in Float size, No upper limit specified!
         eep_address = (float*)&eepage + (user_data.eeCtrSet & 0x000000ff);
-      }
-
-      //Checking for the write request
-      if (user_data.eeCtrSet & EEP_CTRL_WRITE){
+        //Checking for the write request
+        if (user_data.eeCtrSet & EEP_CTRL_WRITE){
           *eep_address = user_data.eepValue;
-      //Checking for the read request
-      } else if (user_data.eeCtrSet & EEP_CTRL_READ) {
-        DISABLE_INTERRUPTS;
-        user_data.eepValue = *eep_address;
-        ENABLE_INTERRUPTS;
+        //Checking for the read request
+        } else if (user_data.eeCtrSet & EEP_CTRL_READ) {
+          DISABLE_INTERRUPTS;
+          user_data.eepValue = *eep_address;
+          ENABLE_INTERRUPTS;
+        } else {
+          // Tell the user that inappropriate task has been requested
+          DISABLE_INTERRUPTS;
+          user_data.eeCtrSet = EEP_CTRL_INVAL_REQ;
+          ENABLE_INTERRUPTS;
+        }
       } else {
-        // Tell the user that inappropriate task has been requested
         DISABLE_INTERRUPTS;
-        user_data.eepValue = EEP_CTRL_INVAL_REQ;
+        user_data.eeCtrSet = EEP_CTRL_OFF_RANGE;
         ENABLE_INTERRUPTS;
       }
-    }    else {
-      // Tell the user that invalid key has been provided
-      DISABLE_INTERRUPTS;
-      user_data.eepValue = EEP_CTRL_INVAL_KEY;
-      ENABLE_INTERRUPTS;
-    }
-
+   } else {
+    // Tell the user that invalid key has been provided
+    DISABLE_INTERRUPTS;
+    user_data.eeCtrSet = EEP_CTRL_INVAL_KEY;
+    ENABLE_INTERRUPTS;
+   }
     EEP_CTR_FLAG = CLEAR;
   }  // if eep
 

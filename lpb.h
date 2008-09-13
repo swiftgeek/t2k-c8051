@@ -37,6 +37,7 @@ unsigned char bdata rESR;
 sbit IntssTT   = rESR ^ 0;
 sbit Ext1ssTT  = rESR ^ 1;
 sbit Ext2ssTT  = rESR ^ 2;
+sbit EEPerror  = rESR ^ 3;
 
 #define IGAIN1  0
 #define IGAIN2  1
@@ -62,19 +63,24 @@ float code offset[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 //The EEPROM is separated into a total of 4 pages, 0x600 is the WP page
 unsigned int xdata PageAddr[]={0x0, 0x200, 0x400, 0x600};
 
-//The structure of each EEPAGE
+// The structure of each EEPAGE
 struct EEPAGE {
   unsigned long SerialN;
   unsigned int structsze; 
+  unsigned int spare; 
   float sstOffset[2];
 };
 
 //+/- 16 increments corresponds to a +/- 0.25 degrees offset in the ADT7486A chip
 //Initial values for eepage
 struct EEPAGE xdata eepage={
-   0,    // S/N
+// 0x00 - S/N
+   0,   
+// 0x01 - 
    0,
-   0.0, 0.0  // SST Offset
+   0xaabb,
+// 0x02 - SST offset
+   0.0, 0.0  
 };
 
 #define PAGE_SIZE sizeof(eepage)
@@ -82,8 +88,9 @@ struct EEPAGE xdata eepage={
 #define EEP_CTRL_KEY        0x3C000000
 #define EEP_CTRL_READ       0x00110000
 #define EEP_CTRL_WRITE      0x00220000
-#define EEP_CTRL_INVAL_REQ -100
-#define EEP_CTRL_INVAL_KEY -10
+#define EEP_CTRL_INVAL_REQ  0xff000000
+#define EEP_CTRL_INVAL_KEY  0x00ff0000
+#define EEP_CTRL_OFF_RANGE  0x0000ff00
 #define EEP_RW_IDX          0x02   // (I*4) 
 #define SERIALN_ADD         0x600
 
@@ -105,8 +112,8 @@ float riadc[8];
 unsigned char rdac;
 char spare1;
 int  spare2;
-unsigned long eepValue;    //EEPROM Value to be stored/read
-long          eeCtrSet;     //Initiate changing the offset values
+float          eepValue;    //EEPROM Value to be stored/read
+unsigned long  eeCtrSet;     //Initiate changing the offset values
 };
 struct user_data_type xdata user_data;
 
