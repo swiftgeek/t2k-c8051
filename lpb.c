@@ -6,6 +6,11 @@ Created on:   August/6/2008
 Contents:     Application specific (user) part of
               Midas Slow Control for LPB board.
 
+// P3.7:A7       .6:A6        .5:A5       .4:A4      | .3:A3      .2:A2       .1:A1      .0:A0 
+// P2.7:+1.8En   .6:+3.3En    .5:+5En     .4:SPIMOSI | .3:SPISCK  .2:RAMHLDn  .1:SPIMISO .0:RAMWP
+// P1.7:NC       .6:+6ddFlag  .5:R/HClock .4:R/HData | .3:+6ddEN  .2:RAMCS    .1:D2ASync .0:SST_DRV 
+// P0.7:NC       .6:NC        .5:485TXEN  .4:NC      | .3:NC      .2:NC       .1:Rx      .0:Tx 
+
 $Id$
 \********************************************************************/
 
@@ -52,7 +57,7 @@ unsigned int  xdata rSHTtemp1, rSHThumi1;
 unsigned char xdata FCSorig1, FCSdevi1;
 
 //EEPROM variables
-int* xdata eep_address;
+float* xdata eep_address;
 static unsigned char tcounter;
 static unsigned char xdata eeprom_flag=CLEAR;
 unsigned char xdata eeprom_wstatus, eeprom_rstatus;
@@ -83,7 +88,7 @@ MSCB_INFO_VAR code vars[] = {
   4, UNIT_CELSIUS,   0, 0, MSCBF_FLOAT, "33Temp",                &user_data._33Temp,   // 16
 
   4, UNIT_CELSIUS,   0, 0, MSCBF_FLOAT, "SHTtemp",               &user_data.SHTtemp,   // 17
-  4, 10,             0, 0, MSCBF_FLOAT, "RHumid",                &user_data.SHThumi,   // 18
+  4, UNIT_PERCENT,   0, 0, MSCBF_FLOAT, "RHumid",                &user_data.SHThumi,   // 18
 
   4, UNIT_BYTE,      0, 0, MSCBF_FLOAT, "DtoAshft",              &user_data.riadc[0],  // 19
   4, UNIT_BYTE,      0, 0, MSCBF_FLOAT, "rpDVsc",                &user_data.riadc[1],  // 20
@@ -140,6 +145,7 @@ Application specific init and in/output routines
 /*---- User init function ------------------------------------------*/
 void user_init(unsigned char init)
 {
+  float xdata temperature;
   unsigned char xdata pca_add=0;
   unsigned int xdata crate_add=0, board_address=0;
   if(init) {
@@ -187,9 +193,10 @@ void user_init(unsigned char init)
 
   ADT7486A_Init(SST_LINE1);
 #endif
-  //
-  // LED DAC
-  //-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------
+//
+// LED DAC
 #ifdef _AD5300_
   SFRPAGE  = CONFIG_PAGE;
   P1MDOUT |= 0x02; // Setting the DtoA_SYNC push pull
@@ -197,28 +204,31 @@ void user_init(unsigned char init)
   AD5300_Init();
 #endif
 
+//---------------------------------------------------------------
+//
+// EEPROM access
 #ifdef _ExtEEPROM_
   SFRPAGE  = CONFIG_PAGE;
-  P2MDOUT &= 0xFE; // Setting the RAM_WPn to open drain
-  P1MDOUT |= 0x04; // Setting the RAM_CSn to push pull
-  P2MDOUT |= 0x18; // Setting the SPI_MOSI, SPI_SCK to push pull
+  P3MDOUT  = 0x00; // Crate address in OD
+  P2MDOUT |= 0x18; // SPI_MOSI, SPI_SCK in PP
+  P2MDOUT &= 0xFE; // RAM_WPn in OD
+  P1MDOUT |= 0x04; // RAM_CSn in PP
+  P0MDOUT |= 0x20; // RS485_ENABLE in PP
   ExtEEPROM_Init();
 
   //Get serial number from write protected area
-  ExtEEPROM_Read  (WP_START_ADDR
-                  , (unsigned char*)&eepage
-                  , PAGE_SIZE);
+  ExtEEPROM_Read  (WP_START_ADDR, (unsigned char*)&eepage, PAGE_SIZE);
   DISABLE_INTERRUPTS;
-  user_data.SerialN = (float)eepage.SerialN;
+  user_data.SerialN = eepage.SerialN;
   ENABLE_INTERRUPTS;
 
   //Refer to the first Page of the non_protected area
-  ExtEEPROM_Read  (PageAddr[0]
-  ,(unsigned char*)&eepage
-    ,PAGE_SIZE);
+  ExtEEPROM_Read  (PageAddr[0], (unsigned char*)&eepage ,PAGE_SIZE);
 #endif
 
-  //Humidity sensor initialization
+//---------------------------------------------------------------
+//
+//Humidity sensor initialization
 #ifdef _HUMSEN_
   SFRPAGE  = CONFIG_PAGE;
   P1MDOUT |= 0x20;  // P1.5:CLK(PP), P1.4:DATA 10K PullUp (OD)
@@ -229,13 +239,41 @@ void user_init(unsigned char init)
   user_data.SHThumi = 0;
 #endif
 
-  //Configure and read the address
-  //C C C C C C 1 0 1 is the MSCB Addr[8..0], 9 bits
-  //Modifying what the board reads from the Pins
+// P3.7:A7       .6:A6        .5:A5       .4:A4      | .3:A3      .2:A2       .1:A1      .0:A0 
+// P2.7:+1.8En   .6:+3.3En    .5:+5En     .4:SPIMOSI | .3:SPISCK  .2:RAMHLDn  .1:SPIMISO .0:RAMWP
+// P1.7:NC       .6:+6ddFlag  .5:R/HClock .4:R/HData | .3:+6ddEN  .2:RAMCS    .1:D2ASync .0:SST_DRV 
+// P0.7:NC       .6:NC        .5:485TXEN  .4:NC      | .3:NC      .2:NC       .1:Rx      .0:Tx 
+
+//---------------------------------------------------------------
+//
+// Configure and read the address
+// C C C C C C 1 0 1 is the MSCB Addr[8..0], 9 bits
+// Modifying what the board reads from the Pins
   pca_add= P3;
   board_address= (((~pca_add)<<1) & 0x01F8)| 0x0005;
   sys_info.node_addr   = board_address;
 
+//---------------------------------------------------------------
+// SST Temperatures, setting temperature offsets
+#ifdef _ADT7486A_
+  SFRPAGE  = CONFIG_PAGE;
+  P1MDOUT |= 0x01; // Setting the SST_DRV (SST) to push pull
+  SFRPAGE  = CPT1_PAGE;
+  CPT1CN  |= 0x80; // Enable the Comparator 1
+  CPT1MD   = 0x03; //Comparator1 Mode Selection
+  //Use default, adequate TYP (CP1 Response Time, no edge triggered interrupt)
+
+  ADT7486A_Init(SST_LINE1); //NW modified ADT7486A to support more than one line
+
+  ADT7486A_Cmd( ADT7486A_ADDR0, SetExt1Offset
+             , ((int)eepage.sstOffset[channel]>>8)
+             ,  (int)eepage.sstOffset[channel]
+             , SST_LINE1
+             , &temperature); //NW
+#endif
+
+//---------------------------------------------------------------
+//
   P1MDOUT |= 0x08;
   VCC_EN = OFF;
   P2MDOUT |= 0xE0;
@@ -284,7 +322,7 @@ unsigned char user_func(unsigned char *data_in, unsigned char *data_out)
 //-----------------------------------------------------------------------------
 void user_loop(void) {
 
-  float xdata volt,temperature;
+  float xdata volt, temperature;
   unsigned int xdata rvolt;
 
   // Watchdog
@@ -370,7 +408,7 @@ void user_loop(void) {
   //
   // Internal temperature reading
 #ifdef _ADT7486A_
-  if(!ADT7486A_Cmd(ADT7486A_address, GetIntTemp, SST_LINE1, &temperature)){
+  if(!ADT7486A_Cmd(ADT7486A_ADDR0, GetIntTemp, SST_LINE1, &temperature)){
     IntssTT = CLEAR;
     DISABLE_INTERRUPTS;
     user_data.IntTemp = temperature;
@@ -387,7 +425,7 @@ void user_loop(void) {
   //-----------------------------------------------------------------------------
   //
   // External temperature readings
-  if(!ADT7486A_Cmd(ADT7486A_address, GetExt1Temp, SST_LINE1, &temperature)){
+  if(!ADT7486A_Cmd(ADT7486A_ADDR0, GetExt1Temp, SST_LINE1, &temperature)){
     Ext1ssTT = CLEAR;
     DISABLE_INTERRUPTS;
     user_data._58Temp = temperature;
@@ -402,7 +440,7 @@ void user_loop(void) {
 
   delay_us(500);
 
-  if(!ADT7486A_Cmd(ADT7486A_address, GetExt2Temp, SST_LINE1, &temperature)){
+  if(!ADT7486A_Cmd(ADT7486A_ADDR0, GetExt2Temp, SST_LINE1, &temperature)){
     Ext2ssTT = CLEAR;
     DISABLE_INTERRUPTS;
     user_data._33Temp = temperature;
@@ -419,29 +457,35 @@ void user_loop(void) {
   //
   //-----------------------------------------------------------------------------
 #ifdef _ExtEEPROM_
-  if (EEP_CTR_FLAG){
+
+  //
+  //-----------------------------------------------------------------------------
+  // Checking the eeprom control flag
+  if (EEP_CTR_FLAG) {
     //Checking for the special instruction
-    if (user_data.eeCtrSet & EEP_CTRL_KEY){
-      eep_address = (int*)(&eepage) + (int)(user_data.eeCtrSet & 0x000000ff);
+    if (user_data.eeCtrSet & EEP_CTRL_KEY) {
+      // convert the index value to fit the address of the eepage structure
+      //
+      if( (int)(user_data.eeCtrSet & 0x000000ff) >= EEP_RW_IDX) {
+        // Float area from EEP_RW_IDX, count in Float size, No upper limit specified!
+        eep_address = (float*)&eepage + (user_data.eeCtrSet & 0x000000ff);
+      }
+
       //Checking for the write request
       if (user_data.eeCtrSet & EEP_CTRL_WRITE){
-        if ((user_data.eeCtrSet & 0x000000ff) <= ((SERIALN_ADD - WP_START_ADDR)/2))
           *eep_address = user_data.eepValue;
-        //Checking for the read request
-      } else if (user_data.eeCtrSet & EEP_CTRL_READ){
+      //Checking for the read request
+      } else if (user_data.eeCtrSet & EEP_CTRL_READ) {
         DISABLE_INTERRUPTS;
         user_data.eepValue = *eep_address;
         ENABLE_INTERRUPTS;
       } else {
-
         // Tell the user that inappropriate task has been requested
         DISABLE_INTERRUPTS;
         user_data.eepValue = EEP_CTRL_INVAL_REQ;
         ENABLE_INTERRUPTS;
       }
-
-    } else {
-
+    }    else {
       // Tell the user that invalid key has been provided
       DISABLE_INTERRUPTS;
       user_data.eepValue = EEP_CTRL_INVAL_KEY;
@@ -449,7 +493,7 @@ void user_loop(void) {
     }
 
     EEP_CTR_FLAG = CLEAR;
-  }
+  }  // if eep
 
   //
   //-----------------------------------------------------------------------------

@@ -20,8 +20,10 @@ bit AD5300_FLAG;
 #define VREF       2.50f
 
 // ADT7486A temperature addresses
-#define ADT7486A_address 0x4C
-#define SST_LINE1           1
+#define ADT7486A_ADDR0    0x4C
+#define NCHANNEL_ADT7486A    1
+#define SST_LINE1            1
+
 // Global definition
 #define CLEAR    0
 #define SET      1
@@ -63,6 +65,7 @@ unsigned int xdata PageAddr[]={0x0, 0x200, 0x400, 0x600};
 //The structure of each EEPAGE
 struct EEPAGE {
   unsigned long SerialN;
+  unsigned int structsze; 
   float sstOffset[2];
 };
 
@@ -70,7 +73,8 @@ struct EEPAGE {
 //Initial values for eepage
 struct EEPAGE xdata eepage={
    0,    // S/N
-   0, 0  // SST Offset
+   0,
+   0.0, 0.0  // SST Offset
 };
 
 #define PAGE_SIZE sizeof(eepage)
@@ -80,7 +84,8 @@ struct EEPAGE xdata eepage={
 #define EEP_CTRL_WRITE      0x00220000
 #define EEP_CTRL_INVAL_REQ -100
 #define EEP_CTRL_INVAL_KEY -10
-#define SERIALN_ADD         0x64A
+#define EEP_RW_IDX          0x02   // (I*4) 
+#define SERIALN_ADD         0x600
 
 /*---- Define variable parameters returned to CMD_GET_INFO command ----*/
 struct user_data_type {
@@ -122,6 +127,10 @@ sbit SeeS   = rCSR ^ 4;
 sbit SeeR   = rCSR ^ 5;
 sbit SmSd   = rCSR ^ 7;
 
+//---------------------------------------------------------------
+// P2.7:+1.8En   .6:+3.3En    .5:+5En     .4:SPIMOSI | .3:SPISCK  .2:RAMHLDn  .1:SPIMISO .0:RAMWP
+// P1.7:NC       .6:+6ddFlag  .5:R/HClock .4:R/HData | .3:+6ddEN  .2:RAMCS    .1:D2ASync .0:SST_DRV 
+//
 sbit VCC_EN =  P1 ^ 3;
 sbit VREG_5 =  P2 ^ 5;
 sbit VREG_3 =  P2 ^ 6;
