@@ -30,13 +30,15 @@ unsigned int xdata page_addr[] = {0x000,0x200,0x400,0x600};
 
 #define BACKPLANE_INPUT_ENABLE ADDR_PCA9539, PCA9539_CONFIG1, PCA9539_ALL_INPUT
 #define BACKPLANE_READ			   ADDR_PCA9539, PCA9539_INPUT1	 
-
+#define SERIALN_LENGTH         4
+ 
 /*---- Define variable parameters returned to CMD_GET_INFO command ----*/
 struct{
+	unsigned long serialN;     
 	unsigned char control;       
 	unsigned char eepage;
 	unsigned char status;	
-	unsigned long serialN;     
+  unsigned int  structsze;
 }xdata user_data;
 
 bit EEPROM_FLAG;
@@ -156,13 +158,21 @@ struct EEPAGE xdata eepage = {
 //
 //-----------------------------------------------------------------------------
 #elif defined(L_LPB)
+
+//The structure of each EEPAGE
 struct EEPAGE {
-	unsigned long SerialN;
+  unsigned long SerialN;
+  unsigned int structsze;   //  0x1
+  float sstOffset[2];
 };
-struct EEPAGE xdata eepage = {
-	 0x0000
+
+//+/- 16 increments corresponds to a +/- 0.25 degrees offset in the ADT7486A chip
+//Initial values for eepage
+struct EEPAGE xdata eepage={
+   0,    // S/N
+   0,
+   0.0, 0.0  // SST Offset
 };
-#endif
 
 // EEPROM page for loader confirmation
 struct EEPAGE xdata eepage2;
