@@ -78,7 +78,7 @@ signed char ExtEEPROM_WriteProtect(unsigned char *source, unsigned int page_size
   blockSize = page_size / AT2516_MAX_BYTE;
 
   for (i = 0; i <= blockSize; i++) {
-    eeprom_addr = WP_START_ADDR + (i * AT2516_MAX_BYTE);          //Updating the address of mempry
+    eeprom_addr = WP_START_ADDR + (i * AT2516_MAX_BYTE);    //Updating the address of memory
     if (i == blockSize) {
       counter = (page_size % AT2516_MAX_BYTE);
     }
@@ -88,7 +88,7 @@ signed char ExtEEPROM_WriteProtect(unsigned char *source, unsigned int page_size
 
     RAM_CSn = 0;
 
-    SPI_WriteByte(AT2516_WRITE);     // Sending the Write Data to Memory Array command
+    SPI_WriteByte(AT2516_WRITE);    // Sending the Write Data to Memory Array command
     SPI_WriteUInt(eeprom_addr);     // Sending the address of location that we want to do the write
 
     for (j=0; j<counter; j++) {
