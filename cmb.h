@@ -18,6 +18,7 @@
 // ADT7486A temperature addresses
 #define ADT7486A_address 0x48	
 #define SST_LINE1 1
+
 // Global definition
 #define CLEAR 0
 #define SET 1
