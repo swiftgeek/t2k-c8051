@@ -17,6 +17,7 @@
 #define LTC2495_CMD_IGNORE 	0x00 	// Don't care/leave alone
 #define LTC2495_CMD_SELECT	0xA0	// Select an Input Channel command
 #define LTC2495_CMD_SGL			0x10	// Single Ended (non-differential)
+#define LTC2495_CMD2_SPD    0x08  // Speed x1 = 0x00; Speed X2 = 0x08 (no auto calibration)
 #define LTC2495_ENABLE2			0x80
 
 
