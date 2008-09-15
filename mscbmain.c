@@ -132,9 +132,6 @@ void setup(void)
    SFRPAGE   = CONFIG_PAGE;
 
 #ifdef FEB64
-	#ifdef _SMB_PROTOCOL_
-		// Clear SMBus
-	#endif
    XBR0 = 0x05;                 // Enable XBar, SMBus, UART0
    XBR1 = 0x00;
    XBR2 = 0x40;
@@ -144,7 +141,7 @@ void setup(void)
    XBR2 = 0x44;
 #endif
 #ifdef LOADER
-   XBR0 = 0x04;                 // Enable XBar,UART0
+   XBR0 = 0x05;                 // Enable XBar, SMBus, UART0
    XBR1 = 0x00;
    XBR2 = 0x40;
 #endif
