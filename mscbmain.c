@@ -132,28 +132,28 @@ void setup(void)
    SFRPAGE   = CONFIG_PAGE;
 
 #ifdef FEB64
-   XBR0 = 0x05;                 // Enable XBar, SMBus, UART0
+   XBR0 = 0x05;                 // Enable SMBus, UART0
    XBR1 = 0x00;
-   XBR2 = 0x40;
+   XBR2 = 0x40;                 // Enable Xbar
 #else
-   XBR0 = 0x04;                 // Enable XBar, UART0 & UART1
+   XBR0 = 0x04;                 // Enable UART0
    XBR1 = 0x00;
-   XBR2 = 0x44;
+   XBR2 = 0x44;                 // Enable Xbar & UART1
 #endif
 #ifdef LOADER
-   XBR0 = 0x05;                 // Enable XBar, SMBus, UART0
+   XBR0 = 0x05;                 // Enable SMBus, UART0
    XBR1 = 0x00;
-   XBR2 = 0x40;
+   XBR2 = 0x40;                 // Enable Xbar
 #endif
 #ifdef CMB
-   XBR0 = 0x04;                 // Enable XBar,UART0
+   XBR0 = 0x04;                 // Enable UART0
    XBR1 = 0x00;
-   XBR2 = 0x40;
+   XBR2 = 0x40;                 // Enable Xbar
 #endif
 #ifdef TEMP36
-   XBR0 = 0x04;                 // Enable XBar,UART0
+   XBR0 = 0x04;                 // Enable UART0
    XBR1 = 0x00;
-   XBR2 = 0x40;
+   XBR2 = 0x40;                 // Enable Xbar
 
 	// run TEMP36 at 6.1 MHz
    SFRPAGE   = CONFIG_PAGE;
