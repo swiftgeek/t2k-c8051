@@ -482,7 +482,7 @@ void switchonoff(unsigned char command)
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // Needs to stay on for JTAG debug access!
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    REG_EN  = OFF;   // Shutdown All Regulators 
+    REG_EN  = ON;   // Shutdown All Regulators 
 
     //SPI communication for EEPROM is maintained
     // P2.7:SPARE1 .6:CSn7 .5:CSn6 .4:SPIMOSI .3:SPISCK .2:RAMHLDn .1:SPIMISO .0:RAMWPn 
@@ -1255,37 +1255,37 @@ void user_loop(void) {
   //-----------------------------------------------------------------------------
   // Checking the eeprom control flag
   if (EEP_CTR_Flag) {
-    watchdog(16);
     //Checking for the special instruction
     if (user_data.eeCtrSet & EEP_CTRL_KEY) {
-      // convert the index value to fit the address of the eepage structure
-      //
+      // Valid index range
       if( (int)(user_data.eeCtrSet & 0x000000ff) >= EEP_RW_IDX) {
         // Float area from EEP_RW_IDX, count in Float size, No upper limit specified!
         eep_address = (float*)&eepage + (user_data.eeCtrSet & 0x000000ff);
-      }
-
-      //Checking for the write request
-      if (user_data.eeCtrSet & EEP_CTRL_WRITE){
+        //Checking for the write request
+        if (user_data.eeCtrSet & EEP_CTRL_WRITE){
           *eep_address = user_data.eepValue;
-      //Checking for the read request
-      } else if (user_data.eeCtrSet & EEP_CTRL_READ) {
-        DISABLE_INTERRUPTS;
-        user_data.eepValue = *eep_address;
-        ENABLE_INTERRUPTS;
+        //Checking for the read request
+        } else if (user_data.eeCtrSet & EEP_CTRL_READ) {
+          DISABLE_INTERRUPTS;
+          user_data.eepValue = *eep_address;
+          ENABLE_INTERRUPTS;
+        } else {
+          // Tell the user that inappropriate task has been requested
+          DISABLE_INTERRUPTS;
+          user_data.eeCtrSet = EEP_CTRL_INVAL_REQ;
+          ENABLE_INTERRUPTS;
+        }
       } else {
-        // Tell the user that inappropriate task has been requested
         DISABLE_INTERRUPTS;
-        user_data.eepValue = EEP_CTRL_INVAL_REQ;
+        user_data.eeCtrSet = EEP_CTRL_OFF_RANGE;
         ENABLE_INTERRUPTS;
       }
-    }    else {
-      // Tell the user that invalid key has been provided
-      DISABLE_INTERRUPTS;
-      user_data.eepValue = EEP_CTRL_INVAL_KEY;
-      ENABLE_INTERRUPTS;
-    }
-
+   } else {
+    // Tell the user that invalid key has been provided
+    DISABLE_INTERRUPTS;
+    user_data.eeCtrSet = EEP_CTRL_INVAL_KEY;
+    ENABLE_INTERRUPTS;
+   }
     EEP_CTR_Flag = CLEAR;
   }  // if eep
 

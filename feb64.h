@@ -156,22 +156,26 @@ struct IADC_TABLE xdata iadc_table[8] = {
 /**********************************************************************************/
 // External EEPROM variables
 unsigned char rEER;
+//Keys for changing the EEPROM
 #define EEP_CTRL_KEY        0x3C000000
 #define EEP_CTRL_READ       0x00110000
 #define EEP_CTRL_WRITE      0x00220000
-#define EEP_CTRL_INVAL_REQ -100
-#define EEP_CTRL_INVAL_KEY -10
+#define EEP_CTRL_INVAL_REQ  0xff000000
+#define EEP_CTRL_INVAL_KEY  0x00ff0000
+#define EEP_CTRL_OFF_RANGE  0x0000ff00
+#define PAGE_SIZE  sizeof(eepage)  // 300 for now
 #define EEP_RW_IDX          0x06   // (I*4)  but use 0x17 for normal operation
+#define EEP_RW_LAST_IDX   PAGE_SIZE/4
 
 // EEPROM structure
 struct EEPAGE {
-unsigned long SerialN;    //  0x0
-unsigned int structsze;   //  0x1
-unsigned int rasum[8];    //  ..
-unsigned int rqpump;      //  ..
-unsigned int SWbias;      //  0x7
-unsigned int calQpump;    //  ..
-unsigned char rbias [64]; //  0x8 
+unsigned long SerialN;    
+unsigned int structsze;
+unsigned int rasum[8];
+unsigned int rqpump;
+unsigned int SWbias;   
+unsigned int calQpump;
+unsigned char rbias [64]; 
 // 
 float lVIlimit[8]; // vQ iQ +6Vd +6Va -6Va -6Ia +6Ia +6Id
 float uVIlimit[8];
@@ -229,19 +233,17 @@ struct EEPAGE xdata eepage = {
 // 0x31 - LIBias, LVBias (uA)
  ,0.0 ,10.0
 // 0x33 - SST channel 1 offset[0..3]
- ,0,0 ,0,0
-// 0x35 - SST channel 2 offset[0..3]
- ,0,0 ,0,0
-// 0x37 - Current Bias Offset [0..7]
+ ,0.0, 0.0, 0.0, 0.0
+// 0x37 - SST channel 2 offset[0..3]
+ ,0.0, 0.0, 0.0, 0.0
+// 0x3B - Current Bias Offset [0..7]
  , 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
-// 0x3F - Voltage Bias Offset [0..7]
+// 0x43 - Voltage Bias Offset [0..7]
  , 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 };
 
 // EEPROM page for debugging
 struct EEPAGE xdata eepage2; //NW testing
-#define PAGE_SIZE  sizeof(eepage)  // 300 for now
-#define EEP_RW_LAST_IDX   PAGE_SIZE/4
 
 /**********************************************************************************/
 // Definitions
