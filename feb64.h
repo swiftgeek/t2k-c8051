@@ -361,8 +361,8 @@ sbit RdssT   = rESR ^ 4;  //0x1000
 #define CURRENT_MASK         0x00E0
 
 // SMBus Port Aliases
-sbit SDA    = MSCB_I2C_SDA;
-sbit SCL    = MSCB_I2C_SCL;
+//sbit SDA    = MSCB_I2C_SDA;
+//sbit SCL    = MSCB_I2C_SCL;
 
 /**********************************************************************************/
 // MSCB structure
