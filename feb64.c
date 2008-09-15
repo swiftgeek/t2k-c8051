@@ -95,7 +95,7 @@ unsigned long xdata loopcnt = 0;
 // Global bit register
 unsigned char bdata bChange;
 // Local flag
-sbit bdoitNOW       = bChange ^ 0;
+sbit bCPupdoitNOW   = bChange ^ 0;
 sbit bDacdoitNOW    = bChange ^ 1;
 //Defining the user_write() flag actions
 sbit PCA_Flag       = bChange ^ 2;
@@ -631,7 +631,7 @@ void user_init(unsigned char init)
     //NW mirror of the rBias values
     ltc1665mirror[i] = eepage.rbias[i];
   }
-  user_data.rQpump = (char) (eepage.rqpump & 0xFF);
+  user_data.rQpump = (unsigned int) (eepage.rqpump & 0x3FF);
   user_data.swBias = eepage.SWbias;
   ENABLE_INTERRUPTS;
 
@@ -976,7 +976,7 @@ void user_loop(void) {
 #endif
     delay_ms(100);
     // Force Check on Voltage
-    bdoitNOW = ON;
+    bCPupdoitNOW = ON;
     // Wait for Check before setting SPup
     // Reset Action
     CPup = CLEAR;  // rCTL not updated yet, publish state after U/I check
@@ -986,7 +986,7 @@ void user_loop(void) {
   //-----------------------------------------------------------------------------
   // Temperature reading/monitoring based on time for internal temperature
   // Board Temperature
-  if ( bdoitNOW || ((uptime() - sstTime) > SST_TIME)) {
+  if ( bCPupdoitNOW || ((uptime() - sstTime) > SST_TIME)) {
 
     watchdog(14);
 
@@ -1014,7 +1014,7 @@ void user_loop(void) {
   //-----------------------------------------------------------------------------
   // Temperature reading/monitoring based on time for external temperature
   // FGD Temperature
-  if (bdoitNOW || ((uptime() - sstExtTime) > SST_TIME)) {
+  if (bCPupdoitNOW || ((uptime() - sstExtTime) > SST_TIME)) {
     watchdog(11);
     for (channel=0;channel < NCHANNEL_ADT7486A; channel++){
       if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt1Temp, SST_LINE1, &temperature)){
@@ -1060,7 +1060,7 @@ void user_loop(void) {
 
   //
   // uCtemperature, Voltage and Current readout
-  if ( bdoitNOW || ((uptime() - currentTime) > 1)) {
+  if ( bCPupdoitNOW || ((uptime() - currentTime) > 1)) {
 
     watchdog(7);
 
@@ -1123,21 +1123,18 @@ void user_loop(void) {
     currentTime = uptime();
   }  // Voltage, Current & Temperature test
 
-  //
-  // if coming from CPup publish all the registers.
-  if (bdoitNOW) {
-    bdoitNOW = OFF;   // Reset flag coming from PowerUp sequence
-    if (rESR & (VOLTAGE_MASK | UCTEMPERATURE_MASK | BTEMPERATURE_MASK | FGDTEMPERATURE_MASK)) {
-      pca_operation(Q_PUMP_OFF);
-      SPup = SqPump = OFF;
-      switchonoff(OFF);
-      SsS = ON;
-    } else {
-      SsS = SmSd = OFF;
-      SPup = ON;
-      bDacdoitNOW = ON;
-    }
-  }  // Publishing
+
+  // Take action based on ERROR
+  if (rESR & (VOLTAGE_MASK | UCTEMPERATURE_MASK | BTEMPERATURE_MASK | FGDTEMPERATURE_MASK)) {
+    SPup = SqPump = OFF;
+    switchonoff(OFF);
+    SsS = ON;
+  } else if (bCPupdoitNOW) {
+    bCPupdoitNOW = OFF;   // Reset flag coming from PowerUp sequence
+    SsS = SmSd = OFF;
+    SPup = ON;
+    bDacdoitNOW = ON;
+  }
 
   // Publish Control, Error and Status for all the bdoitNOW actions.
   DISABLE_INTERRUPTS;
@@ -1304,7 +1301,7 @@ void user_loop(void) {
       for(i=0;i<64;i++) {
         eepage.rbias[i] = user_data.rBias[i];
       }
-      eepage.rqpump = user_data.rQpump;
+      eepage.rqpump = ((unsigned int) user_data.rQpump & 0x3FF);
       eepage.SWbias = user_data.swBias;
 
       //Temporary store the first address of page
@@ -1371,7 +1368,7 @@ void user_loop(void) {
     // Force a DAC Setting on next loop
     bDacdoitNOW = ON;
 
-    user_data.rQpump = (char) (eepage.rqpump & 0xFF);
+    user_data.rQpump = (unsigned int) (eepage.rqpump & 0x3FF);
     user_data.swBias = eepage.SWbias;
 
     ENABLE_INTERRUPTS;
