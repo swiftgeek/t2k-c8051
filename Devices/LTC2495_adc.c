@@ -43,8 +43,8 @@ void LTC2495_StartConversion(unsigned char addr, unsigned char channel, unsigned
 		cmd |= 0x08;
 	} 
 
-//	cmd2= LTC2495_ENABLE2 | gain;
- 	cmd2= LTC2495_ENABLE2 | LTC2495_CMD2_SPD | gain;  //DB - set speed to x2
+	cmd2= LTC2495_ENABLE2 | gain;
+// 	cmd2= LTC2495_ENABLE2 | LTC2495_CMD2_SPD | gain;  //DB - set speed to x2
 
 	// Wait for the SMBus to clear
 	dowhile(&SMB_BUSY,2);
