@@ -35,6 +35,8 @@ char code  node_name[] = "loader";
 unsigned char idata _n_sub_addr = 1;
 
 #ifdef L_FEB64
+// Vreg Enable port assignment Rev 1 ONLY
+sbit REG_EN  = P3 ^ 2;
 // RESET output pin for PCA9539 (PIO) and LTC1665 (DACx8)
 sbit RESETN         = P1 ^ 3;
 #elif defined(L_TEMP36)
@@ -96,6 +98,8 @@ void user_init(unsigned char init)
   P1MDOUT |= 0x08; // ResetN in PP
   P0MDOUT |= 0x20; // RS485 in PP
 
+  // Get ALL Vreg on
+  REG_EN = 1;
   // Reset PCA9539 (PIO)
   RESETN = 0;
   RESETN = 1;
@@ -109,6 +113,8 @@ void user_init(unsigned char init)
   PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
   delay_us(10);
 
+  //Write to the PCA register for setting 0.x to output
+  PCA9539_WriteByte(BIAS_OUTPUT_ENABLE);
   //Write to the PCA register for setting 1.x to input
   PCA9539_WriteByte(BACKPLANE_INPUT_ENABLE);
   delay_us(10);
@@ -121,6 +127,7 @@ void user_init(unsigned char init)
   crate_add= ((~pca_add)<<1)  & 0x01F8;
   //Internally, the board address are not reversed
   board_address = crate_add | ((pca_add) & 0x0003);
+  if (board_address == 504) board_address = 0;
   sys_info.node_addr   = board_address;
 #endif
 
