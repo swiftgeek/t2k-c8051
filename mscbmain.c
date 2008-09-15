@@ -135,6 +135,7 @@ void setup(void)
    XBR0 = 0x05;                 // Enable SMBus, UART0
    XBR1 = 0x00;
    XBR2 = 0x40;                 // Enable Xbar
+   P1MDOUT = 0x08;              // ResetN in PP
 #else
    XBR0 = 0x04;                 // Enable UART0
    XBR1 = 0x00;
@@ -144,6 +145,8 @@ void setup(void)
    XBR0 = 0x05;                 // Enable SMBus, UART0
    XBR1 = 0x00;
    XBR2 = 0x40;                 // Enable Xbar
+   P1MDOUT = 0x08;              // ResetN in PP
+   DEBUG_PIN = 0;
 #endif
 #ifdef CMB
    XBR0 = 0x04;                 // Enable UART0
