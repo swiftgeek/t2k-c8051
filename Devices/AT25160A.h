@@ -12,6 +12,9 @@
 #ifndef  _EEPROM_H_
 #define  _EEPROM_H_
 
+#ifndef  _SPI_PROTOCOL_
+#define  _SPI_PROTOCOL_
+
 // SPI Protocol Signals
 sbit EEP_SCK  = MSCB_SPI_SCK;
 sbit EEP_MOSI = MSCB_SPI_MISO;
@@ -56,4 +59,5 @@ void ExtEEPROM_WriteStatusReg(unsigned char status);
 unsigned char ExtEEPROM_Status(void);
 void ExtEEPROM_Wait(void);
 
-#endif
+#endif   //_SPI_PROTOCOL_
+#endif   //_EEPROM_H_
