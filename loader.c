@@ -21,6 +21,7 @@ $Id$
 #include "mscbemb.h"
 #include "loader.h"
 #include "Devices/AT25160A.h"
+
 #ifdef _PCA9539_
 #include "Devices/PCA9539_io.h"
 #endif
@@ -38,9 +39,12 @@ unsigned char idata _n_sub_addr = 1;
 // Vreg Enable port assignment Rev 1 ONLY
 sbit REG_EN  = P3 ^ 2;
 // RESET output pin for PCA9539 (PIO) and LTC1665 (DACx8)
-sbit RESETN         = P1 ^ 3;
+sbit RESETN  = P1 ^ 3;
+
 #elif defined(L_TEMP36)
+
 #elif defined(L_CMB)
+
 #elif defined(L_LPB)
 #endif
 
@@ -78,14 +82,16 @@ void user_init(unsigned char init)
   sys_info.node_addr = cur_sub_addr();
   EEPROM_FLAG=0;
 
-
-  //
-  //-----------------------------------------------------------------------------
-  SFRPAGE  = CONFIG_PAGE;
+//-----------------------------------------------------------------------------
+//
 #ifdef L_TEMP36
   sprintf(sys_info.node_name,"TEMP36");
+  SFRPAGE  = CONFIG_PAGE;
   P2MDOUT |= 0x31; // Setting the RAM_CSn. SPI_MOSI, SPI_SCK to push pull
   P2MDOUT &= 0xFB; // Setting the RAM_WPn to open drain
+
+//-----------------------------------------------------------------------------
+//
 #elif defined(L_FEB64)
   // P3.7:RAMCSn   .6:CSn6      .5:CSn4     .4:SPARE5  | .3:SPARE4  .2:REG_EN   .1:CSn3    .0:CSn2 
   // P2.7:SPARE1   .6:CSn7      .5:CSn6     .4:SPIMOSI | .3:SPISCK  .2:RAMHLDn  .1:SPIMISO .0:RAMWPn 
@@ -131,13 +137,9 @@ void user_init(unsigned char init)
   sys_info.node_addr   = board_address;
 #endif
 
-#elif defined(L_CMB)
-  sprintf(sys_info.node_name,"CMB");
-  P3MDOUT |= 0x80; // RAM_CSn in PP
-  P2MDOUT |= 0x18; // SPI_MOSI, SPI_SCK in PP
-  P2MDOUT &= 0xFE; // RAM_WPn in OD
-
-#else defined(L_LPB)
+//-----------------------------------------------------------------------------
+//
+#elif defined(L_LPB)
   // P3.7:A7       .6:A6        .5:A5       .4:A4      | .3:A3      .2:A2       .1:A1      .0:A0 
   // P2.7:+1.8En   .6:+3.3En    .5:+5En     .4:SPIMOSI | .3:SPISCK  .2:RAMHLDn  .1:SPIMISO .0:RAMWP
   // P1.7:NC       .6:+6ddFlag  .5:R/HClock .4:R/HData | .3:+6ddEN  .2:RAMCS    .1:D2ASync .0:SST_DRV 
@@ -156,6 +158,14 @@ void user_init(unsigned char init)
   pca_add= P3;
   board_address= (((~pca_add)<<1) & 0x01F8)| 0x0005;
   sys_info.node_addr   = board_address;
+
+//-----------------------------------------------------------------------------
+//
+#else defined(L_CMB)
+  sprintf(sys_info.node_name,"CMB");
+  P3MDOUT |= 0x80; // RAM_CSn in PP
+  P2MDOUT |= 0x18; // SPI_MOSI, SPI_SCK in PP
+  P2MDOUT &= 0xFE; // RAM_WPn in OD
 
 #endif	
 
@@ -267,4 +277,5 @@ void user_loop(void)
     // if successful should read 0xF (00001111) in status
   }
   delay_ms(1);
-} 
+}
+
