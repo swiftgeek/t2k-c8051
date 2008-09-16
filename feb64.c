@@ -125,7 +125,7 @@ MSCB_INFO_VAR code vars[] = {
   2, UNIT_BYTE,            0, 0,           0, "rQpump",     &user_data.rQpump,       //6
 
   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "VBias",      &user_data.VBias,        //7
-  4, UNIT_AMPERE, PRFX_MILLI, 0, MSCBF_FLOAT, "IBias",      &user_data.IBias,        //8
+  4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "IBias",      &user_data.IBias,        //8
   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pDVMon",     &user_data.pDVMon,       //9
   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "pAVMon",     &user_data.pAVMon,       //10
   4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "nAVMon",     &user_data.nAVMon,       //11
@@ -496,7 +496,7 @@ void switchonoff(unsigned char command)
 
     // mscb communication
     // P0.7:CSn1 .6:CSn0 .5:485TXEN .4:QPUMPCLK .3:SMBCLK .2:SMBDAT .1:Rx .0:Tx 
-    P0MDOUT &= 0x23;
+    P0MDOUT &= 0x20;
     // P0 &= 0x23;
   }
 }
@@ -896,7 +896,7 @@ void user_loop(void) {
   }
 
   adc_value = ((float)((result - adc2mscb_table[adcChannel].Offst)
-    + CONVER_FAC1) * (float)(EXT_VREF / CONVER_FAC2));
+                               + CONVER_FAC1) * (float)(EXT_VREF / CONVER_FAC2));
   adc_value = (adc_value * adc2mscb_table[adcChannel].Coef) ;
   //dividing by the gain
   adc_value /= pow(2, (adc2mscb_table[adcChannel].gain + adc2mscb_table[adcChannel].current));
@@ -1398,7 +1398,8 @@ void user_loop(void) {
      user_data.status  = rCSR;
      ENABLE_INTERRUPTS;
      calState = 15;
-   } else {
+   } else { 
+     SeeS = CLEAR;
      Ccal = CLEAR;
      Scal = OFF;
      calState = 0;   // unknown state
