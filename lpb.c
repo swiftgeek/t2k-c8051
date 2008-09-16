@@ -151,6 +151,7 @@ void user_init(unsigned char init)
   if(init) {
      crate_add = cur_sub_addr();
   }
+  sys_info.group_addr  = 500;
 
   user_data.IntTemp = 0;
   user_data._58Temp = 0;
