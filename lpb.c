@@ -193,6 +193,9 @@ void user_init(unsigned char init)
   //-----------------------------------------------------------------------------
   adc_internal_init();
 
+  // Address decoding
+//  P3MDOUT  = 0x00; // Crate address in OD
+//  P3 = 0xFF;
 
   //
   // SST Temperatures
@@ -223,7 +226,6 @@ void user_init(unsigned char init)
 // EEPROM access
 #ifdef _ExtEEPROM_
   SFRPAGE  = CONFIG_PAGE;
-  P3MDOUT  = 0x00; // Crate address in OD
   P2MDOUT |= 0x18; // SPI_MOSI, SPI_SCK in PP
   P2MDOUT &= 0xFE; // RAM_WPn in OD
   P1MDOUT |= 0x04; // RAM_CSn in PP
