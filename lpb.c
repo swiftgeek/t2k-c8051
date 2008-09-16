@@ -40,6 +40,7 @@ $Id$
 // Global declarations
 //-----------------------------------------------------------------------------
 char code  node_name[] = "LPB";
+char idata svn_rev_code[] = "$Rev$";
 
 //
 // Declare globally the number of sub-addresses to framework
@@ -146,11 +147,23 @@ Application specific init and in/output routines
 void user_init(unsigned char init)
 {
   float xdata temperature;
-  unsigned char xdata pca_add=0;
+  unsigned char xdata i, pca_add=0;
   unsigned int xdata crate_add=0, board_address=0;
   if(init) {
      crate_add = cur_sub_addr();
   }
+
+  /* Format the SVN and store this code SVN revision into the system */
+  for (i=0;i<4;i++) {
+    if (svn_rev_code[6+i] < 48) {
+      svn_rev_code[6+i] = '0';
+    }
+  }
+  sys_info.svn_revision = (svn_rev_code[6]-'0')*1000+
+    (svn_rev_code[7]-'0')*100+
+    (svn_rev_code[8]-'0')*10+
+    (svn_rev_code[9]-'0');
+
   sys_info.group_addr  = 500;
 
   user_data.IntTemp = 0;
