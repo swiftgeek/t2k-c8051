@@ -73,6 +73,8 @@ void user_init(unsigned char init)
 {
   char xdata pca_add=0;
   unsigned int xdata crate_add=0, board_address=0;
+  unsigned long SNtemp;
+  unsigned int  Szetemp;
 
   if (init) {}
 
@@ -110,7 +112,7 @@ void user_init(unsigned char init)
 //    timeout++;
 //  }
 // Reset PCA9539 (PIO)
-//  RESETN = 0;
+// RESETN = 0;
 // RESETN = 1;
   delay_us(100);
 
@@ -183,19 +185,25 @@ void user_init(unsigned char init)
   }
 
   //
-  // Read ALL eepage fomr Protected page
-  ExtEEPROM_Read(WP_START_ADDR, (unsigned char*)&eepage, PAGE_SIZE);
+  // Read S/N and struct size only from Protected page
+  ExtEEPROM_Read(WP_START_ADDR, (unsigned char*)&SNtemp, SERIALN_LENGTH);
+  ExtEEPROM_Read(WP_START_ADDR+SERIALN_LENGTH, (unsigned char*)&Szetemp, 2);
   DISABLE_INTERRUPTS;
-  user_data.serialN = eepage.SerialN;
-  user_data.structsze = eepage.structsze;
+  user_data.serialN   = SNtemp;
+  user_data.structsze = Szetemp;
   ENABLE_INTERRUPTS;
 
+  if (user_data.structsze != PAGE_SIZE) {
   //
   // Check Structure size and publish it (above)
-  if (eepage.structsze != PAGE_SIZE) {
+  // If the size doesn't match use the struct definition
     DISABLE_INTERRUPTS;
     user_data.status = 0xFF;
     ENABLE_INTERRUPTS;
+  } else {
+  // Correct PAGE_SIZE: take page[0] content as default.
+  // Use page[0] as it may have been modified.
+  ExtEEPROM_Read(page_addr[0], (unsigned char*)&eepage, PAGE_SIZE);
   }
 }
 
