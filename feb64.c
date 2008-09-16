@@ -27,7 +27,7 @@ CODE(?PR?UPGRADE?MSCBMAIN (0xD000))
 
 // P3.7:RAMCSn   .6:CSn6      .5:CSn4     .4:SPARE5  | .3:SPARE4  .2:REG_EN   .1:CSn3    .0:CSn2 
 // P2.7:SPARE1   .6:CSn7      .5:CSn6     .4:SPIMOSI | .3:SPISCK  .2:RAMHLDn  .1:SPIMISO .0:RAMWPn 
-// P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn | .3:ResetN  .2:SPARE2   .1:SPARE3  .0:SST_DRV 
+// P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn | .3:DACResetN  .2:PCARESETN .1:SPARE3  .0:SST_DRV 
 // P0.7:CSn1     .6:CSn0      .5:485TXEN  .4:QPUMPCLK| .3:SMBCLK  .2:SMBDAT   .1:Rx      .0:Tx 
 
 $Id$
@@ -106,7 +106,8 @@ sbit EEP_CTR_Flag   = bChange ^ 6;
 sbit CAsum_Flag     = bChange ^ 7;
 //
 // RESET output pin for PCA9539 (PIO) and LTC1665 (DACx8)
-sbit RESETN         = P1 ^ 3;
+sbit DACRESETN      = P1 ^ 3;
+sbit PCARESETN      = P1 ^ 1;
 //
 // ASUM port
 sbit ASUM_SYNC      = P1 ^ 7;
@@ -402,6 +403,8 @@ void switchonoff(unsigned char command)
     P0MDOUT |= 0xC0; // Setting the BIAS_DAC_CSn1 and BIAS_DAC_CSn2 to push pull
     P3MDOUT |= 0x63; // Setting the BIAS_DAC_CSn3,4,5,6 to push pull
     P2MDOUT |= 0x60; // Setting the BIAS_DAC_CSn7,8 to push pull
+    P1MDOUT |= 0x08;
+    DACRESETN  = 1;
     LTC1665_Init();
 #endif
     //
@@ -409,8 +412,9 @@ void switchonoff(unsigned char command)
     //-----------------------------------------------------------------------------
 #ifdef _LTC2600_
     SFRPAGE  = CONFIG_PAGE;
-    P1MDOUT |= 0x10; // Setting the SUM_DAC_CSn to push pull
-    P2MDOUT |= 0x18; // Setting the SPI_MOSI and SPI_SCK to push pull
+    P1MDOUT |= 0x10;  // Setting the SUM_DAC_CSn to push pull
+    P2MDOUT |= 0x18;  // Setting the SPI_MOSI and SPI_SCK to push pull
+//    P2MDOUT &= ~0x02; // Keep MISO in OD
     LTC2600_Init();
 #endif
     //
@@ -479,25 +483,29 @@ void switchonoff(unsigned char command)
     //Ram_CSn maintained in PP
     // P3.7:RAMCSn .6:CSn6 .5:CSn4 .4:SPARE5 .3:SPARE4 .2:REG_EN .1:CSn3 .0:CSn2 
     P3MDOUT = 0x80;
+    P3 &= 0x80;
+
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // Needs to stay on for JTAG debug access!
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    REG_EN  = ON;   // Shutdown All Regulators 
+    REG_EN  = OFF;   // Shutdown All Regulators 
 
     //SPI communication for EEPROM is maintained
     // P2.7:SPARE1 .6:CSn7 .5:CSn6 .4:SPIMOSI .3:SPISCK .2:RAMHLDn .1:SPIMISO .0:RAMWPn 
     P2MDOUT &= 0x1F;
-    //    P2 &= 0x1F;
+    P2 &= 0x0F;
 
-    //SST and RESETN is maintained
-    // P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn .3:ResetN .2:SPARE2 .1:SPARE3 .0:SST_DRV 
-    P1MDOUT &= 0x09;
-    RESETN = 1;
+    //SST and PCARESETN is maintained ==1 and PP
+    // P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn .3:DACResetN .2:SPARE2 .1:PCAResetN .0:SST_DRV 
+    P1MDOUT  |= 0x0F;
+    DACRESETN = 1;
+    PCARESETN = 1;
+    P1 &= 0x07;
 
     // mscb communication
     // P0.7:CSn1 .6:CSn0 .5:485TXEN .4:QPUMPCLK .3:SMBCLK .2:SMBDAT .1:Rx .0:Tx 
     P0MDOUT &= 0x20;
-    // P0 &= 0x23;
+    P0 &= 0x3F;
   }
 }
 
@@ -578,10 +586,11 @@ void user_init(unsigned char init)
   ExtEEPROM_Init();
 #endif
 
-  // Reset PCA9539 (PIO) and LTC1665 (DACx8)
-  P1MDOUT |= 0x8;
-  RESETN = 0;
-  RESETN = 1;
+  // Reset LTC1665 (DACx8)
+  // Reset PCA9539 (PIO)
+  P1MDOUT |= 0xF;
+  DACRESETN = 1;
+  PCARESETN = 1;
   //
   // Initialize PCA for address reading and switch settings
   //-----------------------------------------------------------------------------
