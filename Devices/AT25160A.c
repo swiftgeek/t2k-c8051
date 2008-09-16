@@ -28,7 +28,7 @@ signed char ExtEEPROM_Init (unsigned int page_size)
   //Initializing the SPI
   SPI_Init();
 
-  if(page_size > WP_START_ADDR)
+  if(page_size > MAX_PAGE_SIZE)
   return ERROR;
 
   ExtEEPROM_Wait();
