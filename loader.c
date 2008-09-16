@@ -181,7 +181,7 @@ void user_init(unsigned char init)
 // Initialize EEPAGE access (SPI)
   if(ExtEEPROM_Init(PAGE_SIZE)) {
     DISABLE_INTERRUPTS;
-    user_data.status = 0xFF;
+    user_data.status = 0x7F;
     ENABLE_INTERRUPTS;
   }
 
@@ -194,7 +194,9 @@ void user_init(unsigned char init)
   user_data.structsze = Szetemp;
   ENABLE_INTERRUPTS;
 
-  if (user_data.structsze != PAGE_SIZE) {
+  // Read Page 0 if empty use definition
+  ExtEEPROM_Read(page_addr[0], (unsigned char*)&eepage2, PAGE_SIZE);
+  if (eepage2.uuCTlimit == 0) {
   //
   // Check Structure size and publish it (above)
   // If the size doesn't match use the struct definition
