@@ -167,7 +167,7 @@ void user_init(unsigned char init)
 
 //-----------------------------------------------------------------------------
 //
-#else defined(L_CMB)
+#elif defined(L_CMB)
   sprintf(sys_info.node_name,"CMB");
   P3MDOUT |= 0x80; // RAM_CSn in PP
   P2MDOUT |= 0x18; // SPI_MOSI, SPI_SCK in PP
@@ -196,7 +196,12 @@ void user_init(unsigned char init)
 
   // Read Page 0 if empty use definition
   ExtEEPROM_Read(page_addr[0], (unsigned char*)&eepage2, PAGE_SIZE);
+#ifdef L_FEB64
   if (eepage2.uuCTlimit == 0) {
+#elif defined (L_LPB)
+  if (eepage2.sstOffset[0] == 0.0f) {
+#elif defined (L_CMB)
+#endif
   //
   // Check Structure size and publish it (above)
   // If the size doesn't match use the struct definition
