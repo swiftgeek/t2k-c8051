@@ -1,7 +1,7 @@
 /********************************************************************\
 
   Name:         loader.h
-  Created by:   Bahman Sotoodian				
+  Created by:   Bahman Sotoodian
 
   Contents:     Application specific (user) part of
                 Midas Slow Control Bus protocol
@@ -13,9 +13,9 @@
 #ifndef  _LOADER_H_
 #define  _LOADER_H_
 
-#define NUMBER_PAGES	   3
-#define CLEAR				  0x01
-#define WRITE				  0x00
+#define NUMBER_PAGES     3
+#define CLEAR         0x01
+#define WRITE         0x00
 
 //Defining the page mapping      NP[0..2]  0x600 Protected
 unsigned int xdata page_addr[] = {0x000,0x200,0x400,0x600};
@@ -25,19 +25,19 @@ unsigned int xdata page_addr[] = {0x000,0x200,0x400,0x600};
 #define BIAS_OUTPUT_ENABLE     ADDR_PCA9539, PCA9539_CONFIG0, PCA9539_ALL_OUTPUT
 #define BIAS_DISABLE           ADDR_PCA9539, PCA9539_OUTPUT0, 0xFF
 #define BIAS_ENABLE            ADDR_PCA9539, PCA9539_OUTPUT0, 0x00
-#define BIAS_READ			         ADDR_PCA9539, PCA9539_INPUT0
-#define BIAS_WRITE				     ADDR_PCA9539, PCA9539_OUTPUT0
+#define BIAS_READ              ADDR_PCA9539, PCA9539_INPUT0
+#define BIAS_WRITE             ADDR_PCA9539, PCA9539_OUTPUT0
 
 #define BACKPLANE_INPUT_ENABLE ADDR_PCA9539, PCA9539_CONFIG1, PCA9539_ALL_INPUT
-#define BACKPLANE_READ			   ADDR_PCA9539, PCA9539_INPUT1	 
+#define BACKPLANE_READ         ADDR_PCA9539, PCA9539_INPUT1
 #define SERIALN_LENGTH         4
- 
+
 /*---- Define variable parameters returned to CMD_GET_INFO command ----*/
 struct{
-	unsigned long serialN;     
-	unsigned char control;       
-	unsigned char eepage;
-	unsigned char status;	
+  unsigned long serialN;
+  unsigned char control;
+  unsigned char eepage;
+  unsigned char status;
   unsigned int  structsze;
 }xdata user_data;
 
@@ -49,22 +49,22 @@ bit EEPROM_FLAG;
 //-----------------------------------------------------------------------------
 #ifdef L_TEMP36
 struct EEPAGE {
-	int ext1offset[18];
-	int ext2offset[18];
+  int ext1offset[18];
+  int ext2offset[18];
 
-	int control;
-	unsigned long SerialN;
+  int control;
+  unsigned long SerialN;
 };
 struct EEPAGE xdata eepage = {
-	//Temperature sensor offsets corresponding to the external 1 channel
+  //Temperature sensor offsets corresponding to the external 1 channel
     //Temp02,04....36
-	32,48,32,32,16,16,48,16,0,16,0,0,16,32,16,32,-16,32 ,
-	//Temperature sensor offsets corresponding to the external 2 channel
+  32,48,32,32,16,16,48,16,0,16,0,0,16,32,16,32,-16,32 ,
+  //Temperature sensor offsets corresponding to the external 2 channel
     //Temp01,03....35
-	48,32,48,64,64,32,48,64,0,16,16,32,48,48,32,32,16,32,
+  48,32,48,64,64,32,48,64,0,16,16,32,48,48,32,32,16,32,
 
-	0,
-	1000
+  0,
+  1000
 };
 
 //-----------------------------------------------------------------------------
@@ -72,14 +72,14 @@ struct EEPAGE xdata eepage = {
 // EEPROM structure should be a COPY of the feb64.h structure
 // EEPROM structure
 struct EEPAGE {
-unsigned long SerialN;    
+unsigned long SerialN;
 unsigned int structsze;
 unsigned int rasum[8];
 unsigned int rqpump;
-unsigned int SWbias;   
+unsigned int SWbias;
 unsigned int calQpump;
-unsigned char rbias [64]; 
-// 
+unsigned char rbias [64];
+//
 float lVIlimit[8]; // vQ iQ +6Vd +6Va -6Va -6Ia +6Ia +6Id
 float uVIlimit[8];
 float luCTlimit, uuCTlimit;
@@ -150,10 +150,10 @@ unsigned long xdata smbdebug;
 //-----------------------------------------------------------------------------
 #elif defined(L_CMB)
 struct EEPAGE {
-	unsigned long SerialN;
+  unsigned long SerialN;
 };
 struct EEPAGE xdata eepage = {
-	 0x0000
+   0x0000
 };
 
 //
@@ -179,7 +179,7 @@ struct EEPAGE xdata eepage={
 // Macro EEPAGE size independently of the BOARD
 #define PAGE_SIZE  sizeof(eepage)
 
-#endif  // L_xxx 
+#endif  // L_xxx
 
 //
 // Global to ALL boards

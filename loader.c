@@ -7,11 +7,11 @@ Contents:     Application specific (user) part of
 Midas Slow Control Bus protocol
 for External EEPROM of FEB64 board
 
-Memory usage:  
+Memory usage:
 
-JTAG Chain: 
+JTAG Chain:
 FEB64 : 1 0 5 0
-LPB   : 0 0 0 0 
+LPB   : 0 0 0 0
 
 $Id$
 \********************************************************************/
@@ -47,15 +47,16 @@ sbit RESETN  = P1 ^ 3;
 #elif defined(L_CMB)
 
 #elif defined(L_LPB)
+
 #endif
 
 // User Data structure declaration
 //-----------------------------------------------------------------------------
 MSCB_INFO_VAR code vars[] = {
-  4, UNIT_BYTE,            0, 0,           0, "SerialN",    &user_data.serialN,  	  // 0
+  4, UNIT_BYTE,            0, 0,           0, "SerialN",    &user_data.serialN,      // 0
   1, UNIT_BYTE,            0, 0,           0, "Control",    &user_data.control,      // 1
   1, UNIT_BYTE,            0, 0,           0, "EEPage",     &user_data.eepage,       // 2
-  1, UNIT_BYTE,            0, 0,           0, "Status",     &user_data.status,       // 3 
+  1, UNIT_BYTE,            0, 0,           0, "Status",     &user_data.status,       // 3
   2, UNIT_BYTE,            0, 0,           0, "StrcSze",    &user_data.structsze,    // 4
   0
 };
@@ -95,10 +96,10 @@ void user_init(unsigned char init)
 //-----------------------------------------------------------------------------
 //
 #elif defined(L_FEB64)
-  // P3.7:RAMCSn   .6:CSn6      .5:CSn4     .4:SPARE5  | .3:SPARE4  .2:REG_EN   .1:CSn3    .0:CSn2 
-  // P2.7:SPARE1   .6:CSn7      .5:CSn6     .4:SPIMOSI | .3:SPISCK  .2:RAMHLDn  .1:SPIMISO .0:RAMWPn 
-  // P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn | .3:ResetN  .2:SPARE2   .1:SPARE3  .0:SST_DRV 
-  // P0.7:CSn1     .6:CSn0      .5:485TXEN  .4:QPUMPCLK| .3:SMBCLK  .2:SMBDAT   .1:Rx      .0:Tx 
+  // P3.7:RAMCSn   .6:CSn6      .5:CSn4     .4:SPARE5  | .3:SPARE4  .2:REG_EN   .1:CSn3    .0:CSn2
+  // P2.7:SPARE1   .6:CSn7      .5:CSn6     .4:SPIMOSI | .3:SPISCK  .2:RAMHLDn  .1:SPIMISO .0:RAMWPn
+  // P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn | .3:ResetN  .2:SPARE2   .1:SPARE3  .0:SST_DRV
+  // P0.7:CSn1     .6:CSn0      .5:485TXEN  .4:QPUMPCLK| .3:SMBCLK  .2:SMBDAT   .1:Rx      .0:Tx
   sprintf(sys_info.node_name,"FEB64");
   P3MDOUT |= 0x80; // RAM_CSn in PP, REG_EN in OD
   P2MDOUT |= 0x18; // SPI_MOSI, SPI_SCK in PP
@@ -145,10 +146,10 @@ void user_init(unsigned char init)
 //-----------------------------------------------------------------------------
 //
 #elif defined(L_LPB)
-  // P3.7:A7       .6:A6        .5:A5       .4:A4      | .3:A3      .2:A2       .1:A1      .0:A0 
+  // P3.7:A7       .6:A6        .5:A5       .4:A4      | .3:A3      .2:A2       .1:A1      .0:A0
   // P2.7:+1.8En   .6:+3.3En    .5:+5En     .4:SPIMOSI | .3:SPISCK  .2:RAMHLDn  .1:SPIMISO .0:RAMWP
-  // P1.7:NC       .6:+6ddFlag  .5:R/HClock .4:R/HData | .3:+6ddEN  .2:RAMCS    .1:D2ASync .0:SST_DRV 
-  // P0.7:NC       .6:NC        .5:485TXEN  .4:NC      | .3:NC      .2:NC       .1:Rx      .0:Tx 
+  // P1.7:NC       .6:+6ddFlag  .5:R/HClock .4:R/HData | .3:+6ddEN  .2:RAMCS    .1:D2ASync .0:SST_DRV
+  // P0.7:NC       .6:NC        .5:485TXEN  .4:NC      | .3:NC      .2:NC       .1:Rx      .0:Tx
   sprintf(sys_info.node_name,"LPB");
   P3MDOUT  = 0x00; // Crate address in OD
   P2MDOUT |= 0x18; // SPI_MOSI, SPI_SCK in PP
@@ -172,7 +173,7 @@ void user_init(unsigned char init)
   P2MDOUT |= 0x18; // SPI_MOSI, SPI_SCK in PP
   P2MDOUT &= 0xFE; // RAM_WPn in OD
 
-#endif	
+#endif
 
 
 //-----------------------------------------------------------------------------
@@ -234,7 +235,7 @@ unsigned char user_func(unsigned char *data_in, unsigned char *data_out)
 }
 
 //-----------------------------------------------------------------------------
-void user_loop(void) 
+void user_loop(void)
 {
   unsigned char FAILED=0;
 
@@ -254,7 +255,7 @@ void user_loop(void)
 
     // Check S/N readback
     FAILED = ExtEEPROM_Read(WP_START_ADDR,(unsigned char*)&eepage2, PAGE_SIZE);
-    if(!FAILED && (user_data.serialN == eepage2.SerialN))	{
+    if(!FAILED && (user_data.serialN == eepage2.SerialN)) {
       DISABLE_INTERRUPTS;
       user_data.status |= (1<<1);
       ENABLE_INTERRUPTS;

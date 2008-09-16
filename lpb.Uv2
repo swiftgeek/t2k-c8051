@@ -55,7 +55,7 @@ Options 1,0,0  // Target 'Target 1'
  LstDir (.\)
  HexSel=0
  MG32K=0
- TGMORE=0
+ TGMORE=1
  RunUsr 0 0 <>
  RunUsr 1 0 <>
  BrunUsr 0 0 <>
