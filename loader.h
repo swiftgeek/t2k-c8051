@@ -142,8 +142,8 @@ struct EEPAGE xdata eepage = {
 // 0x3B - Current Bias Offset [0..7]
  , 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 // 0x43 - Voltage Bias Offset [0..7]
- , 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
-};
+ , 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.00
+ };
 unsigned long xdata smbdebug;
 
 //
