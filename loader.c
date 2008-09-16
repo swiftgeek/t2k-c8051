@@ -34,6 +34,7 @@ char code  node_name[] = "loader";
 //
 // Declare globally the number of sub-addresses to framework
 unsigned char idata _n_sub_addr = 1;
+int timeout = 0;
 
 #ifdef L_FEB64
 // Vreg Enable port assignment Rev 1 ONLY
@@ -79,7 +80,6 @@ void user_init(unsigned char init)
   user_data.control   = 0;
   user_data.status    = 0;
   user_data.structsze = 0;
-  sys_info.node_addr = cur_sub_addr();
   EEPROM_FLAG=0;
 
 //-----------------------------------------------------------------------------
@@ -98,17 +98,21 @@ void user_init(unsigned char init)
   // P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn | .3:ResetN  .2:SPARE2   .1:SPARE3  .0:SST_DRV 
   // P0.7:CSn1     .6:CSn0      .5:485TXEN  .4:QPUMPCLK| .3:SMBCLK  .2:SMBDAT   .1:Rx      .0:Tx 
   sprintf(sys_info.node_name,"FEB64");
-  P3MDOUT |= 0x84; // RAM_CSn, REG_EN in PP
+  P3MDOUT |= 0x80; // RAM_CSn in PP, REG_EN in OD
   P2MDOUT |= 0x18; // SPI_MOSI, SPI_SCK in PP
   P2MDOUT &= 0xFE; // RAM_WPn in OD
   P1MDOUT |= 0x08; // ResetN in PP
   P0MDOUT |= 0x20; // RS485 in PP
 
-  // Get ALL Vreg on
-  REG_EN = 1;
-  // Reset PCA9539 (PIO)
-  RESETN = 0;
-  RESETN = 1;
+// Get ALL Vreg on
+//  while((REG_EN == 0) && (timeout < 30)) {
+//    delay_ms(100);
+//    timeout++;
+//  }
+// Reset PCA9539 (PIO)
+//  RESETN = 0;
+// RESETN = 1;
+  delay_us(100);
 
 //
 // Get Card address through SMB PCA port
@@ -119,13 +123,12 @@ void user_init(unsigned char init)
   PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
   delay_us(10);
 
-  //Write to the PCA register for setting 0.x to output
-  PCA9539_WriteByte(BIAS_OUTPUT_ENABLE);
   //Write to the PCA register for setting 1.x to input
   PCA9539_WriteByte(BACKPLANE_INPUT_ENABLE);
   delay_us(10);
 
   PCA9539_Read(BACKPLANE_READ, &pca_add, 1);
+  delay_us(10);
   //C C C C C C 0 B B is the MSCB Addr[8..0], 9 bits
   //Modifying what the board reads from the PCA
   //Externally, the crate address are reversed
