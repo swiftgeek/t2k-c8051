@@ -87,9 +87,9 @@ float code Mon_Offst[]={  0.2278, 0.2278, 0.2278, 0.2278
 /**********************************************************************************/
 // External ADC channel, gain conversion table
 struct ADC2MSCB_TABLE {
-char gain;
-char mscbIdx;
-char current;
+int gain;
+int mscbIdx;
+int current;
 float Coef;
 unsigned int Offst;
 };
