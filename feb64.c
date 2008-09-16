@@ -482,7 +482,7 @@ void switchonoff(unsigned char command)
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // Needs to stay on for JTAG debug access!
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    REG_EN  = OFF;   // Shutdown All Regulators 
+    REG_EN  = ON;   // Shutdown All Regulators 
 
     //SPI communication for EEPROM is maintained
     // P2.7:SPARE1 .6:CSn7 .5:CSn6 .4:SPIMOSI .3:SPISCK .2:RAMHLDn .1:SPIMISO .0:RAMWPn 
