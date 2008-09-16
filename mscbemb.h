@@ -539,8 +539,6 @@ sbit RS485_ENABLE = P0 ^ 2; //MSCB communication enable port
 #if defined(LED_1) 
 #undef LED_1
 #endif
-
-sbit DEBUG_PIN = P3 ^ 3;
    
 #define LED_ON 0 //defines LED "ON" as forcing the specified pin to low
 
