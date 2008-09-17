@@ -103,7 +103,7 @@ unsigned char ExtEEPROM_Write_Clear(unsigned int write_addr
   if (write_addr+page_size >= WP_START_ADDR)
     return EEP_PROTECTED;
 
-  //Making sure that Write Protection pin is high
+  // Enable Memory write access 
   RAM_WPn = 1;
   //Nblock would determine number of 32 bytes blocks
   Nblock = page_size / EEP_MAX_BYTE;
@@ -146,7 +146,8 @@ unsigned char ExtEEPROM_Write_Clear(unsigned int write_addr
     RAM_CSn = 1;   //Programming will start after the chip select is brought high
     delay_us(EEP_delay);
   }
-
+  
+  // Disable Memory Write 
   RAM_WPn = 0;
   return EEP_SUCCESS;
 }
@@ -174,7 +175,7 @@ unsigned char ExtEEPROM_WriteEnable(void)
 //-----------------------------------------------------------------
 /**
 Writing to the status register
-@param status Stuats would determine the value of WPEN,BP0,BP1
+@param status Status would determine the value of WPEN,BP0,BP1
               bits of status register
 */
 unsigned char ExtEEPROM_WriteStatusReg(unsigned char status) {
