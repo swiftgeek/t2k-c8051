@@ -80,9 +80,10 @@ void SPI_WriteByte(unsigned char dataToSend)
 
   SFRPAGE = SPI0_PAGE ;
   for(i = 7; i >= 0; i--) {
-	  SPI_MOSI = (dataToSend >> i) & 0x01;
+     SPI_MOSI = (dataToSend >> i) & 0x01;
      SPI_ClockOnce();
   }
+  SPI_MOSI = 0;
 }
 
 
@@ -100,10 +101,12 @@ void SPI_WriteUInt(unsigned int dataToBeSend)
 	signed char i;
 	
   SFRPAGE = SPI0_PAGE ;
+  
   for(i = 15; i >= 0; i--) {       
 	  SPI_MOSI = (dataToBeSend >> i) & 0x01;
      SPI_ClockOnce();
   }
+  SPI_MOSI = 0;
 }
 
 // Disabled to remove UNCALLED SEGMENT warning
@@ -131,7 +134,6 @@ unsigned char SPI_ReadByteFalling(void)
     din = SPI_MISO;
     dataReceived |= (din << i);
 	 SPI_ClockOnce();
-
   }
   return dataReceived;
 }
