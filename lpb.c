@@ -47,6 +47,10 @@ char idata svn_rev_code[] = "$Rev$";
 unsigned char idata _n_sub_addr = 1;
 
 // Local flag
+sbit SPI_SCK   = MSCB_SPI_SCK;     // SPI Protocol Serial Clock
+sbit SPI_MOSI  = MSCB_SPI_MOSI;    // SPI Protocol Master Out Slave In
+sbit SPI_CSN   = MSCB_SYNC;        // SPI Protocol Master Out Slave In
+
 bit EEP_CTR_FLAG;
 unsigned char channel;
 unsigned long xdata currentTime=0;
@@ -219,6 +223,9 @@ void user_init(unsigned char init)
   P1MDOUT |= 0x02; // Setting the DtoA_SYNC push pull
   P2MDOUT |= 0x18; // Setting SPI_MOSI, SPI_SCK to push pull
   AD5300_Init();
+  SPI_SCK  = 0;
+  SPI_MOSI = 0;
+  SPI_CSN  = 0;
 #endif
 
 //---------------------------------------------------------------
@@ -296,12 +303,12 @@ void user_init(unsigned char init)
 
 //---------------------------------------------------------------
 //
+// Main swithc PP
   P1MDOUT |= 0x08;
   VCC_EN = OFF;
   P2MDOUT |= 0xE0;
-  VREG_5 = ON;
-  VREG_3 = ON;
-  VREG_1 = ON;
+// Should be OFF
+  VREG_5 = VREG_3 = VREG_1 = OFF;
 
   // Watchdog
   user_data.spare1 = 0;
@@ -358,6 +365,7 @@ void user_loop(void) {
   if(CPup){
     rCSR = user_data.status;
     VCC_EN = ON;
+    VREG_5 = VREG_3 = VREG_1 = ON;
     SmSd = OFF;
     CPup = OFF;
     SPup = ON;
@@ -373,10 +381,14 @@ void user_loop(void) {
   if (CmSd){
     rCSR = user_data.status;
     VCC_EN = OFF;
+    VREG_5 = VREG_3 = VREG_1 = OFF;
     CPup = OFF;
     CmSd = OFF;
     SmSd = ON;
     SPup = OFF;
+    SPI_SCK  = 0;
+    SPI_MOSI = 0;
+    SPI_CSN  = 0;
     DISABLE_INTERRUPTS;
     user_data.control = rCTL;
     user_data.status  = rCSR;
