@@ -25,9 +25,13 @@
  #ifdef _HUMSEN_
  #include "Devices/Humidity_sensor.h"
  #endif
- 
+   
  #ifdef _LTC2600_
  #include "Devices/LTC2600_dac.h"
+ #endif
+ 
+ #ifdef _ADC_INTERNAL_
+ #include "Devices/adc_internal.h"
  #endif
 
   // Declare globally the number of sub-addresses to framework
@@ -42,6 +46,7 @@
  bit EEP_CTR_FLAG;
  bit LTC2600_FLAG;
  bit REF_FLAG;
+
  //EEPROM variables
  int* xdata eep_address;
  static unsigned char tcounter;
@@ -63,12 +68,15 @@
  float xdata average;
  float xdata temperature;
 
+#ifdef _LTC2600_
  //DAC variables
  unsigned char xdata DACIndex;
  unsigned char xdata LTC2600_LOAD[] = {LTC2600_LOAD_A,LTC2600_LOAD_B
                           ,LTC2600_LOAD_C,LTC2600_LOAD_D
                           ,LTC2600_LOAD_E,LTC2600_LOAD_F
                           ,LTC2600_LOAD_G,LTC2600_LOAD_H};
+#endif
+                          
  // Get sysinfo if necessary
  extern SYS_INFO sys_info;          // For address setting
 
@@ -76,112 +84,118 @@
  // User Data structure declaration
  //-----------------------------------------------------------------------------
  MSCB_INFO_VAR code vars[] = {
-   4, UNIT_BYTE,            0, 0,           0, "SerialN",      &user_data.SerialN,     //0 
-   1, UNIT_BYTE,            0, 0,           0, "Control",      &user_data.control,     //1 
-   1, UNIT_BYTE,            0, 0,           0, "Status",       &user_data.status,      //2 
-   1, UNIT_BYTE,            0, 0,           0, "EEPage",       &user_data.eepage,      //3 
-   2, UNIT_BYTE,            0, 0,           0, "Navg",         &user_data.navg,      //4     
-   1, UNIT_BYTE,            0, 0,           0, "TE01-08",      &user_data.terror[0],   //5 
-   1, UNIT_BYTE,            0, 0,           0, "TE09-16",      &user_data.terror[1],   //6 
-   1, UNIT_BYTE,            0, 0,           0, "TE17-24",      &user_data.terror[2],   //7 
-   1, UNIT_BYTE,            0, 0,           0, "TE25-32",      &user_data.terror[3],   //8 
-   1, UNIT_BYTE,            0, 0,           0, "TE33-36",      &user_data.terror[4],   //9 
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp01",       &user_data.Temp[0],     //10
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp02",       &user_data.Temp[1],     //11
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp03",       &user_data.Temp[2],     //12
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp04",       &user_data.Temp[3],     //13
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp05",       &user_data.Temp[4],     //14
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp06",       &user_data.Temp[5],     //15
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp07",       &user_data.Temp[6],     //16
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp08",       &user_data.Temp[7],     //17
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp09",       &user_data.Temp[8],     //18
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp10",       &user_data.Temp[9],     //19
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp11",       &user_data.Temp[10],    //20
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp12",       &user_data.Temp[11],    //21
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp13",       &user_data.Temp[12],    //22
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp14",       &user_data.Temp[13],    //23
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp15",       &user_data.Temp[14],    //24
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp16",       &user_data.Temp[15],    //25
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp17",       &user_data.Temp[16],    //26
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp18",       &user_data.Temp[17],    //27
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp19",       &user_data.Temp[18],    //28
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp20",       &user_data.Temp[19],    //29
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp21",       &user_data.Temp[20],    //30
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp22",       &user_data.Temp[21],    //31
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp23",       &user_data.Temp[22],    //32
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp24",       &user_data.Temp[23],    //33
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp25",       &user_data.Temp[24],    //34
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp26",       &user_data.Temp[25],    //35
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp27",       &user_data.Temp[26],    //36
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp28",       &user_data.Temp[27],    //37
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp29",       &user_data.Temp[28],    //38
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp30",       &user_data.Temp[29],    //39
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp31",       &user_data.Temp[30],    //40
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp32",       &user_data.Temp[31],    //41
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp33",       &user_data.Temp[32],    //42
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp34",       &user_data.Temp[33],    //43
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp35",       &user_data.Temp[34],    //44
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp36",       &user_data.Temp[35],    //45
+   4, UNIT_BYTE,            0, 0,           0, "SerialN",    &user_data.SerialN,       //0
+   2, UNIT_BYTE,            0, 0,           0, "Error",      &user_data.error,         //1
+   1, UNIT_BYTE,            0, 0,           0, "Control",    &user_data.control,       //2
+   1, UNIT_BYTE,            0, 0,           0, "Status",     &user_data.status,        //3
+   1, UNIT_BYTE,            0, 0,           0, "EEPage",     &user_data.eepage,        //4
+   2, UNIT_BYTE,            0, 0,           0, "Navge",        &user_data.navge,       //5     
+   1, UNIT_BYTE,            0, 0,           0, "TE01-08",      &user_data.terror[0],   //6 
+   1, UNIT_BYTE,            0, 0,           0, "TE09-16",      &user_data.terror[1],   //7 
+   1, UNIT_BYTE,            0, 0,           0, "TE17-24",      &user_data.terror[2],   //8 
+   1, UNIT_BYTE,            0, 0,           0, "TE25-32",      &user_data.terror[3],   //9 
+   1, UNIT_BYTE,            0, 0,           0, "TE33-36",      &user_data.terror[4],   //10 
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp01",       &user_data.Temp[0],     //11
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp02",       &user_data.Temp[1],     //12
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp03",       &user_data.Temp[2],     //13
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp04",       &user_data.Temp[3],     //14
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp05",       &user_data.Temp[4],     //15
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp06",       &user_data.Temp[5],     //16
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp07",       &user_data.Temp[6],     //17
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp08",       &user_data.Temp[7],     //18
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp09",       &user_data.Temp[8],     //19
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp10",       &user_data.Temp[9],     //20
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp11",       &user_data.Temp[10],    //21
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp12",       &user_data.Temp[11],    //22
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp13",       &user_data.Temp[12],    //23
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp14",       &user_data.Temp[13],    //24
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp15",       &user_data.Temp[14],    //25
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp16",       &user_data.Temp[15],    //26
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp17",       &user_data.Temp[16],    //27
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp18",       &user_data.Temp[17],    //28
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp19",       &user_data.Temp[18],    //29
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp20",       &user_data.Temp[19],    //30
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp21",       &user_data.Temp[20],    //31
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp22",       &user_data.Temp[21],    //32
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp23",       &user_data.Temp[22],    //33
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp24",       &user_data.Temp[23],    //34
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp25",       &user_data.Temp[24],    //35
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp26",       &user_data.Temp[25],    //36
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp27",       &user_data.Temp[26],    //37
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp28",       &user_data.Temp[27],    //38
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp29",       &user_data.Temp[28],    //39
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp30",       &user_data.Temp[29],    //40
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp31",       &user_data.Temp[30],    //41
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp32",       &user_data.Temp[31],    //42
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp33",       &user_data.Temp[32],    //43
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp34",       &user_data.Temp[33],    //44
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp35",       &user_data.Temp[34],    //45
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp36",       &user_data.Temp[35],    //46
 
-  4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,"eepValue",      &user_data.eepValue,    //46
-   4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,"eeCtrSet",      &user_data.eeCtrSet,    //47
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "REF",          &user_data.ref   ,      //47
 
-   4, UNIT_CELSIUS,         0, 0,MSCBF_HIDDEN|MSCBF_FLOAT, "SHTtemp",    &user_data.SHTtemp1,    //48
-   4, 10,              0, 0,MSCBF_HIDDEN|MSCBF_FLOAT, "SHThumi",     &user_data.SHThumi1,    //49   
-   4, UNIT_CELSIUS,         0, 0,MSCBF_HIDDEN|MSCBF_FLOAT, "SHTtemp2",     &user_data.SHTtemp2,    //50
-   4, 10,              0, 0,MSCBF_HIDDEN|MSCBF_FLOAT, "SHThumi2",    &user_data.SHThumi2,    //51  
-   2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC0",         &user_data.DAC[0],      //52
-   2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC1",         &user_data.DAC[1],      //53
-   2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC2",         &user_data.DAC[2],      //54
-   2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC3",         &user_data.DAC[3],      //55
-   2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC4",         &user_data.DAC[4],      //56
-   2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC5",         &user_data.DAC[5],      //57
-   2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC6",         &user_data.DAC[6],      //58
-   2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC7",         &user_data.DAC[7],      //59 
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg01",       &user_data.AT[0],       //48
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg02",       &user_data.AT[1],       //49
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg03",       &user_data.AT[2],       //50
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg04",       &user_data.AT[3],       //51
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg05",       &user_data.AT[4],       //52 
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg06",       &user_data.AT[5],       //53
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg07",       &user_data.AT[6],       //54
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg08",       &user_data.AT[7],       //55
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg09",       &user_data.AT[8],       //56
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg10",       &user_data.AT[9],       //57
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg11",       &user_data.AT[10],      //58
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg12",       &user_data.AT[11],      //59
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg13",       &user_data.AT[12],      //60
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg14",       &user_data.AT[13],      //61
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg15",       &user_data.AT[14],      //62
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg16",       &user_data.AT[15],      //63
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg17",       &user_data.AT[16],      //64
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg18",       &user_data.AT[17],      //65
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg19",       &user_data.AT[18],      //66
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg20",       &user_data.AT[19],      //67
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg21",       &user_data.AT[20],      //68
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg22",       &user_data.AT[21],      //69
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg23",       &user_data.AT[22],      //70
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg24",       &user_data.AT[23],      //71
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg25",       &user_data.AT[24],      //72
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg26",       &user_data.AT[25],      //73
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg27",       &user_data.AT[26],      //74
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg28",       &user_data.AT[27],      //75
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg29",       &user_data.AT[28],      //76
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg30",       &user_data.AT[29],      //77
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg31",       &user_data.AT[30],      //78
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg32",       &user_data.AT[31],      //79
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg33",       &user_data.AT[32],      //80
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg34",       &user_data.AT[33],      //81
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg35",       &user_data.AT[34],      //82
+   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg36",       &user_data.AT[35],      //83
+
+   4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,"eepValue",      &user_data.eepValue,    //84
+   4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,"eeCtrSet",      &user_data.eeCtrSet,    //85
+
+   4, UNIT_CELSIUS, 0, 0,MSCBF_HIDDEN|MSCBF_FLOAT, "SHTtemp",  &user_data.SHTtemp1,    //86
+   4, 10,           0, 0,MSCBF_HIDDEN|MSCBF_FLOAT, "SHThumi",  &user_data.SHThumi1,    //87   
+   4, UNIT_CELSIUS, 0, 0,MSCBF_HIDDEN|MSCBF_FLOAT, "SHTtemp2", &user_data.SHTtemp2,    //88
+   4, 10,           0, 0,MSCBF_HIDDEN|MSCBF_FLOAT, "SHThumi2", &user_data.SHThumi2,    //89  
+
+   2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC0",         &user_data.DAC[0],      //90
+   2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC1",         &user_data.DAC[1],      //91
+   2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC2",         &user_data.DAC[2],      //92
+   2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC3",         &user_data.DAC[3],      //93
+   2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC4",         &user_data.DAC[4],      //94
+   2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC5",         &user_data.DAC[5],      //95
+   2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC6",         &user_data.DAC[6],      //96
+   2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC7",         &user_data.DAC[7],      //97 
   
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg01",       &user_data.AT[0],       //60
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg02",       &user_data.AT[1],       //61
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg03",       &user_data.AT[2],       //62
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg04",       &user_data.AT[3],       //63
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg05",       &user_data.AT[4],       //64
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg06",       &user_data.AT[5],       //65
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg07",       &user_data.AT[6],       //66
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg08",       &user_data.AT[7],       //67
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg09",       &user_data.AT[8],       //68
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg10",       &user_data.AT[9],       //69
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg11",       &user_data.AT[10],      //70
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg12",       &user_data.AT[11],      //71
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg13",       &user_data.AT[12],      //72
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg14",       &user_data.AT[13],      //73
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg15",       &user_data.AT[14],      //74
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg16",       &user_data.AT[15],      //75
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg17",       &user_data.AT[16],      //76
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg18",       &user_data.AT[17],      //77
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg19",       &user_data.AT[18],      //78
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg20",       &user_data.AT[19],      //79
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg21",       &user_data.AT[20],      //80
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg22",       &user_data.AT[21],      //81
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg23",       &user_data.AT[22],      //82
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg24",       &user_data.AT[23],      //83
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg25",       &user_data.AT[24],      //84
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg26",       &user_data.AT[25],      //85
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg27",       &user_data.AT[26],      //86
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg28",       &user_data.AT[27],      //87
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg29",       &user_data.AT[28],      //88
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg30",       &user_data.AT[29],      //89
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg31",       &user_data.AT[30],      //90
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg32",       &user_data.AT[31],      //91
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg33",       &user_data.AT[32],      //92
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg34",       &user_data.AT[33],      //93
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg35",       &user_data.AT[34],      //94
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg36",       &user_data.AT[35],      //95
-   
-  4, UNIT_CELSIUS,       0, 0, MSCBF_FLOAT, "REF",        &user_data.ref    ,      //96
   0
  };
  
  MSCB_INFO_VAR *variables = vars;   // Structure mapping
 
+ 
+// Offset calibration
+//-----------------------------------------------------------------------------
 void autocalibration(float reference)
 {
   float buffer;
@@ -202,7 +216,9 @@ void autocalibration(float reference)
   }
   return;
 }
-//converts channel index to eepage structure offset address
+
+// converts channel index to eepage structure offset address
+//-----------------------------------------------------------------------------
 int eepageAddrConvert(unsigned int index)
 {
   int add;
@@ -214,6 +230,7 @@ int eepageAddrConvert(unsigned int index)
     add=index/2;
   return add;
 }
+
 /*---- User init function ------------------------------------------*/
 void user_init(unsigned char init)
 {
@@ -231,34 +248,33 @@ void user_init(unsigned char init)
                            (svn_rev_code[8]-'0')*10+
                            (svn_rev_code[9]-'0');
 
+  if(init) {}
+
  // Initial setting for communication and overall ports 
  //-----------------------------------------------------------------------------
-   //External EEPROM chip
+ // External EEPROM chip
 #ifdef _ExtEEPROM_
    SFRPAGE  = CONFIG_PAGE;
    P2MDOUT |= 0x31; // Setting the RAM_CSn. SPI_MOSI, SPI_SCK to push pull
    P2MDOUT &= 0xFB; // Setting the RAM_WPn to open drain
    ExtEEPROM_Init();
 
-  //Get serial number from write protected area 
-   ExtEEPROM_Read  (WP_START_ADDR
-                  ,(unsigned char*)&eepage
-             ,PAGE_SIZE);
+   //Get serial number from write protected area 
+   ExtEEPROM_Read  (WP_START_ADDR, (unsigned char*)&eepage ,PAGE_SIZE);
    DISABLE_INTERRUPTS;
-  user_data.SerialN = (float)eepage.SerialN;
+   user_data.SerialN = eepage.SerialN;
    ENABLE_INTERRUPTS;
 
   //Refer to the first Page of the non_protected area
-   ExtEEPROM_Read  (PageAddr[0]
-                  ,(unsigned char*)&eepage
-             ,PAGE_SIZE);
-  DISABLE_INTERRUPTS;
-  user_data.control = (char)eepage.control;
-  rCTL=eepage.control;
-  ENABLE_INTERRUPTS;
+   ExtEEPROM_Read  (PageAddr[0] ,(unsigned char*)&eepage ,PAGE_SIZE);
+   DISABLE_INTERRUPTS;
+   user_data.navge = eepage.navge;
+   ENABLE_INTERRUPTS;
 
 #endif
-   //ADT7486A Init
+
+//
+// ADT7486A Init
 #ifdef _ADT7486A_
    SFRPAGE  = CONFIG_PAGE;
    P0MDOUT |= 0x18; // Setting the SST_DRV (SST) to push pull
@@ -272,11 +288,11 @@ void user_init(unsigned char init)
    ADT7486A_Init(SST_LINE1); //Temperature measurements related initialization
    ADT7486A_Init(SST_LINE2); 
 
-  //Setting the offset for the temperature sensors
+// Setting the offset for the temperature sensors
    for (channel=0;channel < 9; channel++){
-    //Set the offset for the temp01,03...17 sensors 
-      ADT7486A_Cmd(ADT7486A_addrArray[channel]
-               , SetExt2Offset
+    // Set the offset for the temp01,03...17 sensors 
+    ADT7486A_Cmd(ADT7486A_addrArray[channel]
+            , SetExt2Offset
             , (eepage.ext2offset[channel]>>8)
             , eepage.ext2offset[channel]
             , SST_LINE1
@@ -318,14 +334,15 @@ void user_init(unsigned char init)
    }
    delay_us(300);
 #endif
-   //User variables initialization
+
+// User variables initialization
    DISABLE_INTERRUPTS
    user_data.terror[0]=0;
    user_data.terror[1]=0;
    user_data.terror[2]=0;
    user_data.terror[3]=0;
    user_data.terror[4]=0;
-  user_data.status=0;
+   user_data.status=0;
 
   //temporary humidity sensor
   user_data.SHTtemp1 = 0;
@@ -336,7 +353,7 @@ void user_init(unsigned char init)
    for (i=0; i<36;i ++)
       user_data.Temp[i] = 0.0;
   user_data.eepage=0;
-  user_data.navg=0;
+  user_data.navge=0;
   for(i=0; i<36; i++)
   {
     user_data.AT[i]=0;
@@ -344,12 +361,12 @@ void user_init(unsigned char init)
   
   user_data.ref=0;
 
-   ENABLE_INTERRUPTS
-   //General Variables initialization
+  ENABLE_INTERRUPTS
+  // General Variables initialization
   EEP_CTR_FLAG=0;
   rCSR=0;
 
-//Humidity sensor initialization
+// Humidity sensor initialization
 #ifdef _HUMSEN_
   SFRPAGE  = CONFIG_PAGE;
    P1MDOUT |= 0xBB;
@@ -363,14 +380,14 @@ void user_init(unsigned char init)
   HumiSensor_Init(humsen2);
 #endif   
 #endif
-//DAC initialization
+
+// DAC initialization
 #ifdef _LTC2600_
    SFRPAGE  = CONFIG_PAGE;
    P0MDOUT |= 0x80; // Setting the SUM_DAC_CSn to push pull
    P2MDOUT |= 0x30; // Setting the SPI_MOSI and SPI_SCK to push pull
    LTC2600_Init();
 #endif
-
 }
 
 /*---- User write function -----------------------------------------*/
@@ -381,13 +398,14 @@ void user_write(unsigned char index) reentrant
    if (index == IDXEEP_CTL)
       EEP_CTR_FLAG = SET;
 
+#ifdef _LTC2600_
    if ((index >= First_DACIndex) && (index <= Last_DACIndex)) {
       DACIndex = (index - First_DACIndex);
-      #ifdef _LTC2600_
        // Update Bias Dac voltages as requested by bit5 of control register
       LTC2600_FLAG = SET;
-      #endif
    }
+#endif
+
   if(index==IDXNAVG) {
     cavg=0;
     numavg=0;
@@ -415,12 +433,12 @@ unsigned char user_func(unsigned char *data_in, unsigned char *data_out)
 void user_loop(void)
 {
 #ifdef _ADT7486A_
-  //Read the external temperature from each chip that is connected to SST_LINE1
-  //Corresponds to Temp01,03,05...17
+  // Read the external temperature from each chip that is connected to SST_LINE1
+  // Corresponds to Temp01,03,05...17
    for (channel=0;channel < 9; channel++){
       if(!ADT7486A_Cmd(ADT7486A_addrArray[channel]
-                   , GetExt2Temp
-              , SST_LINE1
+              , GetExt2Temp
+              , SST_LINE1 
               , &temperature)){
          //Clear the bit if there is no error 
          DISABLE_INTERRUPTS;
@@ -432,8 +450,7 @@ void user_loop(void)
       else 
         user_data.terror[2]   &= Terrorclear[2*(channel-8)];
          ENABLE_INTERRUPTS;
-      }
-      else{
+      } else {
       //Set the bit if there is an error
          DISABLE_INTERRUPTS;
       if(channel<4)
@@ -445,11 +462,14 @@ void user_loop(void)
          ENABLE_INTERRUPTS;
       } 
    }
-  //Read the external temperature from each chip that is connected to SST_LINE2
-   //Corresponds to Temp19,21...35
+
+  yield();
+
+  // Read the external temperature from each chip that is connected to SST_LINE2
+  // Corresponds to Temp19,21...35
   for (channel=9;channel < 18; channel++){
       if(!ADT7486A_Cmd(ADT7486A_addrArray[channel-9]
-                   , GetExt2Temp
+              , GetExt2Temp
               , SST_LINE2
               , &temperature)){
          
@@ -474,11 +494,15 @@ void user_loop(void)
          ENABLE_INTERRUPTS;
       }
    }
-  //Read the second external temperature from each chip that is connected to SST_LINE1
-   //Corresponds to Temp02,04...18  
+  
+
+  yield();
+
+   // Read the second external temperature from each chip that is connected to SST_LINE1
+   // Corresponds to Temp02,04...18  
    for (channel=0;channel < 9; channel++){
       if(!ADT7486A_Cmd(ADT7486A_addrArray[channel]
-                   , GetExt1Temp
+              , GetExt1Temp
               , SST_LINE1
               , &temperature)){
          DISABLE_INTERRUPTS;
@@ -502,11 +526,15 @@ void user_loop(void)
          ENABLE_INTERRUPTS;
       }
    }
-  //Read the second external temperature from each chip that is connected to SST_LINE2
-   //Corresponds to Temp20,22,...36
+
+
+  yield();
+
+  // Read the second external temperature from each chip that is connected to SST_LINE2
+  // Corresponds to Temp20,22,...36
   for (channel=9;channel < 18; channel++){
       if(!ADT7486A_Cmd(ADT7486A_addrArray[channel-9]
-                   , GetExt1Temp
+              , GetExt1Temp
               , SST_LINE2
               , &temperature)){
          DISABLE_INTERRUPTS;
@@ -530,33 +558,40 @@ void user_loop(void)
          ENABLE_INTERRUPTS;
       }
    }
-  //Calculating the rolling average
-   if(user_data.navg<=TAVGMAX && user_data.navg!=0){
-      if(cavg==user_data.navg)
+
+
+  yield();
+
+   // Calculating the rolling average
+   if((user_data.navge <= TAVGMAX) && (user_data.navge != 0)) {
+      if(cavg == user_data.navge)
          cavg=1;
-      else{
+      else {
          cavg++;
-      if(numavg != user_data.navg)
-          numavg=cavg;
+         if(numavg != user_data.navge) numavg=cavg;
       }
-      for(channel=0; channel<36; channel++){
+
+      for(channel=0; channel<36; channel++) {
          Taverage[channel][(cavg-1)] = user_data.Temp[channel];
          average=0;
+    
          for(avgcount=0; avgcount<numavg; avgcount++)
             average+=Taverage[channel][avgcount];
          average/=numavg;
          DISABLE_INTERRUPTS;
-        user_data.AT[channel]=average;
+         user_data.AT[channel]=average;
          ENABLE_INTERRUPTS;
       } 
    }
 #endif
+
 #ifdef _ExtEEPROM_
    if (EEP_CTR_FLAG){
+      led_blink(0, 1, 150);
       //Checking for the special instruction
       if (user_data.eeCtrSet & EEP_CTRL_KEY){
       //convert the index value to fit the address of the eepage structure, temp offset only
-      if(((int)(user_data.eeCtrSet & 0x000000ff))<TEMPOFF_LAST_INDX)
+      if(((int)(user_data.eeCtrSet & 0x000000ff)) < TEMPOFF_LAST_INDX)
         eep_address = (int*)(&eepage) + eepageAddrConvert((int)(user_data.eeCtrSet & 0x000000ff));
        else
         eep_address = (int*)(&eepage) + (int)(user_data.eeCtrSet & 0x000000ff);
@@ -587,7 +622,8 @@ void user_loop(void)
 
       EEP_CTR_FLAG = CLEAR;
    }
-  //Writing to the EEPROM
+
+   //Writing to the EEPROM
    if (CeeS){
        //Check if we are here for the first time
       if (!eeprom_flag){
@@ -623,7 +659,8 @@ void user_loop(void)
       user_data.status  = rCSR;
       ENABLE_INTERRUPTS;
    }
-  //Reading from the EEPROM
+
+   //Reading from the EEPROM
    if (CeeR) {
       rCSR = user_data.status;
       eeprom_rstatus = ExtEEPROM_Read  (eeptemp_addr,
@@ -631,8 +668,7 @@ void user_loop(void)
       if (eeprom_rstatus == DONE){
          CeeR = CLEAR;
          SeeR = DONE;
-      } 
-    else
+      } else
          SeeR = FAILED;
 
       // Publish Registers state
@@ -647,7 +683,7 @@ void user_loop(void)
   //Measuring the humidity and temperature
    if(CHum){
       status = HumidSensor_Cmd (&rSHThumi1
-                             ,&rSHTtemp1
+                     ,&rSHTtemp1
                      ,&humidity
                      ,&htemperature
                      ,&FCSorig1
@@ -674,9 +710,10 @@ void user_loop(void)
         user_data.SHTtemp2 = htemperature;
       ENABLE_INTERRUPTS;
       }
-#endif
+#endif // MORETHANONE
    }
-#endif 
+
+#endif // HUMIDITY
 
 #ifdef _LTC2600_
   //DAC
@@ -695,5 +732,7 @@ void user_loop(void)
     user_data.control=rCTL;
     ENABLE_INTERRUPTS; 
   }
-  led_blink(1, 1, 250);
+
+  led_blink(0, 1, 150);
+
 }
