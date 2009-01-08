@@ -38,33 +38,40 @@ struct{
   unsigned char control;
   unsigned char eepage;
   unsigned char status;
-  unsigned int  structsze;
+  unsigned long serialNWp;
+  unsigned int  structszeWp;
+  unsigned long serialN0;
+  unsigned int  structsze0;
 }xdata user_data;
 
-bit EEPROM_FLAG;
+char EEPROM_FLAG;
 #define IDXCTL 1
 
 //
 // SELECT EEPAGE STRUCTURE BASED ON BOARD
 //-----------------------------------------------------------------------------
 #ifdef L_TEMP36
+// The structure of each EEPAGE
 struct EEPAGE {
+  unsigned long SerialN;    
+  unsigned int structsze;
+  unsigned int  navge;
   int ext1offset[18];
   int ext2offset[18];
-
-  int control;
-  unsigned long SerialN;
 };
-struct EEPAGE xdata eepage = {
+
+//+/- 16 increments corresponds to a +/- 0.25 degrees offset in the ADT7486A chip
+//Initial values for eepage
+struct EEPAGE xdata eepage={
+  0,     // S/N
+  1000,  // Structure size
+  10,    // Average value
   //Temperature sensor offsets corresponding to the external 1 channel
     //Temp02,04....36
-  32,48,32,32,16,16,48,16,0,16,0,0,16,32,16,32,-16,32 ,
+  32, 48, 32, 32, 16, 16, 48, 16, 0, 16, 0, 0, 16, 32, 16, 32, -16, 32,
   //Temperature sensor offsets corresponding to the external 2 channel
-    //Temp01,03....35
-  48,32,48,64,64,32,48,64,0,16,16,32,48,48,32,32,16,32,
-
-  0,
-  1000
+  //Temp01,03....35
+  48, 32, 48, 64, 64, 32, 48, 64, 0, 16, 16, 32, 48, 48, 32, 32, 16, 32,
 };
 
 //-----------------------------------------------------------------------------

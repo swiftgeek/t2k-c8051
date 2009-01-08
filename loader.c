@@ -5,19 +5,20 @@ Created by:   Bahman Sotoodian                Mar/11/2008
 
 Contents:     Application specific (user) part of
 Midas Slow Control Bus protocol
-for External EEPROM of FEB64 board
+for External EEPROM of FEB64/TEMP36 boards
 
-Memory usage:
 
-JTAG Chain:
+JTAG Chain / Program Size
 FEB64 : 1 0 5 0
 LPB   : 0 0 0 0
+TEMP36: 0 0 0 0 data=135.1 xdata=310 code=10508
 
 $Id$
 \********************************************************************/
 
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 #include "mscbemb.h"
 #include "loader.h"
 #include "Devices/AT25160A.h"
@@ -57,7 +58,10 @@ MSCB_INFO_VAR code vars[] = {
   1, UNIT_BYTE,            0, 0,           0, "Control",    &user_data.control,      // 1
   1, UNIT_BYTE,            0, 0,           0, "EEPage",     &user_data.eepage,       // 2
   1, UNIT_BYTE,            0, 0,           0, "Status",     &user_data.status,       // 3
-  2, UNIT_BYTE,            0, 0,           0, "StrcSze",    &user_data.structsze,    // 4
+  4, UNIT_BYTE,            0, 0,           0, "SNWp",       &user_data.serialNWp,    // 4
+  2, UNIT_BYTE,            0, 0,           0, "StrcSzWp",   &user_data.structszeWp,  // 5
+  4, UNIT_BYTE,            0, 0,           0, "SN0",        &user_data.serialN0,     // 6
+  2, UNIT_BYTE,            0, 0,           0, "StrcSze0",   &user_data.structsze0,   // 7
   0
 };
 
@@ -74,15 +78,15 @@ void user_init(unsigned char init)
 {
   char xdata pca_add=0;
   unsigned int xdata crate_add=0, board_address=0;
-  unsigned long SNtemp;
-  unsigned int  Szetemp;
+  unsigned long SNWp;
+  unsigned int  structSzeWp;
 
   if (init) {}
 
   // Initialize control and status
-  user_data.control   = 0;
-  user_data.status    = 0;
-  user_data.structsze = 0;
+  user_data.control    = 0;
+  user_data.status     = 0;
+  user_data.structsze0 = 0;
   EEPROM_FLAG=0;
 
 //-----------------------------------------------------------------------------
@@ -92,6 +96,7 @@ void user_init(unsigned char init)
   SFRPAGE  = CONFIG_PAGE;
   P2MDOUT |= 0x31; // Setting the RAM_CSn. SPI_MOSI, SPI_SCK to push pull
   P2MDOUT &= 0xFB; // Setting the RAM_WPn to open drain
+  P0MDOUT |= 0x04; // RS485 in PP
 
 //-----------------------------------------------------------------------------
 //
@@ -123,6 +128,8 @@ void user_init(unsigned char init)
 #ifdef _PCA9539_
   SFRPAGE = CONFIG_PAGE;
 
+// Enable SMB
+  XBR0 |= 0x01;                 // Enable SMBus
   PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
   delay_us(10);
 
@@ -187,31 +194,40 @@ void user_init(unsigned char init)
 
   //
   // Read S/N and struct size only from Protected page
-  ExtEEPROM_Read(WP_START_ADDR, (unsigned char*)&SNtemp, SERIALN_LENGTH);
-  ExtEEPROM_Read(WP_START_ADDR+SERIALN_LENGTH, (unsigned char*)&Szetemp, 2);
+  // S/N ans Strtsze at the same location for all the cards
+  ExtEEPROM_Read(WP_START_ADDR, (unsigned char*)&SNWp, SERIALN_LENGTH);
+  ExtEEPROM_Read(WP_START_ADDR+SERIALN_LENGTH, (unsigned char*)&structSzeWp, 2);
   DISABLE_INTERRUPTS;
-  user_data.serialN   = SNtemp;
-  user_data.structsze = Szetemp;
+  user_data.serialNWp   = SNWp;
+  user_data.structszeWp = structSzeWp;
   ENABLE_INTERRUPTS;
 
-  // Read Page 0 if empty use definition
+  // Read Page 0 in temporatry struct as we need to figure out if the 
+  // memory contains valid information or if it is empty
   ExtEEPROM_Read(page_addr[0], (unsigned char*)&eepage2, PAGE_SIZE);
-#ifdef L_FEB64
-  if (eepage2.uuCTlimit == 0) {
-#elif defined (L_LPB)
-  if (eepage2.sstOffset[0] == 0.0f) {
-#elif defined (L_CMB)
-#endif
-  //
+  DISABLE_INTERRUPTS;
+  user_data.serialN0   = eepage2.SerialN;
+  user_data.structsze0 = eepage2.structsze;
+  ENABLE_INTERRUPTS;
+  // If no match use Wp structure
+  if (eepage2.structsze != user_data.structsze0) {
+
   // Check Structure size and publish it (above)
   // If the size doesn't match use the struct definition
     DISABLE_INTERRUPTS;
     user_data.status = 0xFF;
     ENABLE_INTERRUPTS;
   } else {
-  // Correct PAGE_SIZE: take page[0] content as default.
-  // Use page[0] as it may have been modified.
-  ExtEEPROM_Read(page_addr[0], (unsigned char*)&eepage, PAGE_SIZE);
+  //
+  // Use Flash memory as initial parameters.
+  memcpy(  (unsigned char*)&eepage, (unsigned char*)&eepage2, PAGE_SIZE);
+  //
+  // Possible extra initialization
+#ifdef L_FEB64
+#elif defined (L_LPB)
+#elif defined (L_CMB)
+#elif defined (L_TEMP36)
+#endif
   }
 }
 
@@ -289,7 +305,7 @@ void user_loop(void)
     if(user_data.status == 0xF) {
       DISABLE_INTERRUPTS;
       user_data.control = 0;
-      user_data.structsze = eepage2.structsze;
+      user_data.structsze0 = eepage2.structsze;
       EEPROM_FLAG=0;
       ENABLE_INTERRUPTS;
     }
