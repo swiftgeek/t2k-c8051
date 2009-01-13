@@ -12,33 +12,32 @@
 #define  _ExtEEPROM_H_
 
 //ExtEEPROM port assignment
-#ifdef FEB64
-#define RAM_CHIP_SELECT    P3 ^ 7
-#define RAM_HOLD_DOWN      P2 ^ 2
-#define RAM_WRITE_PROTECT  P2 ^ 0
-
-#elif defined(TEMP36)   //NW temp36 board
-#define RAM_CHIP_SELECT    P2 ^ 0
-#define RAM_HOLD_DOWN      P2 ^ 3
-#define RAM_WRITE_PROTECT  P2 ^ 2
-
-//#define PAGE_SIZE           0x4E         //Would define the length of our pages
-//#define NUMEBER_PAGES       0x06         //Would define number of pages
-
-#elif defined(LPB)   //NW temp36 board
-#define RAM_CHIP_SELECT    P1 ^ 2
-#define RAM_HOLD_DOWN      P2 ^ 2
-#define RAM_WRITE_PROTECT  P2 ^ 0
-
+//#ifdef FEB64
+//#define RAM_CHIP_SELECT    P3 ^ 7
+//#define RAM_HOLD_DOWN      P2 ^ 2
+//#define RAM_WRITE_PROTECT  P2 ^ 0
+//
+//#elif defined(TEMP36)   //NW temp36 board
+//#define RAM_CHIP_SELECT    P2 ^ 0
+//#define RAM_HOLD_DOWN      P2 ^ 3
+//#define RAM_WRITE_PROTECT  P2 ^ 2
+//
+////#define PAGE_SIZE           0x4E         //Would define the length of our pages
+////#define NUMEBER_PAGES       0x06         //Would define number of pages
+//
+//#elif defined(LPB)   //NW temp36 board
+//#define RAM_CHIP_SELECT    P1 ^ 2
+//#define RAM_HOLD_DOWN      P2 ^ 2
+//#define RAM_WRITE_PROTECT  P2 ^ 0
+//
 //#define PAGE_SIZE           0x4E         //Would define the length of our pages
 //#define NUMEBER_PAGES       0x04         //Would define number of pages
-
-#endif
+//#endif
 
 sbit RAM_CSn  = RAM_CHIP_SELECT;     // The Chip Select Signal would select/unselect the chip
 sbit RAM_HLDn = RAM_HOLD_DOWN;       // The Hold Down Signal would puase the serial communication
 sbit RAM_WPn  = RAM_WRITE_PROTECT;   // The Write Protection signal would enable/disable write to
-                                                 // the status register
+                                     // the status register
 
 //The EEP_CLEAR and EEP_WRITE would be passed to the ExtEEPROM_Write_Clear() function
 //to determine whether to perform the "clear" operation or the "write" one.
@@ -60,10 +59,10 @@ sbit RAM_WPn  = RAM_WRITE_PROTECT;   // The Write Protection signal would enable
 
 
 #define EEP_MAX_BYTE 32             //Maximum number of bytes that can be written to memory
-                                            //during each write cycle.
-#define EEP_PROTECTION 0x84     //Setting the bits of status register:
-                                            //Setting the BP0, WEN and WPEN to 1 and BP1 to 0 to write
-                                            //protect the last quarter of memory
+                                    //during each write cycle.
+#define EEP_PROTECTION 0x84         //Setting the bits of status register:
+                                    //Setting the BP0, WEN and WPEN to 1 and BP1 to 0 to write
+                                    //protect the last quarter of memory
 
 #define EEP_ERROR        0
 #define EEP_SUCCESS      1

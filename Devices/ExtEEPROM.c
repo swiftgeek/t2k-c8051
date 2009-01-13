@@ -9,7 +9,7 @@
   $Id$
 
 \********************************************************************/
-//  need to have FEB64 or TEMP36 defined
+//  need to have FEB64, CMB or TEMP36 defined
 
 #ifdef  _ExtEEPROM_
 
@@ -95,9 +95,7 @@ unsigned char ExtEEPROM_Write_Clear(unsigned int write_addr
                                   , unsigned char WC_flag
                                   , unsigned char *flag)
 {
-  unsigned int i,j;
-  unsigned int Nblock;
-  unsigned int counter = EEP_MAX_BYTE;
+  unsigned int i,j, Nblock, counter = EEP_MAX_BYTE;
 
    //Checking if we are trying to write in the write protected block
   if (write_addr+page_size >= WP_START_ADDR)
