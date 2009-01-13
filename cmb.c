@@ -5,8 +5,11 @@ Created on:   April/9/2008
 
 Contents:     Application specific (user) part of
 Midas Slow Control for CMB board.      
-
-define(_SST_PROTOCOL_) 
+JTAG:
+0 0 0  0 (no power)
+0 2 0 18 (with power/4V)
+define(CMB) define(_ADT7486A_) define(_ExtEEPROM_) 
+Program Size: data=169.0 xdata=459 code=14211
 
 $Id$
 \********************************************************************/
