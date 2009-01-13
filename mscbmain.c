@@ -146,6 +146,7 @@ void setup(void)
    XBR1 = 0x00;
    XBR2 = 0x40;                 // Enable Xbar
    P1MDOUT = 0x08;              // ResetN in PP
+//   DEBUG_PIN = 0;
 #endif
 #ifdef CMB
    XBR0 = 0x04;                 // Enable UART0
