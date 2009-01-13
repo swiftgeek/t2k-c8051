@@ -303,10 +303,10 @@ void updateAdc2Table(void)
   for(i=0;i<16;i++) {
     if (adc2mscb_table[i].current) {
       j = adc2mscb_table[i].mscbIdx;
-      adc2mscb_table[i].Offst = (unsigned int) eepage.iBiasOffset[j];
+      adc2mscb_table[i].Offst = (signed int) eepage.iBiasOffset[j];
     } else {
       j = adc2mscb_table[i].mscbIdx;
-      adc2mscb_table[i].Offst = (unsigned int) eepage.vBiasOffset[j];
+      adc2mscb_table[i].Offst = (signed int) eepage.vBiasOffset[j];
     }
   }
 }
@@ -567,7 +567,6 @@ void user_init(unsigned char init)
   // Initial setting for communication and overall ports (if needed).
   //-----------------------------------------------------------------------------
   SFRPAGE  = CONFIG_PAGE;
-  // P0MDOUT contains Tx in push-pull
   P0MDOUT |= 0x20;   // add RS485_ENABLE in push-pull
 
   //

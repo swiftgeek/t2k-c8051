@@ -10,6 +10,8 @@ for External EEPROM of FEB64/TEMP36 boards
 
 JTAG Chain / Program Size
 FEB64 : 1 0 5 0
+CMB   : 0 0 0 0 ( no 4V/ no power)
+CMB   : 0 2 0 18(with 4V)  Program Size: data=143.1 xdata=364 code=12432
 LPB   : 0 0 0 0
 TEMP36: 0 0 0 0 data=135.1 xdata=310 code=10508
 

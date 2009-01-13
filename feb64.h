@@ -59,7 +59,7 @@ struct ADC2MSCB_TABLE {
 char mscbIdx;
 char current;
 float Coef;
-unsigned int Offst;
+signed int Offst;
 };
 struct ADC2MSCB_TABLE xdata adc2mscb_table[16] = {
 {1, V_A2MTABLE, 100, 0.2278},   {3, V_A2MTABLE, 100, 0.2278}
@@ -91,7 +91,7 @@ int gain;
 int mscbIdx;
 int current;
 float Coef;
-unsigned int Offst;
+signed int Offst;
 };
 
 struct ADC2MSCB_TABLE xdata adc2mscb_table[16] = {
