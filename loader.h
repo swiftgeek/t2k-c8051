@@ -157,10 +157,31 @@ unsigned long xdata smbdebug;
 //-----------------------------------------------------------------------------
 #elif defined(L_CMB)
 struct EEPAGE {
-  unsigned long SerialN;
+unsigned long SerialN;    
+unsigned int structsze;
+// 
+float lVIlimit[8], uVIlimit[8]; // i4 v4 a33 a25 d15 d18 d25 d33
+float luCTlimit, uuCTlimit;
+float lSSTlimit, uSSTlimit;
+float ext1offset[4];
 };
+
+// Default structure
 struct EEPAGE xdata eepage = {
-   0x0000
+// 0x00 - Card Serial Number
+ 0x00000000
+// 0x01 - Structure size
+ , 110
+// 0x02 - Low   i4 v4 a33 a25 d15 d18 d25 d33
+ , 0.0, 3.0, 3.0, 2.0, 1.2, 1.5, 2.0, 3.0
+// 0x0A - High  i4 v4 a33 a25 d15 d18 d25 d33
+ , 4.0, 4.5, 3.7, 2.7, 1.7, 2.0, 2.7, 3.7
+// 0x12 - LuC Temperature,  HuC Temperature
+ , 10., 50.
+// 0x14 - LSST Temperature,  HSST Temperature
+ , 10. ,50.
+// 0x33 - SST channel 1 offset[0..3]
+ , 0.0, 0.0, 0.0, 0.0
 };
 
 //
@@ -181,11 +202,6 @@ struct EEPAGE xdata eepage={
    0,
    0.0, 0.0  // SST Offset
 };
-
-
-// Macro EEPAGE size independently of the BOARD
-#define PAGE_SIZE  sizeof(eepage)
-
 #endif  // L_xxx
 
 //

@@ -210,7 +210,7 @@ void user_init(unsigned char init)
   user_data.structsze0 = eepage2.structsze;
   ENABLE_INTERRUPTS;
   // If no match use Wp structure
-  if (eepage2.structsze != user_data.structsze0) {
+  if ((eepage2.luCTlimit != eepage.luCTlimit) || (eepage2.structsze != user_data.structsze0)) {
 
   // Check Structure size and publish it (above)
   // If the size doesn't match use the struct definition
@@ -268,14 +268,23 @@ void user_loop(void)
     eepage.SerialN = user_data.serialN;
     eepage.structsze = PAGE_SIZE;
 
-    // Write to the Protected Memory
+  if (user_data.control & 0x2) {
+    // Write Struct to the Protected Memory
     FAILED = ExtEEPROM_WriteProtect((unsigned char*)&eepage, PAGE_SIZE);
     if(!FAILED) {
       DISABLE_INTERRUPTS;
       user_data.status = 1;
       ENABLE_INTERRUPTS;
     }
-
+  } else {
+    // Write page[0] to the Protected Memory
+    FAILED = ExtEEPROM_WriteProtect((unsigned char*)&eepage2, PAGE_SIZE);
+    if(!FAILED) {
+      DISABLE_INTERRUPTS;
+      user_data.status = 1;
+      ENABLE_INTERRUPTS;
+    }
+  }
     // Check S/N readback
     FAILED = ExtEEPROM_Read(WP_START_ADDR,(unsigned char*)&eepage2, PAGE_SIZE);
     if(!FAILED && (user_data.serialN == eepage2.SerialN)) {
