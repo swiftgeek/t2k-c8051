@@ -130,7 +130,7 @@ Options 1,0,0  // Target 'Target 1'
  LX51DAS ()
  LX51IDS ()
   OPTDL (S8051.DLL)()(DCYG.DLL)(-pCYGF133)(S8051.DLL)()(TCYG.DLL)(-pCYGF133)
-  OPTDBG 48126,5,()()()()()()()()()() (BIN\SiC8051F.dll)()()()
+  OPTDBG 48126,8,()()()()()()()()()() (BIN\SiC8051F.dll)()()()
  FLASH1 { 1,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0 }
  FLASH2 (BIN\SiC8051F.dll)
  FLASH3 ()
