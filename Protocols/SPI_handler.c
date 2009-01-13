@@ -64,7 +64,6 @@ void SPI_ClockOnce(void)
   SPI_SCK = 0;
 }
 
-
 //
 //------------------------------------------------------------------------
 /**
@@ -121,7 +120,6 @@ Performing SPI read operation on the falling edge of clock.One byte of data is r
 @return dataReceived 	The function returns one byte of information which has been 
 								received via SPI protocol
 */
-
 unsigned char SPI_ReadByteFalling(void)
 {
   signed char i = 0;
@@ -140,6 +138,8 @@ unsigned char SPI_ReadByteFalling(void)
 
 #endif
  
+//
+//------------------------------------------------------------------------
 unsigned char SPI_ReadByteRising(void)
 {
   signed char i = 0;
@@ -159,4 +159,3 @@ unsigned char SPI_ReadByteRising(void)
   }
   return dataReceived;
 }
-
