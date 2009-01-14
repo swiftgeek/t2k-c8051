@@ -52,26 +52,36 @@ char EEPROM_FLAG;
 //-----------------------------------------------------------------------------
 #ifdef L_TEMP36
 // The structure of each EEPAGE
+//---------------------------------------------------------------
 struct EEPAGE {
-  unsigned long SerialN;    
-  unsigned int structsze;
-  unsigned int  navge;
-  int ext1offset[18];
-  int ext2offset[18];
+unsigned long SerialN;    
+unsigned int structsze;
+unsigned int debug1;
+// 
+float lVIlimit[8], uVIlimit[8]; // i4 v4 a33 a25 d15 d18 d25 d33
+float luCTlimit, uuCTlimit;
+float lSSTlimit, uSSTlimit;
+float ext1offset[4];
 };
 
-//+/- 16 increments corresponds to a +/- 0.25 degrees offset in the ADT7486A chip
-//Initial values for eepage
-struct EEPAGE xdata eepage={
-  0,     // S/N
-  1000,  // Structure size
-  10,    // Average value
-  //Temperature sensor offsets corresponding to the external 1 channel
-    //Temp02,04....36
-  32, 48, 32, 32, 16, 16, 48, 16, 0, 16, 0, 0, 16, 32, 16, 32, -16, 32,
-  //Temperature sensor offsets corresponding to the external 2 channel
-  //Temp01,03....35
-  48, 32, 48, 64, 64, 32, 48, 64, 0, 16, 16, 32, 48, 48, 32, 32, 16, 32,
+// Default structure
+struct EEPAGE xdata eepage = {
+// 0x00 - Card Serial Number
+ 0x00000000
+// 0x01 - Structure size
+ , 110
+// 0x01 - debug size
+ , 123
+// 0x02 - Low   i4 v4 a33 a25 d15 d18 d25 d33
+ , 0.0, 3.0, 3.0, 2.0, 1.2, 1.5, 2.0, 3.0
+// 0x0A - High  i4 v4 a33 a25 d15 d18 d25 d33
+ , 4.0, 4.5, 3.7, 2.7, 1.7, 2.0, 2.7, 3.7
+// 0x12 - LuC Temperature,  HuC Temperature
+ , 10., 50.
+// 0x14 - LSST Temperature,  HSST Temperature
+ , 10. ,50.
+// 0x33 - SST channel 1 offset[0..3]
+ , 0.0, 0.0, 0.0, 0.0
 };
 
 //-----------------------------------------------------------------------------
@@ -159,6 +169,7 @@ unsigned long xdata smbdebug;
 struct EEPAGE {
 unsigned long SerialN;    
 unsigned int structsze;
+unsigned int debug1;
 // 
 float lVIlimit[8], uVIlimit[8]; // i4 v4 a33 a25 d15 d18 d25 d33
 float luCTlimit, uuCTlimit;
@@ -172,6 +183,8 @@ struct EEPAGE xdata eepage = {
  0x00000000
 // 0x01 - Structure size
  , 110
+// 0x01 - Debug
+ , 123
 // 0x02 - Low   i4 v4 a33 a25 d15 d18 d25 d33
  , 0.0, 3.0, 3.0, 2.0, 1.2, 1.5, 2.0, 3.0
 // 0x0A - High  i4 v4 a33 a25 d15 d18 d25 d33

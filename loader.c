@@ -178,9 +178,26 @@ void user_init(unsigned char init)
 //
 #elif defined(L_CMB)
   sprintf(sys_info.node_name,"CMB");
+  P0MDOUT |= 0x20; // RS485_ENABLE in PP
   P3MDOUT |= 0x80; // RAM_CSn in PP
   P2MDOUT |= 0x18; // SPI_MOSI, SPI_SCK in PP
   P2MDOUT &= 0xFE; // RAM_WPn in OD
+
+  //
+  // Address retrieval
+  //-----------------------------------------------------------------------------
+  // Configure and read the address
+  // C C C C C C 1 0 0 is the MSCB Addr[8..0], 9 bits
+  // Modifying what the board reads from the Pins 
+  SFRPAGE = CONFIG_PAGE;
+  // Change p3 to digital input
+  P3MDOUT = 0x00;
+  P3=0xFF;
+  // Read crate address
+  pca_add= P3;
+  crate_add= ((~pca_add)<<3)  & 0x01F8;
+  board_address=(crate_add &  0x01FC) | 0x0004;
+  sys_info.node_addr   = board_address; 
 
 #endif
 
