@@ -218,6 +218,7 @@ void user_init(unsigned char init)
   ExtEEPROM_Read(WP_START_ADDR, (unsigned char*)&SNWp, SERIALN_LENGTH);
   ExtEEPROM_Read(WP_START_ADDR+SERIALN_LENGTH, (unsigned char*)&structSzeWp, 2);
   DISABLE_INTERRUPTS;
+  user_data.serialN     = SNWp;
   user_data.serialNWp   = SNWp;
   user_data.structszeWp = structSzeWp;
   ENABLE_INTERRUPTS;
