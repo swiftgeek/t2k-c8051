@@ -178,6 +178,7 @@ void user_init(unsigned char init)
 //
 #elif defined(L_CMB)
   sprintf(sys_info.node_name,"CMB");
+  SFRPAGE = CONFIG_PAGE;
   P0MDOUT |= 0x20; // RS485_ENABLE in PP
   P3MDOUT |= 0x80; // RAM_CSn in PP
   P2MDOUT |= 0x18; // SPI_MOSI, SPI_SCK in PP
