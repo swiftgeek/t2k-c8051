@@ -52,11 +52,13 @@ unsigned char idata _n_sub_addr = 1;
 //
 unsigned char xdata channel;
 unsigned long xdata tempTime=0, sstTime=0;
+unsigned char xdata eeprom_channel, channel;
 
 // Global bit register
 unsigned char bdata bChange;
 // Local flag
 sbit bCPupdoitNOW   = bChange ^ 0;
+sbit EEP_CTR_Flag   = bChange ^ 1;
 
 // User Data structure declaration
 //-----------------------------------------------------------------------------
@@ -115,7 +117,8 @@ void switchonoff(unsigned char command)
     rESR = 0x0000;   // Reset error status at each Power UP
     rCSR = user_data.status;
     SPup = ON;  // Set Status
-    SsS = OFF;  // Clear Status
+    SsS = OFF;  // Clear System Shutdown
+    SmSd = OFF; // Clear Manual Shutdown
 
     // Publish Status and Error
     DISABLE_INTERRUPTS;
@@ -193,6 +196,10 @@ void user_init(unsigned char init)
   user_data.error = 0;
   user_data.spare = 0;
 
+  // Update local registers
+  rCTL = user_data.control;
+  rCSR = user_data.status;
+
   //
   // Group setting
   sys_info.group_addr  = 400;
@@ -261,23 +268,38 @@ void user_init(unsigned char init)
 #endif
 
   //
-  // Clock Selection P0.7
+  // Clock Selection P0.7 default to External Clock (LVDS)
   //-----------------------------------------------------------------------------
   SFRPAGE  = CONFIG_PAGE;
   P0MDOUT &= ~0x80;  // CLK_SEL (P0.7) OD
-  CLK_SEL = 1;
+  CLK_SEL = SXclk = ON;
 
   //
-  // Over Current Error 
+  // Over Current Error bit
   //-----------------------------------------------------------------------------
   SFRPAGE = CONFIG_PAGE;
   P2MDOUT &= ~0x10;  // V4_OC(P2.4) OD for read
 
+  // 
+  // Watchdog state
+  P2MDOUT &= ~0x02;  // WATCHDOG(P2.1) OD for read
+
+  // Configure Recovery
+  P2MDOUT |= 0x01;  // CFG_RECOVER(P2.0) PP for write
+
+/*
+  // Debug0
+  P2MDOUT &= ~0x20;  // SC_DEBUG0(P2.5) OD
+  // Debug1
+  P2MDOUT &= ~0x40;  // SC_DEBUG0(P2.6) OD
+  // Debug2
+  P2MDOUT &= ~0x80;  // SC_DEBUG0(P2.7) OD
+*/
+
   // Power up the card for now
   //-----------------------------------------------------------------------------
   switchonoff(OFF);
-  rCTL = user_data.control;
-  rCSR = user_data.status;
+
   SmSd = OFF;  // Set Manual Shutdown
   SPup = OFF;
   // Reset Action
@@ -299,6 +321,10 @@ void user_write(unsigned char index) reentrant
   if (index == IDXCTL) {
     rCTL = user_data.control;
   } // IDXCTL
+
+  //
+  //-- EE Page function
+  if (index == IDXEEP_CTL) EEP_CTR_Flag = 1;
 }
 
 /*---- User read function ------------------------------------------*/
@@ -321,9 +347,14 @@ unsigned char user_func(unsigned char *data_in, unsigned char *data_out)
 void user_loop(void) {
 
   float xdata volt, temperature, *pfData;
+  float* xdata eep_address;
+  unsigned int xdata eeptemp_addr;
+  //NW make sure eeptemp_source is stored in xdata
+  unsigned char* xdata eeptemp_source;
+  unsigned char xdata eep_request;
+  static  unsigned char xdata eeprom_flag = CLEAR;
   unsigned int *xdata rpfData;
   unsigned int xdata rvolt;
-
   //-----------------------------------------------------------------------------
   // Power Up based on CTL bit
   if (CPup) {
@@ -361,20 +392,133 @@ void user_loop(void) {
   if (CXclk) {
     rCSR = user_data.status;
     if (SXclk) {
-      CLK_SEL = 0;
-      SXclk = 0;
+      CLK_SEL = SXclk = 0;
     } else {
-      CLK_SEL = 1;
-      SXclk = 1;
+      CLK_SEL = SXclk = 1;
     }
-    CXclk = 0;
+    CXclk = 0;  // Reset command
 
-    // Publish Closk selection
+    // Publish Clock selection
     DISABLE_INTERRUPTS;
     user_data.control = rCTL;
     user_data.status  = rCSR;
     ENABLE_INTERRUPTS;
   } // Switch Clock
+
+  //-----------------------------------------------------------------------------
+  // Config Pulse
+  if (Ccfg) {
+    CFG_RECOVER = 1;
+    delay_us(1);
+    CFG_RECOVER = 0;
+    delay_us(10);
+    Ccfg = 0; 
+  } // Configure_recovery
+
+#ifdef _ExtEEPROM_
+  //
+  //-----------------------------------------------------------------------------
+  // Checking the eeprom control flag
+  if (EEP_CTR_Flag) {
+    //Checking for the special instruction
+    if (user_data.eeCtrSet & EEP_CTRL_KEY) {
+      // Valid index range
+      if( (int)(user_data.eeCtrSet & 0x000000ff) >= EEP_RW_IDX) {
+        // Float area from EEP_RW_IDX, count in Float size, No upper limit specified!
+        eep_address = (float*)&eepage + (user_data.eeCtrSet & 0x000000ff);
+        //Checking for the write request
+        if (user_data.eeCtrSet & EEP_CTRL_WRITE){
+          *eep_address = user_data.eepValue;
+        //Checking for the read request
+        } else if (user_data.eeCtrSet & EEP_CTRL_READ) {
+          DISABLE_INTERRUPTS;
+          user_data.eepValue = *eep_address;
+          ENABLE_INTERRUPTS;
+        } else {
+          // Tell the user that inappropriate task has been requested
+          DISABLE_INTERRUPTS;
+          user_data.eeCtrSet = EEP_CTRL_INVAL_REQ;
+          ENABLE_INTERRUPTS;
+        }
+      } else {
+        DISABLE_INTERRUPTS;
+        user_data.eeCtrSet = EEP_CTRL_OFF_RANGE;
+        ENABLE_INTERRUPTS;
+      }
+   } else {
+    // Tell the user that invalid key has been provided
+    DISABLE_INTERRUPTS;
+    user_data.eeCtrSet = EEP_CTRL_INVAL_KEY;
+    ENABLE_INTERRUPTS;
+   }
+    EEP_CTR_Flag = CLEAR;
+  }  // if eep
+
+  //-----------------------------------------------------------------------------
+  // EEPROM Save procedure based on CTL bit
+  if (CeeS) {
+    //Check if we are here for the first time
+    if (!eeprom_flag) {  // first in
+      rCSR = user_data.status;
+
+      //Temporary store the first address of page
+      eeptemp_addr = PageAddr[(unsigned char)(user_data.eepage & 0x07)];
+      //Temporary store the first address of data which has to be written
+      eeptemp_source = (unsigned char*)&eepage;
+    }
+    //EPROM clear request
+    if (CeeClr) {
+      eep_request = CLEAR_EEPROM;
+    } else {
+      eep_request = WRITE_EEPROM;
+    }
+
+    eeprom_channel = ExtEEPROM_Write_Clear (eeptemp_addr
+      , &(eeptemp_source)
+      , PAGE_SIZE
+      , eep_request
+      , &eeprom_flag);
+
+    if (eeprom_channel == DONE) {
+      SeeS = DONE;
+      eeprom_flag = CLEAR;
+      CeeS = CLEAR;
+      //Set the active page
+      user_data.eepage |= ((user_data.eepage & 0x07) << 5);
+    } else {
+      SeeS = FAILED;
+    }
+
+    // Publish Qpump state
+    // Publish Registers state
+    DISABLE_INTERRUPTS;
+    user_data.control = rCTL;
+    user_data.status  = rCSR;
+    ENABLE_INTERRUPTS;
+  }
+
+  //-----------------------------------------------------------------------------
+  // EEPROM Restore procedure based on CTL bit
+  if (CeeR) {
+    rCSR = user_data.status;
+
+    //NW read to eepage(active page) instead of eepage2
+    channel = ExtEEPROM_Read (PageAddr[(unsigned char)(user_data.eepage & 0x07)]
+    , (unsigned char*)&eepage, PAGE_SIZE);
+
+    if (channel == DONE){
+      CeeR = CLEAR;
+      SeeR = DONE;
+    } else
+      SeeR = FAILED;
+
+    // Publish Registers state
+    DISABLE_INTERRUPTS;
+    user_data.control = rCTL;
+    user_data.status  = rCSR;
+    ENABLE_INTERRUPTS;
+  }
+#endif
 
   //
   //-----------------------------------------------------------------------------
@@ -401,7 +545,7 @@ void user_loop(void) {
     user_data.uCTemp = (float) temperature;
     ENABLE_INTERRUPTS; 
     if ((temperature >= eepage.luCTlimit) && (temperature <= eepage.uuCTlimit)) {
-      uCT = OFF; // in range
+//      uCT = OFF; // in range
     } else {
       uCT = ON; // out of range
     }
@@ -411,6 +555,7 @@ void user_loop(void) {
   }
 
   yield();
+
   //
   //-----------------------------------------------------------------------------
   // Internal temperature reading
@@ -419,7 +564,7 @@ void user_loop(void) {
     // Vreg1 Temperature form the SST device location
     if(!ADT7486A_Cmd(ADT7486A_address, GetIntTemp, SST_LINE1, &temperature)) {
       if ((temperature >= eepage.lSSTlimit) && (temperature <= eepage.uSSTlimit)) {
-        Vreg1ssTT = OFF; // in range
+//        Vreg1ssTT = OFF; // in range
       } else {
         Vreg1ssTT = ON; // out of range
       }
@@ -438,7 +583,7 @@ void user_loop(void) {
     // Vreg2 Temperature from the remote diode of the SST device
     if(!ADT7486A_Cmd(ADT7486A_address, GetExt1Temp, SST_LINE1, &temperature)) {
       if ((temperature >= eepage.lSSTlimit) && (temperature <= eepage.uSSTlimit)) {
-        Vreg2ssTT = OFF; // in range
+//        Vreg2ssTT = OFF; // in range
       } else {
         Vreg2ssTT = ON; // out of range
       }
@@ -472,19 +617,25 @@ void user_loop(void) {
       ENABLE_INTERRUPTS;
     }
     // Update time
-    tempTime = uptime();
+    sstTime = uptime();
   }
 
 #endif
+  //
   // Take action based on ERROR
-  if (rESR & ( UFTEMPERATURE_MASK | BTEMPERATURE_MASK)) {
-//   switchonoff(OFF);
-//   SsS = ON;
+  if (SPup && (rESR & ( UFTEMPERATURE_MASK | BTEMPERATURE_MASK))) {
+    switchonoff(OFF);
+    SPup = OFF;
+    SsS = ON;
   } else if (bCPupdoitNOW) {
     bCPupdoitNOW = OFF;   // Reset flag coming from PowerUp sequence
     SsS = SmSd = OFF;
     SPup = ON;
   }
+
+  //
+  // Read Watchdog state
+  Swdog = WATCHDOG;  // Watchdog state
 
   //
   // Read Over current switch

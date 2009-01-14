@@ -18,17 +18,17 @@ $Id$
 // ADT7486A temperature addresses
 #define ADT7486A_address    0x48
 #define SST_LINE1           1
-#define SST_TIME            4 // in second
-#define TEMP_TIME           3 // in second
+#define SST_TIME            (unsigned long) 1
+#define TEMP_TIME           (unsigned long) 2 // in second
 
 // Global definition
 // Global ON / OFF definition
 #define ON     1
 #define DONE   1
+#define SET    1
 #define OFF    0
 #define FAILED 0
 #define CLEAR  0
-#define SET    1
 
 //Internal ADC
 #define IGAIN1  0
@@ -60,6 +60,7 @@ unsigned int xdata PageAddr[]={0x000, 0x200, 0x400, SERIALN_ADD};
 struct EEPAGE {
 unsigned long SerialN;    
 unsigned int structsze;
+unsigned int debug1;
 // 
 float lVIlimit[8], uVIlimit[8]; // i4 v4 a33 a25 d15 d18 d25 d33
 float luCTlimit, uuCTlimit;
@@ -73,6 +74,8 @@ struct EEPAGE xdata eepage = {
  0x00000000
 // 0x01 - Structure size
  , 110
+// 0x01 - debug size
+ , 123
 // 0x02 - Low   i4 v4 a33 a25 d15 d18 d25 d33
  , 0.0, 3.0, 3.0, 2.0, 1.2, 1.5, 2.0, 3.0
 // 0x0A - High  i4 v4 a33 a25 d15 d18 d25 d33
@@ -94,11 +97,14 @@ struct EEPAGE xdata eepage2; //NW testing
 // Indices for user_write functions
 #define IDXEER            1
 #define IDXCTL            2
+#define IDXEEP_CTL       27
 
 // CTL register
 unsigned char bdata rCTL;
 sbit CPup     = rCTL ^ 0;
 sbit CXclk    = rCTL ^ 1;
+sbit Ccfg     = rCTL ^ 2;
+sbit Cdeb1    = rCTL ^ 3;
 sbit CeeS     = rCTL ^ 4;
 sbit CeeR     = rCTL ^ 5;
 sbit CeeClr   = rCTL ^ 6;
@@ -109,7 +115,7 @@ unsigned char bdata rCSR;
 sbit SPup     = rCSR ^ 0;
 sbit SXclk    = rCSR ^ 1;
 sbit SLos     = rCSR ^ 2;
-sbit Sdeg1    = rCSR ^ 3;
+sbit Swdog    = rCSR ^ 3;
 sbit SeeS     = rCSR ^ 4;
 sbit SeeR     = rCSR ^ 5;
 sbit SsS      = rCSR ^ 6;
@@ -150,7 +156,7 @@ sbit V4_OC     = rESR ^ 7; //0x8000
 
 // Coeff
 // I		   R1	  R2	  (R1+R2)/R2	Rsense 	Isense/Vout
-// Is4     2K	  4.7K	 6.7/4.7    0.015   10/(100*0.015)= 3.33
+// Is4     2K	  4.7K	 6.7/4.7    0.015   1.426/50/0.015= 1.901
 //  V      R1   R2    (R1+R2)/R1
 // 40Mon   4.7  4.7K   9.4/4.7
 // 33Mon   2K   4.7K   6.7/4.7
@@ -159,7 +165,7 @@ sbit V4_OC     = rESR ^ 7; //0x8000
 // +1.8    no conversion.
 // A+33Mon 2K   4.7K   6.7/4.7
 // A+25Mon 2K   4.7K   6.7/4.7
-float code coeff[8] =  {0.973, 2.000 , 1.426, 1.426, 1.0, 1.0, 1.426, 1.426};
+float code coeff[8] =  {1.901, 2.000 , 1.426, 1.426, 1.0, 1.0, 1.426, 1.426};
 float code offset[8] = {0.000,    0.0,   0.0, 0.0  , 0.0, 0.0, 0.0  , 0.0};
 
 
