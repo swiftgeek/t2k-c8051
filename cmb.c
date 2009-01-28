@@ -28,13 +28,13 @@ $Id$
 #ifdef _ExtEEPROM_
 #include "Devices/ExtEEPROM.h"
 #endif
-//
-// Global declarations
+
 //-----------------------------------------------------------------------------
+// Global declarations
 char code  node_name[] = "cmb";
 char idata svn_rev_code[] = "$Rev$";
 
-//
+//-----------------------------------------------------------------------------
 // Port declaration
 sbit SC_DEBUG0   = P2 ^ 5;
 sbit SC_DEBUG1   = P2 ^ 6;
@@ -45,7 +45,7 @@ sbit CLK_SEL     = P0 ^ 7;
 sbit V4_ENn      = P2 ^ 3;
 sbit V4_OCn      = P2 ^ 4;
 
-//
+//-----------------------------------------------------------------------------
 // Declare globally the number of sub-addresses to framework
 unsigned char idata _n_sub_addr = 1;
 
@@ -54,14 +54,15 @@ unsigned char xdata channel;
 unsigned long xdata tempTime=0, sstTime=0;
 unsigned char xdata eeprom_channel, channel;
 
+//-----------------------------------------------------------------------------
 // Global bit register
 unsigned char bdata bChange;
 // Local flag
 sbit bCPupdoitNOW   = bChange ^ 0;
 sbit EEP_CTR_Flag   = bChange ^ 1;
 
-// User Data structure declaration
 //-----------------------------------------------------------------------------
+// User Data structure declaration
 MSCB_INFO_VAR code vars[] = {
   4, UNIT_BYTE,     0, 0,           0, "SerialN",    &user_data.SerialN,    // 0
   2, UNIT_BYTE,     0, 0,           0, "Error",      &user_data.error,      // 1
@@ -102,9 +103,45 @@ MSCB_INFO_VAR *variables = vars;   // Structure mapping
 // Get sysinfo if necessary
 extern SYS_INFO sys_info;          // For address setting
 
-//
-// Switch ON/OFF the 4V main power of the card
+
 //-----------------------------------------------------------------------------
+//
+void publishCtlCsr(void) {
+    DISABLE_INTERRUPTS;
+    user_data.control = rCTL;
+    user_data.status  = rCSR;
+    ENABLE_INTERRUPTS;
+}
+
+//-----------------------------------------------------------------------------
+//
+void publishErr(bit errbit) {
+    DISABLE_INTERRUPTS;
+    errbit = SET;
+    user_data.error   = rESR;
+    ENABLE_INTERRUPTS;
+}
+
+//-----------------------------------------------------------------------------
+//
+void publishAll() {
+  user_data.control = rCTL;
+  user_data.status  = rCSR;
+  user_data.error   = rESR;
+  ENABLE_INTERRUPTS;
+}
+
+//-----------------------------------------------------------------------------
+//
+void PublishVariable(float xdata * pvarDest, float varSrce, bit errbit) {
+    DISABLE_INTERRUPTS;
+    *pvarDest = varSrce;
+    if (errbit) user_data.error = rESR;
+    ENABLE_INTERRUPTS;
+}
+
+//-----------------------------------------------------------------------------
+// Switch ON/OFF the 4V main power of the card
 void switchonoff(unsigned char command)
 {
   if(command==ON)
@@ -133,9 +170,8 @@ void switchonoff(unsigned char command)
   }
 }
 
-//
-// Read internal ADC channel (8 ADC, 1 Temperature)
 //-----------------------------------------------------------------------------
+// Read internal ADC channel (8 ADC, 1 Temperature)
 float read_voltage(unsigned char channel,unsigned int *rvalue, unsigned char gain)
 {
   unsigned int  xdata i;
@@ -195,6 +231,7 @@ void user_init(unsigned char init)
   user_data.status = 0;
   user_data.error = 0;
   user_data.spare = 0;
+  user_data.eepage = 0;
 
   // Update local registers
   rCTL = user_data.control;
@@ -204,23 +241,20 @@ void user_init(unsigned char init)
   // Group setting
   sys_info.group_addr  = 400;
 
-  //
-  // Initial setting for communication and overall ports (if needed).
   //-----------------------------------------------------------------------------
+  // Initial setting for communication and overall ports (if needed).
   SFRPAGE  = CONFIG_PAGE;
   P0MDOUT |= 0x20;   // add RS485_ENABLE(P0.5) in push-pull
 
-  //
-  // uC Miscellaneous ADCs (V/I Monitoring)
   //-----------------------------------------------------------------------------
+  // uC Miscellaneous ADCs (V/I Monitoring)
   SFRPAGE  = CONFIG_PAGE;
   //  P3MDOUT |= 0x1C; //Setting the Regulators control pins to push pull (3 Vreg)
   adc_internal_init();
 
 #ifdef _ADT7486A_
-  //
-  // SST Temperatures
   //-----------------------------------------------------------------------------
+  // SST Temperatures
   SFRPAGE  = CONFIG_PAGE;
   P1MDOUT |= 0x01; // Setting the SST_DRV(P1.0) (SST) to push pull
   SFRPAGE  = CPT1_PAGE;
@@ -232,8 +266,8 @@ void user_init(unsigned char init)
 #endif
 
   //
-  // Address retrieval
   //-----------------------------------------------------------------------------
+  // Address retrieval
   // Configure and read the address
   // C C C C C C 1 0 0 is the MSCB Addr[8..0], 9 bits
   // Modifying what the board reads from the Pins 
@@ -249,8 +283,8 @@ void user_init(unsigned char init)
 
 #ifdef _ExtEEPROM_
   //
-  // EEPROM memory Initialization/Retrieval
   //-----------------------------------------------------------------------------
+  // EEPROM memory Initialization/Retrieval
   SFRPAGE  = CONFIG_PAGE;
   P1MDOUT |= 0x80;  // Setting the RAM_CSn(P1.7) to push pull
   P1MDOUT |= 0x06;  // Setting the SPI_MOSI(P1.1) and SPI_SCK(P1.2) to push pull
@@ -267,16 +301,14 @@ void user_init(unsigned char init)
   ENABLE_INTERRUPTS;
 #endif
 
-  //
-  // Clock Selection P0.7 default to External Clock (LVDS)
   //-----------------------------------------------------------------------------
+  // Clock Selection P0.7 default to External Clock (LVDS)
   SFRPAGE  = CONFIG_PAGE;
   P0MDOUT &= ~0x80;  // CLK_SEL (P0.7) OD
   CLK_SEL = SXclk = ON;
 
-  //
-  // Over Current Error bit
   //-----------------------------------------------------------------------------
+  // Over Current Error bit
   SFRPAGE = CONFIG_PAGE;
   P2MDOUT &= ~0x10;  // V4_OC(P2.4) OD for read
 
@@ -296,14 +328,15 @@ void user_init(unsigned char init)
   P2MDOUT &= ~0x80;  // SC_DEBUG0(P2.7) OD
 */
 
-  // Power up the card for now
   //-----------------------------------------------------------------------------
+  // Power up the card for now
   switchonoff(OFF);
 
   SmSd = OFF;  // Set Manual Shutdown
   SPup = OFF;
   // Reset Action
   CmSd = CLEAR;  // rCTL not yet published
+  Cdeb1 = CLEAR;
   
   // Publish Registers state
   DISABLE_INTERRUPTS;
@@ -354,19 +387,20 @@ void user_loop(void) {
   unsigned char xdata eep_request;
   static  unsigned char xdata eeprom_flag = CLEAR;
   unsigned int *xdata rpfData;
-  unsigned int xdata rvolt;
+  unsigned int xdata i, rvolt;
+
   //-----------------------------------------------------------------------------
   // Power Up based on CTL bit
   if (CPup) {
     switchonoff(ON);
-
     delay_ms(100);
-
     // Force Check on Voltage
     bCPupdoitNOW = ON;
-
     // Reset Action
     CPup = CLEAR;  // rCTL not updated yet, publish state after U/I check
+    // Reset All error
+    rESR = 0x0000;
+
   } // Power Up
 
   //-----------------------------------------------------------------------------
@@ -376,47 +410,36 @@ void user_loop(void) {
     SmSd = ON;  // Set Manual Shutdown
     switchonoff(OFF);
     SPup = OFF;
-
     // Reset Action
     CmSd = CLEAR;  // rCTL not yet published
-
     // Publish Registers state
-    DISABLE_INTERRUPTS;
-    user_data.control = rCTL;
-    user_data.status  = rCSR;
-    ENABLE_INTERRUPTS;
+    publishCtlCsr();
   } // Manual Shutdown
 
   //-----------------------------------------------------------------------------
   // Switch RJ45/Internal Clock source
   if (CXclk) {
     rCSR = user_data.status;
-    if (SXclk) {
-      CLK_SEL = SXclk = 0;
-    } else {
-      CLK_SEL = SXclk = 1;
-    }
+    if (SXclk) CLK_SEL = SXclk = 0;
+    else       CLK_SEL = SXclk = 1;
     CXclk = 0;  // Reset command
-
-    // Publish Clock selection
-    DISABLE_INTERRUPTS;
-    user_data.control = rCTL;
-    user_data.status  = rCSR;
-    ENABLE_INTERRUPTS;
+    publishCtlCsr();  // Publish Clock selection
   } // Switch Clock
 
   //-----------------------------------------------------------------------------
   // Config Pulse
   if (Ccfg) {
-    CFG_RECOVER = 1;
-    delay_us(1);
-    CFG_RECOVER = 0;
-    delay_us(10);
+    for (i=0;i<3;i++) {
+     CFG_RECOVER = 1;
+     delay_us(1);
+     CFG_RECOVER = 0;
+     delay_us(1);
+    }
+    delay_us(9);
     Ccfg = 0; 
   } // Configure_recovery
 
 #ifdef _ExtEEPROM_
-  //
   //-----------------------------------------------------------------------------
   // Checking the eeprom control flag
   if (EEP_CTR_Flag) {
@@ -489,12 +512,8 @@ void user_loop(void) {
       SeeS = FAILED;
     }
 
-    // Publish Qpump state
     // Publish Registers state
-    DISABLE_INTERRUPTS;
-    user_data.control = rCTL;
-    user_data.status  = rCSR;
-    ENABLE_INTERRUPTS;
+    publishCtlCsr();
   }
 
   //-----------------------------------------------------------------------------
@@ -513,16 +532,12 @@ void user_loop(void) {
       SeeR = FAILED;
 
     // Publish Registers state
-    DISABLE_INTERRUPTS;
-    user_data.control = rCTL;
-    user_data.status  = rCSR;
-    ENABLE_INTERRUPTS;
+    publishCtlCsr();
   }
 #endif
 
-  //
   //-----------------------------------------------------------------------------
-  // Internal ADCs monitoring Voltages and Currents based on time
+  // Internal ADCs reading Voltages and Currents based on time
   if (bCPupdoitNOW || ((uptime() - tempTime) > TEMP_TIME)) {
     pfData = &(user_data.pDI4Mon);
     rpfData = &(user_data.rpDI4Mon);
@@ -541,14 +556,8 @@ void user_loop(void) {
     temperature = 1000 * (volt - 0.776) / 2.86;   // Needs calibration
     /* strip to 0.1 digits */
     temperature = ((int) (temperature * 10 + 0.5)) / 10.0;
-    DISABLE_INTERRUPTS;
-    user_data.uCTemp = (float) temperature;
-    ENABLE_INTERRUPTS; 
-    if ((temperature >= eepage.luCTlimit) && (temperature <= eepage.uuCTlimit)) {
-//      uCT = OFF; // in range
-    } else {
-      uCT = ON; // out of range
-    }
+    if ((temperature < eepage.luCTlimit) || (temperature > eepage.uuCTlimit)) uCT = ON; // out of range
+    PublishVariable(&(user_data.uCTemp), temperature, uCT); 
 
     // Update time
     tempTime = uptime();
@@ -556,73 +565,60 @@ void user_loop(void) {
 
   yield();
 
-  //
   //-----------------------------------------------------------------------------
-  // Internal temperature reading
+  // SST temperature reading
 #ifdef _ADT7486A_
   if (bCPupdoitNOW || ((uptime() - sstTime) > SST_TIME)) {
     // Vreg1 Temperature form the SST device location
     if(!ADT7486A_Cmd(ADT7486A_address, GetIntTemp, SST_LINE1, &temperature)) {
-      if ((temperature >= eepage.lSSTlimit) && (temperature <= eepage.uSSTlimit)) {
-//        Vreg1ssTT = OFF; // in range
-      } else {
-        Vreg1ssTT = ON; // out of range
-      }
-      DISABLE_INTERRUPTS;
-      user_data.Vrg1Temp = temperature;
-      user_data.error   = rESR;
-      ENABLE_INTERRUPTS;
-    } else {
-      DISABLE_INTERRUPTS;
-      Vreg1ssTT = SET;
-      user_data.error   = rESR;
-      ENABLE_INTERRUPTS;
-    }
+      if ((temperature < eepage.lSSTlimit) || (temperature > eepage.uSSTlimit)) Vreg1ssTT = ON;
+      PublishVariable(&user_data.Vrg1Temp, temperature, Vreg1ssTT); 
+    } else publishErr(RdssT);
 
     //
-    // Vreg2 Temperature from the remote diode of the SST device
+    // Vreg2 Reading and Monitoring of Temperature from the remote diode of the SST device
     if(!ADT7486A_Cmd(ADT7486A_address, GetExt1Temp, SST_LINE1, &temperature)) {
-      if ((temperature >= eepage.lSSTlimit) && (temperature <= eepage.uSSTlimit)) {
-//        Vreg2ssTT = OFF; // in range
-      } else {
-        Vreg2ssTT = ON; // out of range
-      }
-      DISABLE_INTERRUPTS;
-      user_data.Vrg2Temp = temperature;
-      user_data.error   = rESR;
-      ENABLE_INTERRUPTS;
-    } else {
-      DISABLE_INTERRUPTS;
-      Vreg2ssTT = SET;
-      user_data.error   = rESR;
-      ENABLE_INTERRUPTS;
-    }
+      if ((temperature < eepage.lSSTlimit) || (temperature > eepage.uSSTlimit)) Vreg2ssTT = ON;
+      PublishVariable(&user_data.Vrg2Temp, temperature, Vreg2ssTT); 
+    } else publishErr(RdssT);
 
     //
-    // FGPA Temperature from the internal diode of the FPGA
+    // FGPA Reading and Monitoring of Temperature from the internal diode of the FPGA
     if(!ADT7486A_Cmd(ADT7486A_address, GetExt2Temp, SST_LINE1, &temperature)) {
-      if ((temperature >= eepage.luCTlimit) && (temperature <= eepage.uuCTlimit)) {
-        FPGAssTT = OFF; // in range
-      } else {
-        FPGAssTT = ON; // out of range
-      }
-      DISABLE_INTERRUPTS;
-      user_data.FPGATemp = temperature;
-      user_data.error   = rESR;
-      ENABLE_INTERRUPTS;
-    } else {
-      DISABLE_INTERRUPTS;
-      FPGAssTT = SET;
-      user_data.error   = rESR;
-      ENABLE_INTERRUPTS;
-    }
+      if ((temperature < eepage.luCTlimit) || (temperature > eepage.uuCTlimit)) FPGAssTT = ON;
+      PublishVariable(&user_data.FPGATemp, temperature, FPGAssTT); 
+    } else publishErr(RdssT);
+
     // Update time
     sstTime = uptime();
   }
-
 #endif
+
+  //-----------------------------------------------------------------------------
+  // Main Current and Voltage Monitoring
+  pfData = &(user_data.pDI4Mon);
+  for (channel=0; channel<INTERNAL_N_CHN ; channel++) {
+    if ((pfData[channel] < eepage.lVIlimit[channel])
+     || (pfData[channel] > eepage.uVIlimit[channel])) {
+        rESR |= (1<<channel); // out of range
+    }
+  }
+
+  DISABLE_INTERRUPTS;
+  user_data.error   = rESR;
+  ENABLE_INTERRUPTS;
+
+  //
+  // Read Watchdog state
+  Swdog = WATCHDOG;  // Watchdog state
+
+  //
+  // Read Over current switch
+  V4_OC = (V4_OCn == 0) ? 1 : 0;
+
   //
   // Take action based on ERROR
+  // Currently only the Temperature are considered
   if (SPup && (rESR & ( UFTEMPERATURE_MASK | BTEMPERATURE_MASK))) {
     switchonoff(OFF);
     SPup = OFF;
@@ -634,18 +630,6 @@ void user_loop(void) {
   }
 
   //
-  // Read Watchdog state
-  Swdog = WATCHDOG;  // Watchdog state
-
-  //
-  // Read Over current switch
-  V4_OC = (V4_OCn == 0) ? 1 : 0;
-
-  //
   // Publish Control, Error and Status.
-  DISABLE_INTERRUPTS;
-  user_data.control = rCTL;
-  user_data.error   = rESR;
-  user_data.status  = rCSR;
-  ENABLE_INTERRUPTS;
+  publishCtlCsr();
 } 

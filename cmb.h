@@ -54,9 +54,9 @@ unsigned int xdata PageAddr[]={0x000, 0x200, 0x400, SERIALN_ADD};
 #define PAGE_SIZE  sizeof(eepage)
 #define EEP_RW_IDX          0x02
 
+//---------------------------------------------------------------
 // EEPROM structure
 // To be copied to the loader.h
-//---------------------------------------------------------------
 struct EEPAGE {
 unsigned long SerialN;    
 unsigned int structsze;
@@ -148,7 +148,7 @@ sbit V4_OC     = rESR ^ 7; //0x8000
 
 // Shutdown mask
 // Shut down the card only if any of the following bits in the rESR register is set
-// correspond to the rESR bit assignment
+// corresponds to the rESR bit assignment
 #define UFTEMPERATURE_MASK (unsigned int) 0x0300
 #define BTEMPERATURE_MASK  (unsigned int) 0x0C00
 #define VOLTAGE_MASK       (unsigned int) 0x00FE
