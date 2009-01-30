@@ -103,25 +103,34 @@ void user_init(unsigned char init)
 //-----------------------------------------------------------------------------
 //
 #elif defined(L_FEB64)
+#ifdef FEB64REV1
   // P3.7:RAMCSn   .6:CSn6      .5:CSn4     .4:SPARE5  | .3:SPARE4  .2:REG_EN   .1:CSn3    .0:CSn2
   // P2.7:SPARE1   .6:CSn7      .5:CSn6     .4:SPIMOSI | .3:SPISCK  .2:RAMHLDn  .1:SPIMISO .0:RAMWPn
   // P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn | .3:ResetN  .2:SPARE2   .1:SPARE3  .0:SST_DRV
   // P0.7:CSn1     .6:CSn0      .5:485TXEN  .4:QPUMPCLK| .3:SMBCLK  .2:SMBDAT   .1:Rx      .0:Tx
   sprintf(sys_info.node_name,"FEB64");
+  SFRPAGE = CONFIG_PAGE;
   P3MDOUT |= 0x80; // RAM_CSn in PP, REG_EN in OD
   P2MDOUT |= 0x18; // SPI_MOSI, SPI_SCK in PP
-  P2MDOUT &= 0xFE; // RAM_WPn in OD
+  P2MDOUT &= ~0x01; // RAM_WPn in OD
   P1MDOUT |= 0x08; // ResetN in PP
   P0MDOUT |= 0x20; // RS485 in PP
+  }
 
-// Get ALL Vreg on
-//  while((REG_EN == 0) && (timeout < 30)) {
-//    delay_ms(100);
-//    timeout++;
-//  }
-// Reset PCA9539 (PIO)
-// RESETN = 0;
-// RESETN = 1;
+#elif defined(FEB64REV2)
+// P3.7:RAMCSn   .6:CSn5      .5:CSn4     .4:SPARE5  | .3:SPARE4   .2:REG_EN    .1:CSn3     .0:CSn2 
+// P2.7:SPARE1   .6:CSn7      .5:CSn6     .4:SPIMOSI | .3:SPISCK   .2:RAMHLDn   .1:SPIMISO  .0:RAMWPn 
+// P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn | .3:SST_DRV2 .2:PIORESETN .1:SST_DRV1 .0:DACRESETN 
+// P0.7:CSn1     .6:CSn0      .5:485TXEN  .4:QPUMPCLK| .3:SMBCLK   .2:SMBDAT    .1:Rx       .0:Tx 
+  sprintf(sys_info.node_name,"FEB64");
+  SFRPAGE = CONFIG_PAGE;
+  P3MDOUT |= 0x80; // RAM_CSn in PP, REG_EN in OD
+  P2MDOUT |= 0x18; // SPI_MOSI, SPI_SCK in PP
+  P2MDOUT &= ~0x01; // RAM_WPn in OD
+  P1MDOUT |= 0x05; // ResetN in PP
+  P0MDOUT |= 0x20; // RS485 in PP
+  P1 |= 0x5;  // Set PIO/DAC Reset High
+#endif // FEB64REVx
   delay_us(100);
 
 //
