@@ -251,7 +251,6 @@ void SST_WriteByte(unsigned char datByte, int SST_LINE) {
         return; //error
      }
   }
-
 }
 
 //

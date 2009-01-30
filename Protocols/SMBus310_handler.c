@@ -5,7 +5,7 @@ Created: 		March 11, 2008
 Modified:	   Bahman Sotoodian
 Description:	SMBus protocol using interrupts, created for FEB64 board
 
-$Id: SMBus310_handler.c 63 2008-12-19 00:14:43Z midas $
+$Id: SMBus310_handler.c 73 2009-01-30 05:16:24Z midas $
 \**********************************************************************************/
 
 //-------------------------------------------------------------------
@@ -24,11 +24,20 @@ static bit SMB_BUSY;
 static bit SMB_RW;
 static bit SMB_ACKPOLL;
 
-void SMBus_SetSlaveAddr(unsigned char slaveAddr, char doAckPoll) {
-  SMB_TARGET = slaveAddr;
-  SMB_ACKPOLL = doAckPoll;
+//
+//-------------------------------------------------------------------
+void SMBus_EnableACKPoll(void) {
+  SMB_ACKPOLL = SMB_ENABLE_ACKPOLL;
 }
 
+//
+//-------------------------------------------------------------------
+void SMBus_SetSlaveAddr(unsigned char slaveAddr) {
+  SMB_TARGET = slaveAddr;
+}
+
+//
+//-------------------------------------------------------------------
 void SMBus_SetTXBuffer(unsigned char *pData, unsigned char dataLen) {
   unsigned char i;
 
@@ -39,22 +48,31 @@ void SMBus_SetTXBuffer(unsigned char *pData, unsigned char dataLen) {
   SMB_DATA_OUT_LEN = i;  
 }
 
+//
+//-------------------------------------------------------------------
 void SMBus_SetRXBuffer(unsigned char *pData, unsigned char dataLen) {
   pSMB_DATA_IN = pData; 
   SMB_DATA_IN_LEN = dataLen;
 }
 
+//
+//-------------------------------------------------------------------
 void SMBus_Wait(void) {
   while(SMB_BUSY);
 }
 
+//
+//-------------------------------------------------------------------
 void SMBus_Clear(void) {
   pSMB_DATA_IN = 0;
   SMB_DATA_IN_LEN = 0;
   SMB_DATA_OUT_LEN = 0;
   SMB_BUSY = 0;
+  SMB_ACKPOLL = SMB_DISABLE_ACKPOLL;
 }
 
+//
+//-------------------------------------------------------------------
 void SMBus_Start(void) {
   if(SMB_DATA_OUT_LEN > 0) {
     SMB_RW = SMB_WRITE;
@@ -68,6 +86,7 @@ void SMBus_Start(void) {
   STA = 1;
 
   SMBus_Wait();
+  SMBus_Clear();
 }
 
 //
@@ -107,8 +126,8 @@ void SMBus_Init(void) {
 void SMBus_ISR(void) interrupt 7{
   bit FAIL; 						 // Used by the ISR to flag failed
   // transfers
-  static data_in;
-  static data_out;	
+  static unsigned char data_in;
+  static unsigned char data_out;	
 
   switch (SMB0CN & 0xF0)	    // Status vector
   {
@@ -127,8 +146,9 @@ void SMBus_ISR(void) interrupt 7{
         if (SMB_RW==SMB_WRITE) {// If this transfer is a WRITE,
           SMB0DAT = SMB_DATA_OUT[data_out++]; // send data byte
         } else {
-        }		// If this transfer is a READ, proceed with transfer
-        // without writing to SMB0DAT (switch to receive mode)
+			// If this transfer is a READ, proceed with transfer
+			// without writing to SMB0DAT (switch to receive mode)
+        }		
       } else if(data_in < SMB_DATA_IN_LEN) {
         SMB_RW = SMB_READ;
         STO = 0;
@@ -140,8 +160,8 @@ void SMBus_ISR(void) interrupt 7{
     } else if (SMB_ACKPOLL) {			 				  
       STO = 1;
       STA = 1;  
-    } else {							  // If slave NACK, and we are not expecting anything to read
-      FAIL = 1;					  // Indicate failed transfer and handle at end of ISR											  
+    } else {	// If slave NACK, and we are not expecting anything to read
+      FAIL = 1;	// Indicate failed transfer and handle at end of ISR											  
     }
     break;
 
@@ -160,11 +180,12 @@ void SMBus_ISR(void) interrupt 7{
     break;
 
   default:
-    FAIL = 1;						 // Indicate failed transfer and handle at end of ISR											 
+    FAIL = 1; // Indicate failed transfer and handle at end of ISR											 
     break;
-  } 									 // end switch
-
-  if (FAIL) {							 // If the transfer failed,
+  } // end switch
+	
+  // If the transfer failed
+  if (FAIL) {							 
     SMB0CN &= ~0x40; // Reset communication
     SMB0CN |= 0x40;
     SMBus_Clear();
@@ -181,8 +202,7 @@ void SMBus_ISR(void) interrupt 7{
 //-------------------------------------------------------------------
 void Timer3_ISR(void) interrupt 14 {
   SMB0CN &= ~0x40;	// Disable SMBus
-  SMB0CN |= 0x40;	  // Re-enable SMBus
-
+  SMB0CN |= 0x40;	// Re-enable SMBus
   TMR3CN &= ~0x80;	// Clear Timer3 interrupt-pending flag
   SMBus_Clear();
 }	
