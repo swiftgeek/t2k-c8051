@@ -1,22 +1,21 @@
 /**********************************************************************************\
-  Name:      SMBus_handler.h
-  Author:     Bryerton Shaw
-  Created:     March 11, 2008
-  Description:  SMBus protocol using interrupts, created for FEB64 board
+  Name:           SMBus_handler.h
+  Author:         Bryerton Shaw  
+  Created:       March 11, 2008
+  Description: SMBus protocol using interrupts, created for FEB64 board
 
   $Id$
 \**********************************************************************************/
 
-#ifdef _SMB_PROTOCOL_
-
 #ifndef  _SMBUS_HANDLER_H
 #define  _SMBUS_HANDLER_H
 
+#define SMB_WRITE            0x00
+#define SMB_READ             0x01
+#define SMB_ENABLE_ACKPOLL   0x01
+#define SMB_DISABLE_ACKPOLL  0x00
 
-#define SMB_WRITE  0x00
-#define SMB_READ  0x01
-
-#define SMB_MAX_BUFF_SIZE 8
+#define SMB_MAX_BUFF_SIZE       8
 
 #define SMB_MTSTA    0xE0
 #define SMB_MTDB     0xC0
@@ -35,29 +34,19 @@
 #define SMB_STATE_MR_DATA_ACK     0x50
 #define SMB_STATE_MR_DATA_NACK    0x58
 
-
-// SMBus Global Variables
-extern unsigned char xdata SMB_DATA_OUT[SMB_MAX_BUFF_SIZE];
-extern unsigned char xdata SMB_DATA_OUT_LEN;
-
-extern unsigned char *pSMB_DATA_IN;
-extern unsigned char xdata SMB_DATA_IN_LEN;
-
-extern unsigned char xdata SMB_TARGET;
-
-extern char SMB_BUSY;
-extern bit SMB_RW;
-extern bit SMB_ACKPOLL;
-
-
 /***
- * Function:  SMBus_Init
- * Purpose:    Initialize SMBus Protocol
+ * Function: SMBus_Init
+ * Purpose:  Initialize SMBus Protocol
  *
- * Notes:    Configures Timer3, assumes Timer1 is set properly
+ * Notes:  Configures Timer3, assumes Timer1 is set properly
  */
 void SMBus_Init(void);
+void SMBus_EnableACKPoll(void);
+void SMBus_SetSlaveAddr(unsigned char slaveAddr);
+void SMBus_SetTXBuffer(const unsigned char *pData, unsigned char dataLen);
+void SMBus_SetRXBuffer(unsigned char *pData, unsigned char dataLen);
+void SMBus_Wait(void);
+void SMBus_Start(void);
+void SMBus_Clear(void);
 
 #endif // _SMBUS_HANDLER_H
-
-#endif // _SMB_PROTOCOL_
