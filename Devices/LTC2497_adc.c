@@ -40,29 +40,12 @@ void LTC2497_StartConversion(unsigned char addr, unsigned char channel) {
 		cmd |= 0x08;
 	} 
 
-	// Wait for the SMBus to clear
-//	while(SMB_BUSY);
-	dowhile(&SMB_BUSY, 9);
-	SMB_BUSY = 1;
-	SMB_ACKPOLL = 1;
-
-	// Have Command Bytes to send, so set to write to start
-	SMB_RW = SMB_WRITE;
-
-	// Set Slave Address
-	SMB_TARGET = addr;
-
-	// Setup Command Byte(s)
-	SMB_DATA_OUT_LEN = 1;
-	SMB_DATA_OUT[0] = cmd;
-
-	// Setup Receive Buffer
-	SMB_DATA_IN_LEN = 0;
-	pSMB_DATA_IN = 0;	
-
-	// Start Communication and Block until completed
-	SFRPAGE = SMB0_PAGE;
-	STA = 1;
+  SMBus_Wait();
+  SMBus_EnableACKPoll();
+  SMBus_SetSlaveAddr(addr);
+  SMBus_SetTXBuffer(&cmd, 1);
+  SMBus_SetRXBuffer(0, 0);
+  SMBus_Start();
 }
 
 //
@@ -80,31 +63,12 @@ unsigned char channel, signed long *pResult) {
 		cmd |= 0x08;
 	} 	
 
-	// Wait for the SMBus to clear
-//	while(SMB_BUSY);
-	dowhile(&SMB_BUSY, 8);
-	SMB_BUSY = 1;
-
-	SMB_RW = SMB_WRITE;
-	SMB_ACKPOLL = 1; // keep trying until success!
-
-	// Set Slave Address
-	SMB_TARGET = addr;
-
-	// Setup Command Byte(s)
-	SMB_DATA_OUT_LEN = 1;
-	SMB_DATA_OUT[0] = cmd;
-
-	// Setup Receive Buffer
-	SMB_DATA_IN_LEN = 3;
-	pSMB_DATA_IN = (unsigned char*)&value;	
-
-	// Start Communication and Block until completed
-	SFRPAGE = SMB0_PAGE;
-	STA = 1;
-
-//     	while(SMB_BUSY);
-	dowhile(&SMB_BUSY, 11);
+  SMBus_Wait();
+  SMBus_EnableACKPoll();
+  SMBus_SetSlaveAddr(addr);
+  SMBus_SetTXBuffer(&cmd, 1);
+  SMBus_SetRXBuffer(&value, 3);
+  SMBus_Start();
 
 	if(((value & 0xC0000000) == 0xC0000000) || ((value & 0xC0000000) == 0x00000000)) {
 		// Over/Under-range

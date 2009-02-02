@@ -3,7 +3,6 @@
   Name:         LTC2495_adc.c
   Created by:   Noel Wu												Jul/21/2008
 
-
   Contents:     This ADC provides the VBias and IBias readbacks,
   					 uses interrupt based SMB protocol.
 
@@ -22,99 +21,63 @@
 #include "../Protocols/SMBus_handler.h"
 #include "LTC2495_adc.h"
 
-extern  unsigned long xdata smbdebug;
-
-
-//
 //------------------------------------------------------------------------
+//
 void LTC2495_Init(void) {
 	SMBus_Init(); // SMBus initialization (should be called after pca_operation)
 }
 
-//
 //------------------------------------------------------------------------
+//
 void LTC2495_StartConversion(unsigned char addr, unsigned char channel, unsigned char gain) {
-	unsigned char cmd, cmd2;
+  unsigned char xdata buffer[2];
 	
 	watchdog_refresh(0);
 
-	cmd = (channel >> 1) | LTC2495_CMD_SGL | LTC2495_CMD_SELECT;
-	if(channel & 0x01) {
-		cmd |= 0x08;
-	} 
+	buffer[0] = (channel >> 1) | LTC2495_CMD_SGL | LTC2495_CMD_SELECT;
+	if(channel & 0x01) buffer[0] |= 0x08; 
 
-	cmd2= LTC2495_ENABLE2 | gain;
-// 	cmd2= LTC2495_ENABLE2 | LTC2495_CMD2_SPD | gain;  //DB - set speed to x2
+  //	buffer[1] = LTC2495_ENABLE2 | gain;
+ 	buffer[1] = LTC2495_ENABLE2 | LTC2495_CMD2_SPD | gain;  //DB - set speed to x2
 
-	// Wait for the SMBus to clear
-	dowhile(&SMB_BUSY,2);
-	SMB_BUSY = 1;
-	SMB_ACKPOLL = 1;
+  watchdog_refresh(0);
 
-	// Have Command Bytes to send, so set to write to start
-	SMB_RW = SMB_WRITE;
-
-	// Set Slave Address
-	SMB_TARGET = addr;
-
-	// Setup Command Byte(s)
-	SMB_DATA_OUT_LEN = 2;
-	SMB_DATA_OUT[0] = cmd;
-	SMB_DATA_OUT[1] = cmd2;
-
-	// Setup Receive Buffer
-	SMB_DATA_IN_LEN = 0;
-	pSMB_DATA_IN = 0;	
-
-	// Start Communication and Block until completed
-	SFRPAGE = SMB0_PAGE;
-	STA = 1;
+  // Wait for the SMBus to clear
+  SMBus_Wait();
+  SMBus_SetSlaveAddr(addr);   
+  SMBus_SetTXBuffer(buffer, 2);  // 2 cmds
+  SMBus_SetRXBuffer(0, 0);
+  SMBus_EnableACKPoll();
+  SMBus_Start();
 }
 
-//
 //------------------------------------------------------------------------
-unsigned char LTC2495_ReadConversion(unsigned char addr, 
-unsigned char channel, signed long *pResult, unsigned char gain) {
-	unsigned char cmd, cmd2;
+//
+unsigned char LTC2495_ReadConversion(unsigned char addr
+                                   , unsigned char channel
+                                   , signed long *pResult
+                                   , unsigned char gain) {
+  unsigned char xdata buffer[2];
 	unsigned char validRange = 1;
-	signed long value;
+	signed long value = 0;
 
 	watchdog_refresh(0);
 
-	cmd = (channel >> 1) | LTC2495_CMD_SGL | LTC2495_CMD_SELECT;
-	if(channel & 0x01) {
-		cmd |= 0x08;
-	} 	
+	buffer[0] = (channel >> 1) | LTC2495_CMD_SGL | LTC2495_CMD_SELECT;
+	if(channel & 0x01) buffer[0] |= 0x08;
 
-//	cmd2= LTC2495_ENABLE2 | gain;
-	cmd2= LTC2495_ENABLE2 | LTC2495_CMD2_SPD | gain;  //DB - set speed to x2
+  // buffer[1] = LTC2495_ENABLE2 | gain;
+	buffer[1] = LTC2495_ENABLE2 | LTC2495_CMD2_SPD | gain;  //DB - set speed to x2
 
-	// Wait for the SMBus to clear
-//   while(SMB_BUSY);
-	dowhile(&SMB_BUSY, 5);
-	SMB_BUSY = 1;
-	SMB_RW = SMB_WRITE;
-	SMB_ACKPOLL = 1; // keep trying until success!
+  // Wait for the SMBus to clear
+  SMBus_Wait();
+  SMBus_SetSlaveAddr(addr);   
+  SMBus_SetTXBuffer(buffer, 2);  // 2 cmds
+  SMBus_SetRXBuffer((unsigned char *)&value, 3);
+  SMBus_EnableACKPoll();
+  SMBus_Start();
 
-	// Set Slave Address
-	SMB_TARGET = addr;
-
-	// Setup Command Byte(s)
-	SMB_DATA_OUT_LEN = 2;
-	SMB_DATA_OUT[0] = cmd;
-	SMB_DATA_OUT[1] = cmd2;
-
-	// Setup Receive Buffer
-	SMB_DATA_IN_LEN = 3;
-	pSMB_DATA_IN = (unsigned char*)&value;	
-
-	// Start Communication and Block until completed
-	SFRPAGE = SMB0_PAGE;
-	STA = 1;
-
-//  	while(SMB_BUSY);
-	dowhile(&SMB_BUSY, 10);
-
+/*
 	if(((value & 0xC0000000) == 0xC0000000) || ((value & 0xC0000000) == 0x00000000)) {
 		// Over/Under-range
 		validRange = 0;
@@ -128,11 +91,11 @@ unsigned char channel, signed long *pResult, unsigned char gain) {
 		value = value >> 14;
 		value &= 0x0000FFFF;
 	}
-
-	*pResult = value;
-
+*/
+  // shift 8 for 32 to 24 filled from the left
+  // shift 6 for zero of the data register
+	*pResult = value>>14;
+  validRange = 1;
 	return validRange;
 }
-
-
 #endif
