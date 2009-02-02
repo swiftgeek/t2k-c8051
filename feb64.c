@@ -22,13 +22,13 @@ Program Size: data=150.2 xdata=711 code=15134
 Program Size: data=160.0 xdata=523 code=14686
 Program Size: data=166.5 xdata=1309 code=22083 - Aug 20/2008
 Program Size: data=167.4 xdata=1483 code=23701 - Sep 06/2008
-
+Program Size: data=58.4 xdata=1630 code=27180 - Jan 29/2009 Large model
 CODE(?PR?UPGRADE?MSCBMAIN (0xD000)) 
 
-// P3.7:RAMCSn   .6:CSn6      .5:CSn4     .4:SPARE5  | .3:SPARE4  .2:REG_EN   .1:CSn3    .0:CSn2 
-// P2.7:SPARE1   .6:CSn7      .5:CSn6     .4:SPIMOSI | .3:SPISCK  .2:RAMHLDn  .1:SPIMISO .0:RAMWPn 
-// P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn | .3:DACResetN  .2:PCARESETN .1:SPARE3  .0:SST_DRV 
-// P0.7:CSn1     .6:CSn0      .5:485TXEN  .4:QPUMPCLK| .3:SMBCLK  .2:SMBDAT   .1:Rx      .0:Tx 
+// P3.7:RAMCSn   .6:CSn5      .5:CSn4     .4:SPARE5  | .3:SPARE4   .2:REG_EN    .1:CSn3     .0:CSn2 
+// P2.7:SPARE1   .6:CSn7      .5:CSn6     .4:SPIMOSI | .3:SPISCK   .2:RAMHLDn   .1:SPIMISO  .0:RAMWPn 
+// P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn | .3:SST_DRV2 .2:PIORESETN .1:SST_DRV1 .0:DACRESETN 
+// P0.7:CSn1     .6:CSn0      .5:485TXEN  .4:QPUMPCLK| .3:SMBCLK   .2:SMBDAT    .1:Rx       .0:Tx 
 
 $Id$
 \********************************************************************/
@@ -73,8 +73,8 @@ $Id$
 #include "Devices/ExtEEPROM.h"
 #endif
 //
-// Global declarations
 //-----------------------------------------------------------------------------
+// Global declarations
 char code  node_name[] = "FEB64";
 char idata svn_rev_code[] = "$Rev$";
 
@@ -89,14 +89,16 @@ char xdata calQpumpSave=0, calSwSave=0;
 unsigned long xdata currentTime=0, sstTime=0,sstExtTime=0, calTime=0;
 unsigned char xdata eeprom_channel,channel, chipAdd, chipChan;
 unsigned char xdata BiasIndex, AsumIndex;
-unsigned char xdata SST_LINE1=1;
+unsigned char xdata SST_LINE1=1, SST_LINE2=1;
 unsigned long xdata loopcnt = 0;
 
 // Global bit register
 unsigned char bdata bChange;
+
 // Local flag
 sbit bCPupdoitNOW   = bChange ^ 0;
 sbit bDacdoitNOW    = bChange ^ 1;
+
 //Defining the user_write() flag actions
 sbit PCA_Flag       = bChange ^ 2;
 sbit LTC2600_Flag   = bChange ^ 3;
@@ -104,6 +106,7 @@ sbit LTC1665_Flag   = bChange ^ 4;
 sbit LTC1669_Flag   = bChange ^ 5;
 sbit EEP_CTR_Flag   = bChange ^ 6;
 sbit CAsum_Flag     = bChange ^ 7;
+
 //
 // RESET output pin for PCA9539 (PIO) and LTC1665 (DACx8)
 sbit DACRESETN      = P1 ^ 3;
@@ -113,9 +116,12 @@ sbit PCARESETN      = P1 ^ 1;
 sbit ASUM_SYNC      = P1 ^ 7;
 sbit ASUM_TESTN     = P1 ^ 6;
 sbit ASUM_PWDN      = P1 ^ 5;
+//
+// Vreg Enable port assignment
+sbit REG_EN         = P3 ^ 2;
 
-// User Data structure declaration
 //-----------------------------------------------------------------------------
+// User Data structure declaration
 MSCB_INFO_VAR code vars[] = {
   4, UNIT_BYTE,            0, 0,           0, "SerialN",    &user_data.SerialN,      //0
   2, UNIT_BYTE,            0, 0,           0, "Error",      &user_data.error,        //1
@@ -294,9 +300,44 @@ LTC2600_LOAD_E,LTC2600_LOAD_F,
 LTC2600_LOAD_G,LTC2600_LOAD_H};
 #endif
 
-//
-// Update from eepage the local ADC2 Table
 //-----------------------------------------------------------------------------
+//
+void publishCtlCsr(void) {
+  DISABLE_INTERRUPTS;
+  user_data.control = rCTL;
+  user_data.status  = rCSR;
+  ENABLE_INTERRUPTS;
+}
+
+//-----------------------------------------------------------------------------
+//
+void publishErr(bit errbit) {
+    DISABLE_INTERRUPTS;
+    errbit = ON;
+    user_data.error   = rESR;
+    ENABLE_INTERRUPTS;
+}
+
+//-----------------------------------------------------------------------------
+//
+void publishAll() {
+  user_data.control = rCTL;
+  user_data.status  = rCSR;
+  user_data.error   = rESR;
+  ENABLE_INTERRUPTS;
+}
+
+//-----------------------------------------------------------------------------
+//
+void PublishVariable(float xdata * pvarDest, float varSrce, bit errbit) {
+  DISABLE_INTERRUPTS;
+  *pvarDest = varSrce;
+  if (errbit) user_data.error = rESR;
+  ENABLE_INTERRUPTS;
+}
+
+//-----------------------------------------------------------------------------
+// Update from eepage the local ADC2 Table
 void updateAdc2Table(void)
 {
   int i, j;
@@ -310,9 +351,9 @@ void updateAdc2Table(void)
     }
   }
 }
-//
-// Watchdog counter function
+
 //-----------------------------------------------------------------------------
+// Watchdog counter function
 void watchdog(short int state)
 {
   loopcnt++;
@@ -321,9 +362,8 @@ void watchdog(short int state)
   ENABLE_INTERRUPTS;
 }
 
-//
-//
 //-----------------------------------------------------------------------------
+//
 float read_voltage(unsigned char channel,unsigned int *rvalue,  float coeff, float offset, unsigned char gain)
 {
   unsigned int  xdata i;
@@ -347,37 +387,23 @@ float read_voltage(unsigned char channel,unsigned int *rvalue,  float coeff, flo
 
   return voltage;
 }
-//
-//
+
 //-----------------------------------------------------------------------------
-//converts channel index to eepage structure offset address
-//int eepageAddrConvert(unsigned int index)
-//{
-//  int add;
-//  //if index is even
-//  if(!(index%2))
-//    add=index/2+4;
-//  //if index is odd
-//  else
-//    add=index/2;
-//  return add;
-//}
 //
-//
-//-----------------------------------------------------------------------------
 void switchonoff(unsigned char command)
 {
   char i;
   char xdata swConversion;
   if(command==ON)
   {
+    //-----------------------------------------------------------------------------
     // Enable the voltage regulator to power the card
-    //-----------------------------------------------------------------------------
     SFRPAGE  = CONFIG_PAGE;
-    P3MDOUT &= 0xFB;  // Set Vreg enable to Open drain
-    REG_EN=ON;
-    // Setup the ASUM ports (P1.7, 6,5)
+    P3MDOUT |= 0x04;  // Set Vreg enable to PP
+    REG_EN = ON;
+
     //-----------------------------------------------------------------------------
+    // Setup the ASUM ports (P1.7, 6,5)
     P1MDOUT |= 0xE0;  // Sync, Test, PowerDwnN Push-pull
 
     // Pulse the serializer (ASUM)
@@ -387,51 +413,49 @@ void switchonoff(unsigned char command)
     delay_us(100);     // Wait sometime.
     ASUM_TESTN = 1;    // Choose Non test mode. (TEST=neg true)
     ASUM_SYNC = 0;     // Negate the sync process.
-    //
-    // uC Charge Pump frequency setup
+
     //-----------------------------------------------------------------------------
+    // uC Charge Pump frequency setup
     pca_operation(Q_PUMP_INIT);  // Charge Pump initialization (crossbar settings)
     //Sept 09 default Qpump ON at Power up
     pca_operation(Q_PUMP_ON);
 
-    //
-    // SPI Dac (Bias voltages, 64 channels)
-    //-----------------------------------------------------------------------------
 #ifdef _LTC1665_
+    //-----------------------------------------------------------------------------
+    // SPI Dac (Bias voltages, 64 channels)
     SFRPAGE  = CONFIG_PAGE;
-    P2MDOUT |= 0x18; // Setting the SPI_MOSI and SPI_SCK to push pull
-    P0MDOUT |= 0xC0; // Setting the BIAS_DAC_CSn1 and BIAS_DAC_CSn2 to push pull
-    P3MDOUT |= 0x63; // Setting the BIAS_DAC_CSn3,4,5,6 to push pull
-    P2MDOUT |= 0x60; // Setting the BIAS_DAC_CSn7,8 to push pull
-    P1MDOUT |= 0x08;
-    DACRESETN  = 1;
+    P2MDOUT |= 0x18; // Set SPI_MOSI and SPI_SCK in PP
+    P0MDOUT |= 0xC0; // Set BIAS_DAC_CSn1 and BIAS_DAC_CSn2 in PP
+    P3MDOUT |= 0x63; // Set BIAS_DAC_CSn3,4,5,6 in PP
+    P2MDOUT |= 0x60; // Set BIAS_DAC_CSn7,8 in PP
+    P1MDOUT |= 0x0A; // Set SST_DRV2, SST_DRV1 in PP
+    DACRESETN  = 1;  // in OD for now
     LTC1665_Init();
 #endif
-    //
-    // SPI ASUM DAC (8 channels)
-    //-----------------------------------------------------------------------------
+
 #ifdef _LTC2600_
+    //-----------------------------------------------------------------------------
+    // SPI ASUM DAC (8 channels)
     SFRPAGE  = CONFIG_PAGE;
-    P1MDOUT |= 0x10;  // Setting the SUM_DAC_CSn to push pull
-    P2MDOUT |= 0x18;  // Setting the SPI_MOSI and SPI_SCK to push pull
-//    P2MDOUT &= ~0x02; // Keep MISO in OD
+    P2MDOUT |= 0x18;  // Set SPI_MOSI and SPI_SCK in PP
+    P1MDOUT |= 0x10;  // Set SUM_DAC_CSn in PP
     LTC2600_Init();
 #endif
-    //
-    //SPI ExtEEPROM
-    //-----------------------------------------------------------------------------
+
 #ifdef _ExtEEPROM_
+    //-----------------------------------------------------------------------------
+    //SPI ExtEEPROM
     SFRPAGE  = CONFIG_PAGE;
-    P3MDOUT |= 0x80; // Setting the RAM_CSn to push pull
-    P2MDOUT |= 0x18; // Setting the SPI_MOSI and SPI_SCK to push pull
-    P2MDOUT &= 0xFE; // Setting the RAM_WPn to open drain
+    P2MDOUT |= 0x18; // Set SPI_MOSI and SPI_SCK in PP
+    P3MDOUT |= 0x80; // Set RAM_CSn in PP
+    P2MDOUT &= ~0x01; // Set RAM_WPn in OD
     ExtEEPROM_Init();
 #endif
-    //
-    // SMB Charge Pump DAC
-    //-----------------------------------------------------------------------------
+
 #ifdef _LTC1669_
-    LTC1669_Init(); //I2C DAC initialization (D_CH_PUMP)
+    //-----------------------------------------------------------------------------
+    // SMB Charge Pump DAC
+    LTC1669_Init(); //I2C DAC initialization
 #endif
 
 #ifdef _LTC2497_
@@ -441,10 +465,10 @@ void switchonoff(unsigned char command)
 #ifdef _LTC2495_
     LTC2495_Init();
 #endif
-    //
-    // SMB Bias Voltage switches
-    //-----------------------------------------------------------------------------
+
 #ifdef _PCA9539_
+    //-----------------------------------------------------------------------------
+    // SMB Bias Voltage switches
     SFRPAGE = CONFIG_PAGE;
     P1MDOUT |= 0x08;
     PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
@@ -465,23 +489,20 @@ void switchonoff(unsigned char command)
     // Activate 64 bias dac settings
     // user_data contains correct values, force update 
     // by setting mirror to 0xff 
-    for(i=0;i<64;i++) {
-      ltc1665mirror[i] = 0xFF;
-    }
- 
+    for(i=0;i<64;i++) ltc1665mirror[i] = 0xFF;
+
     // Needs power for DAC update, by now it should be ON
     // Force DAC updates
     LTC1665_Flag = ON;
   }
-  else if(command==OFF)
-  {
+  else if(command==OFF) {
     pca_operation(Q_PUMP_OFF);   // Initially turn it off
 
     // Switch all the ports to open drain except for...
     SFRPAGE  = CONFIG_PAGE;
 
-    //Ram_CSn maintained in PP
-    // P3.7:RAMCSn .6:CSn6 .5:CSn4 .4:SPARE5 .3:SPARE4 .2:REG_EN .1:CSn3 .0:CSn2 
+    //Ram_CSn maintained in PP set it to High
+    // P3.7:RAMCSn   .6:CSn5      .5:CSn4     .4:SPARE5  | .3:SPARE4   .2:REG_EN    .1:CSn3     .0:CSn2 
     P3MDOUT = 0x80;
     P3 &= 0x80;
 
@@ -491,21 +512,21 @@ void switchonoff(unsigned char command)
     REG_EN  = OFF;   // Shutdown All Regulators 
 
     //SPI communication for EEPROM is maintained
-    // P2.7:SPARE1 .6:CSn7 .5:CSn6 .4:SPIMOSI .3:SPISCK .2:RAMHLDn .1:SPIMISO .0:RAMWPn 
+    // P2.7:SPARE1   .6:CSn7      .5:CSn6     .4:SPIMOSI | .3:SPISCK   .2:RAMHLDn   .1:SPIMISO  .0:RAMWPn 
     P2MDOUT &= 0x1F;
     P2 &= 0x0F;
 
     //SST and PCARESETN is maintained ==1 and PP
-    // P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn .3:DACResetN .2:SPARE2 .1:PCAResetN .0:SST_DRV 
-    P1MDOUT  |= 0x0F;
+    // P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn | .3:SST_DRV2 .2:PIORESETN .1:SST_DRV1 .0:DACRESETN 
+    P1MDOUT  |= 0x0F;  // in PP
     DACRESETN = 1;
     PCARESETN = 1;
-    P1 &= 0x07;
+    P1 &= ~0x0A;  // SST1, SST2 set Low
 
     // mscb communication
-    // P0.7:CSn1 .6:CSn0 .5:485TXEN .4:QPUMPCLK .3:SMBCLK .2:SMBDAT .1:Rx .0:Tx 
+    // P0.7:CSn1     .6:CSn0      .5:485TXEN  .4:QPUMPCLK| .3:SMBCLK   .2:SMBDAT    .1:Rx       .0:Tx 
     P0MDOUT &= 0x20;
-    P0 &= 0x3F;
+    P0 &= ~0xC0;  // Set CS1,0 to Low
   }
 }
 
@@ -535,67 +556,59 @@ void user_init(unsigned char init)
 
   board_address = cur_sub_addr();
 
-
-  //
-  // default settings, set only when uC-EEPROM is being erased and written
   //-----------------------------------------------------------------------------
-  if(init)
-  {
+  // default settings, set only when uC-EEPROM is being erased and written
+  if(init) {
     user_data.control    = 0x00;    // Turn off the charge pump
     user_data.status     = 0x80;    // Shutdown state
     user_data.swBias     = 0x00;    // Turn off all the switches
     user_data.rQpump     = 0x00;    // Set to the lowest scale
-    for(i=0;i<8;i++){
+    for(i=0;i<8;i++) {
       user_data.rAsum[i] = 0x80;
       user_data.Temp[i]  = 0.0;
     }
-    for(i=0;i<64;i++)
-    {
+    for(i=0;i<64;i++) {
       user_data.rBias[i] = 0xFF;    // Set the DAC to lowest value
-      //NW mirror of the rBias values
       ltc1665mirror[i]      = 0xFF;
     }
   }
   sys_info.group_addr  = 100;
 
-  //
-  // Local Flags
   //-----------------------------------------------------------------------------
+  // Local Flags
   bChange = 0;
 
-  //
-  // Initial setting for communication and overall ports (if needed).
   //-----------------------------------------------------------------------------
+  // Initial setting for communication and overall ports (if needed).
   SFRPAGE  = CONFIG_PAGE;
   P0MDOUT |= 0x20;   // add RS485_ENABLE in push-pull
 
-  //
-  // uC Miscellaneous ADCs (V/I Monitoring)
   //-----------------------------------------------------------------------------
+  // uC Miscellaneous ADCs (V/I Monitoring)
   adc_internal_init();
 
-  //
-  //SPI ExtEEPROM
   //-----------------------------------------------------------------------------
+  //SPI ExtEEPROM
 #ifdef _ExtEEPROM_
   SFRPAGE  = CONFIG_PAGE;
-  P3MDOUT |= 0x80; // Setting the RAM_CSn to push pull
-  P2MDOUT |= 0x18; // Setting the SPI_MOSI and SPI_SCK to push pull
-  P2MDOUT &= 0xFE; // Setting the RAM_WPn to open drain
+  P2MDOUT |= 0x18;  // Set SPI_MOSI and SPI_SCK in PP
+  P2MDOUT &= ~0x01; // Set RAM_WPn in OD
+  P3MDOUT |= 0x80;  // Set RAM_CSn in PP
   ExtEEPROM_Init();
 #endif
 
-  // Reset LTC1665 (DACx8)
-  // Reset PCA9539 (PIO)
-  P1MDOUT |= 0xF;
-  DACRESETN = 1;
-  PCARESETN = 1;
-  //
-  // Initialize PCA for address reading and switch settings
   //-----------------------------------------------------------------------------
+  // Reset LTC1665 (DACx8), Reset PCA9539 (PIO)
+  SFRPAGE  = CONFIG_PAGE;
+  P1MDOUT |= 0x5;   // PIO/DACRESETN in PP
+  DACRESETN = 1;    // No reset 
+  PCARESETN = 1;    // No reset
+
+  //-----------------------------------------------------------------------------
+  // Initialize PCA for address reading and switch settings
 #ifdef _PCA9539_
   SFRPAGE = CONFIG_PAGE;
-  P1MDOUT |= 0x08;
+//  P1MDOUT |= 0x08;
   PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
   delay_us(10);
   //Write to the PCA register for setting 0.x to output
@@ -607,9 +620,9 @@ void user_init(unsigned char init)
   //Write to the PCA register for setting 1.x to input
   PCA9539_WriteByte(BACKPLANE_INPUT_ENABLE);
   delay_us(10);
-  //
+  
+ //-----------------------------------------------------------------------------
   // Physical backplane address retrieval
-  //-----------------------------------------------------------------------------
   PCA9539_Read(BACKPLANE_READ, &pca_add, 1);
   //C C C C C C 0 B B is the MSCB Addr[8..0], 9 bits
   //Modifying what the board reads from the PCA
@@ -620,9 +633,8 @@ void user_init(unsigned char init)
   sys_info.node_addr   = board_address;
 #endif
 
-  //
-  // EEPROM memory Initialization/Retrieval
   //-----------------------------------------------------------------------------
+  // EEPROM memory Initialization/Retrieval
 #ifdef _ExtEEPROM_
   //Read only the serial number from the protected page
   // (without the iBiasOffset)Protected page starts from 0x600, serial number is located in 0x690
@@ -636,7 +648,6 @@ void user_init(unsigned char init)
     user_data.rAsum[i] = eepage.rasum[i];
   for(i=0;i<64;i++) {
     user_data.rBias[i] = eepage.rbias[i];
-    //NW mirror of the rBias values
     ltc1665mirror[i] = eepage.rbias[i];
   }
   user_data.rQpump = (unsigned int) (eepage.rqpump & 0x3FF);
@@ -647,18 +658,23 @@ void user_init(unsigned char init)
   updateAdc2Table();
 #endif
 
-  //
-  // SST Temperatures, setting temperature offsets
   //-----------------------------------------------------------------------------
+  // SST Temperatures, setting temperature offsets
 #ifdef _ADT7486A_
   SFRPAGE  = CONFIG_PAGE;
-  P1MDOUT |= 0x01; // Setting the SST_DRV (SST) to push pull
+  P1MDOUT |= 0x0A; // Set SST_DRV1/2 in PP
+  // External 4 SST devices
   SFRPAGE  = CPT1_PAGE;
   CPT1CN  |= 0x80; // Enable the Comparator 1
   CPT1MD   = 0x03; //Comparator1 Mode Selection
-  //Use default, adequate TYP (CP1 Response Time, no edge triggered interrupt)
+  // Local 1 SST device
+  SFRPAGE  = CPT0_PAGE;
+  CPT0CN  |= 0x80; // Enable the Comparator 0
+  CPT0MD   = 0x03; //Comparator0 Mode Selection
+ //Use default, adequate TYP (CP1 Response Time, no edge triggered interrupt)
 
-  ADT7486A_Init(SST_LINE1); //NW modified ADT7486A to support more than one line
+  ADT7486A_Init(SST_LINE1); //  external devices
+  ADT7486A_Init(SST_LINE2); //  local devices
 
   for (channel=0;channel < NCHANNEL_ADT7486A; channel++){
     ADT7486A_Cmd(ADT7486A_addrArray[channel]
@@ -679,15 +695,16 @@ void user_init(unsigned char init)
       , &temperature); //NW
     delay_us(100);
   }
+
+  // Missing offset loading for local SST devices.
 #endif
-  //
-  //Turn off the card before the timer expires
+
   //-----------------------------------------------------------------------------
+  // Turn off the card before the timer expires
   switchonoff(OFF);
 
-  //
-  // Final steps
   //-----------------------------------------------------------------------------
+  // Final steps
   rESR = 0x0000;              // No error!
   rEER = 0x00;                    // Active page 0, To be written or read page 0
   rCTL = 0;                       // Reset control
@@ -706,38 +723,17 @@ void user_init(unsigned char init)
     user_data.eepValue = 0.0;
     user_data.eeCtrSet = 0;
   }
-#ifdef FEB64REV0
-  EN_pD5V  = ON;                  // Needed for debug
-  EN_pA5V  = ON;                  //-PAA- needed for ASUM test
-  EN_nA5V  = ON;                  //-PAA- needed for ASUM test
-#elif defined(FEB64REV1)
 
-#if 0
-  {
-    //debugging only
-    switchonoff(ON);
-    SPup = ON;
-    // Publish Registers
-    DISABLE_INTERRUPTS;
-    user_data.status  = rCSR;
-    ENABLE_INTERRUPTS;
-  }
-#endif // 0
-
-#endif
-
-  P2MDOUT |= 0x80;  // Timming port
+  // Debug pin on SPARE1
+  P2MDOUT |= 0x80;  P2 |= 0x80;  // Timing port in PP = 0
 }
 
 //
 // Final state of all input pins and their associated registers
-//
-
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-
 /*---- User write function -----------------------------------------*/
 #pragma NOAREGS
 
@@ -768,8 +764,8 @@ void user_write(unsigned char index) reentrant
   if ((index >= FIRST_ASUM) && (index < LAST_ASUM)) {
     AsumIndex = (index - FIRST_ASUM);
 #ifdef _LTC2600_
-  // Update Bias Dac voltages as requested by bit5 of control register
-  if (!SsS) LTC2600_Flag = 1;  // !Shutdown
+    // Update Bias Dac voltages as requested by bit5 of control register
+    if (!SsS) LTC2600_Flag = 1;  // !Shutdown
 #endif
   }
   //
@@ -781,8 +777,8 @@ void user_write(unsigned char index) reentrant
   }
   //
   // --- Index Qpump DAC
-#ifdef _LTC1669_
-  if((index == IDXQVOLT) && SqPump && !SsS) LTC1669_Flag = 1;   // Qpump on and !Shutdown
+#ifdef _LTC1669_  //SqPump && 
+  if((index == IDXQVOLT) && !SsS) LTC1669_Flag = 1;   // Qpump on and !Shutdown
 #endif
 
   //
@@ -796,7 +792,6 @@ void user_write(unsigned char index) reentrant
     ASUM_TESTN  = (user_data.asumCtl & 0x2) >> 1;
     ASUM_PWDN   = (user_data.asumCtl & 0x4) >> 1;
   }
-
 }
 
 /*---- User read function ------------------------------------------*/
@@ -863,8 +858,7 @@ void user_loop(void) {
   char xdata ltc1665_index, ltc1665_chipChan, ltc1665_chipAdd;
 
   timing=1;
-  watchdog(0);
-  //
+
   //External ADC for REV0 cards
   //-----------------------------------------------------------------------------
 #ifdef _LTC2497_
@@ -873,10 +867,8 @@ void user_loop(void) {
   if(!LTC2497_ReadConversion(ADDR_LTC2497, adcChannel, &result)) {
     result = -CONVER_FAC1;
   }
-  adc_value = ((float)((result)
-    + CONVER_FAC1) * (float)(EXT_VREF / CONVER_FAC2));
+  adc_value = ((float)((result) + CONVER_FAC1) * (float)(EXT_VREF / CONVER_FAC2));
   adc_value = (adc_value * adc2mscb_table[adcChannel].Coef + adc2mscb_table[adcChannel].Offst);
-
 
   DISABLE_INTERRUPTS;
   if(adc2mscb_table[adcChannel].current) {
@@ -892,9 +884,10 @@ void user_loop(void) {
   adcChannel %= N_RB_CHANNEL;
 
 #endif
-  //
-  //External ADC for REV1 cards
+
   //-----------------------------------------------------------------------------
+  // External ADC for REV1 cards
+  // Increment channel per user_loop
 #ifdef _LTC2495_
 
   LTC2495_StartConversion(ADDR_LTC2495, adcChannel, adc2mscb_table[adcChannel].gain);
@@ -903,8 +896,7 @@ void user_loop(void) {
     result = -CONVER_FAC1;
   }
 
-  adc_value = ((float)((result - adc2mscb_table[adcChannel].Offst)
-                               + CONVER_FAC1) * (float)(EXT_VREF / CONVER_FAC2));
+  adc_value = ((float)((result - adc2mscb_table[adcChannel].Offst) + CONVER_FAC1) * (float)(EXT_VREF / CONVER_FAC2));
   adc_value = (adc_value * adc2mscb_table[adcChannel].Coef) ;
   //dividing by the gain
   adc_value /= pow(2, (adc2mscb_table[adcChannel].gain + adc2mscb_table[adcChannel].current));
@@ -917,20 +909,17 @@ void user_loop(void) {
     user_data.rVBMon[adc2mscb_table[adcChannel].mscbIdx] = result;
   }
   ENABLE_INTERRUPTS;
-
-  adcChannel++;                 // increment channel
+//-PAA
+  adcChannel = user_data.eepage;
+//  adcChannel++;                 // increment channel
   adcChannel %= N_RB_CHANNEL;   // modulus 16
 
 #endif
 
-  watchdog(1);
-
-  //
   //-----------------------------------------------------------------------------
-  //Checking switches flag for toggling the switches
+  // Checking switches flag for toggling the switches
 #ifdef _PCA9539_
-  if(PCA_Flag){
-    watchdog(2);
+  if(PCA_Flag) {
     swConversion = user_data.swBias;
     PCA9539_Conversion(&swConversion);
     PCA9539_WriteByte(BIAS_WRITE, ~swConversion);
@@ -938,52 +927,39 @@ void user_loop(void) {
   }
 #endif
 
-  //
   //-----------------------------------------------------------------------------
-  //Checking ASUM flag for updating the asum values
-  // Can do this action only when card is off shutdown (system/Manual)
+  // Checking ASUM flag for updating the asum values
 #ifdef _LTC2600_
   if(LTC2600_Flag) {
-    watchdog(3);
     LTC2600_Cmd(WriteTo_Update,LTC2600_LOAD[AsumIndex], user_data.rAsum[AsumIndex]);
     LTC2600_Flag = CLEAR;
   }
 #endif
 
-  watchdog(54);
-  //
   //-----------------------------------------------------------------------------
-  //Checking DAC charge pump flag for adjusting the charge pump voltage
+  // Checking DAC charge pump flag for adjusting the charge pump voltage
 #ifdef _LTC1669_
   if(LTC1669_Flag) {
-    watchdog(5);
     LTC1669_SetDAC(ADDR_LTC1669, LTC1669_INT_BG_REF, user_data.rQpump);
     LTC1669_Flag = CLEAR;
   }
 #endif
-  watchdog(55);
 
   //-----------------------------------------------------------------------------
   // Power Up based on CTL bit
   if (CPup) {
-    watchdog(6);
     rCSR = user_data.status;
     rESR = 0x0000;   // Reset error status at each Power UP
     // Clear Status
     SsS = OFF;
     DISABLE_INTERRUPTS;
     user_data.status  = rCSR;
+    user_data.error   = rESR;
     ENABLE_INTERRUPTS;
     // Power up Card
-#ifdef FEB64REV0
-    EN_pD5V = ON;
-    EN_pA5V = ON;
-    EN_nA5V = ON;
-#elif defined(FEB64REV1)
     switchonoff(ON);
-#endif
     delay_ms(100);
-    // Force Check on Voltage
+    // Force Check on Voltage during loop
     bCPupdoitNOW = ON;
     // Wait for Check before setting SPup
     // Reset Action
@@ -995,8 +971,6 @@ void user_loop(void) {
   // Temperature reading/monitoring based on time for internal temperature
   // Board Temperature
   if ( bCPupdoitNOW || ((uptime() - sstTime) > SST_TIME)) {
-
-    watchdog(14);
 
     for (channel=0;channel < NCHANNEL_ADT7486A; channel++) {
       if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetIntTemp, SST_LINE1, &temperature)) {
@@ -1015,7 +989,6 @@ void user_loop(void) {
         ENABLE_INTERRUPTS;
       }
     }  // For loop
-    watchdog(64);
     sstTime = uptime();
   }  // Internal temperature
 
@@ -1023,116 +996,78 @@ void user_loop(void) {
   // Temperature reading/monitoring based on time for external temperature
   // FGD Temperature
   if (bCPupdoitNOW || ((uptime() - sstExtTime) > SST_TIME)) {
-    watchdog(11);
     for (channel=0;channel < NCHANNEL_ADT7486A; channel++){
       if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt1Temp, SST_LINE1, &temperature)){
         RdssT = CLEAR;
-        if ((temperature >= eepage.lSSTlimit) && (temperature <= eepage.uSSTlimit)) {
-          ExtssTT = OFF; // in range
-        } else {
-          ExtssTT = ON; // out of range
-        }
-        DISABLE_INTERRUPTS;
-        user_data.Temp[channel*2] = temperature;
-        ENABLE_INTERRUPTS;
-      } else {
-        DISABLE_INTERRUPTS;
-        RdssT = ON;
-        ENABLE_INTERRUPTS;
-      }
+        if ((temperature < eepage.lSSTlimit) || (temperature > eepage.uSSTlimit)) ExtssTT = ON;
+        PublishVariable(&(user_data.Temp[(channel*2)]), temperature, ExtssTT);
+      } else publishErr(RdssT);
     } // For loop 1
 
     for (channel=0;channel < NCHANNEL_ADT7486A; channel++) {
-      watchdog(12);
       if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt2Temp, SST_LINE1, &temperature)) {
         RdssT = CLEAR;
-        if ((temperature >= eepage.lSSTlimit) && (temperature <= eepage.uSSTlimit)) {
-          ExtssTT = OFF; // in range
-        } else {
-          ExtssTT = ON; // out of range
-        }
-        DISABLE_INTERRUPTS;
-        user_data.Temp[(channel*2)+1] = temperature;
-        ENABLE_INTERRUPTS;
-      } else {
-        DISABLE_INTERRUPTS;
-        RdssT = ON;
-        ENABLE_INTERRUPTS;
-      }
+        if ((temperature < eepage.lSSTlimit) || (temperature > eepage.uSSTlimit)) ExtssTT = ON;
+        PublishVariable(&(user_data.Temp[(channel*2)+1]), temperature, ExtssTT);
+      } else publishErr(RdssT);
     }  // For loop 2
 
-    watchdog(62);
+    // ext Temp error not yet published...
+
     sstExtTime = uptime();
   } // External Temperature
 #endif
 
-  //
+  //-----------------------------------------------------------------------------
+  // Periodic check and After power up
   // uCtemperature, Voltage and Current readout
   if ( bCPupdoitNOW || ((uptime() - currentTime) > 1)) {
-
-    watchdog(7);
-
     //-----------------------------------------------------------------------------
-    //
     // uC Temperature reading/monitoring based on time
-    // Read uC temperature
+    // Read uC temperature, set error if temp out of range
     volt = read_voltage(TCHANNEL, &rvolt, 0, 0, IntGAIN1 );
     /* convert to deg. C */
     temperature = 1000 * (volt - 0.776) / 2.86;   // Needs calibration
     /* strip to 0.1 digits */
     temperature = ((int) (temperature * 10 + 0.5)) / 10.0;
-    DISABLE_INTERRUPTS;
-    user_data.uCTemp = (float) temperature;
-    ENABLE_INTERRUPTS;
-    if ((temperature >= eepage.luCTlimit) && (temperature <= eepage.uuCTlimit)) {
-      uCT = OFF; // in range
-    } else {
-      uCT = ON; // out of range
-    }
+    if ((temperature < eepage.luCTlimit) || (temperature > eepage.uuCTlimit)) uCT = ON; // out of range
+    PublishVariable(&(user_data.uCTemp), temperature, ExtssTT);
 
     //-----------------------------------------------------------------------------
-    //
     // Internal ADCs monitoring Voltages and Currents based on time
-    // Time to do U/I Reg reading
+    // All U/I except Qpump, set error if value out of range
     pfData  = &(user_data.VBias);
     rpfData = &(user_data.rVBias);
     // Skip Current limit check if Ccurrent has been set (rCTL:0x4)
     for (channel=0 ; channel<INTERNAL_N_CHN ; channel++) {
-      volt = read_voltage(channel
-        , &rvolt
-        , iadc_table[channel].coeff
-        , iadc_table[channel].offset
-        , iadc_table[channel].gain );
+      volt = read_voltage(channel, &rvolt, iadc_table[channel].coeff
+                                         , iadc_table[channel].offset
+                                         , iadc_table[channel].gain );
       DISABLE_INTERRUPTS;
       pfData[channel] = volt;
       rpfData[channel] = rvolt;
       ENABLE_INTERRUPTS;
-      mask = (1<<channel);
+      mask = (1<<channel); /// Error mask
 
-      // Check for Qpump Voltage ON (> 40V)
-      if (channel == 0) {
-        if ((volt >= eepage.lVIlimit[channel]))
-          SqPump = ON;
-        else
-          SqPump = OFF;
-      }
+      // Check for Qpump Voltage ON (> 40V), set error if value out of range
+      if (channel == 0)
+        if ((volt < eepage.lVIlimit[channel])) SqPump = OFF;
+        else SqPump = ON;
 
       // Skip the first two channels(charge pump)
       if ((channel > 1)) {  // Skip vQ, I
-        if ((volt >= eepage.lVIlimit[channel]) && (volt <= eepage.uVIlimit[channel])) {
-          rESR &= ~mask; // in range
-        } else {
-          rESR |= mask; // out of range
-        }
+        if ((volt < eepage.lVIlimit[channel]) || (volt > eepage.uVIlimit[channel])) rESR |= mask; // out of range
       } // skip v/iQ channel
     }  // for loop
+
+    // U/I error not yet published ...
 
     // update time for next loop
     currentTime = uptime();
   }  // Voltage, Current & Temperature test
 
-
-  // Take action based on ERROR
+  //-----------------------------------------------------------------------------
+  // Finally take action based on ERROR register
   if (rESR & (VOLTAGE_MASK | UCTEMPERATURE_MASK | BTEMPERATURE_MASK | FGDTEMPERATURE_MASK)) {
     SPup = SqPump = OFF;
     switchonoff(OFF);
@@ -1140,26 +1075,18 @@ void user_loop(void) {
   } else if (bCPupdoitNOW) {
     bCPupdoitNOW = OFF;   // Reset flag coming from PowerUp sequence
     SsS = SmSd = OFF;
-    SPup = ON;
-    bDacdoitNOW = ON;
+    SPup = bDacdoitNOW = ON; // Set status and enable DACs writing 
   }
 
   // Publish Control, Error and Status for all the bdoitNOW actions.
-  DISABLE_INTERRUPTS;
-  user_data.control = rCTL;
-  user_data.error   = rESR; //NW
-  user_data.status  = rCSR;
-  ENABLE_INTERRUPTS;
+  publishAll();
 
-  //
   //-----------------------------------------------------------------------------
-  //Checking APD flag for updating the APD dacs
+  // Checking APD flag for updating the APD dacs
 #ifdef _LTC1665_
-  watchdog(53);
   // Get current status of the Card, don't update DAC in case of no Power, keep flag up
   rCSR = user_data.status;    
   if(SPup && LTC1665_Flag) {
-    watchdog(4);
     for(ltc1665_index=0; ltc1665_index<64; ltc1665_index++) {
       if(bDacdoitNOW || (ltc1665mirror[ltc1665_index]!= user_data.rBias[ltc1665_index])) {
         ltc1665_chipChan = (ltc1665_index / 8) + 1;
@@ -1178,85 +1105,25 @@ void user_loop(void) {
   //-----------------------------------------------------------------------------
   // Set Manual Shutdown based on Index
   if (CmSd) {
-
-    watchdog(9);
-
     rCSR = user_data.status;
     SmSd = ON;  // Set Manual Shutdown
     pca_operation(Q_PUMP_OFF);
-#ifdef FEB64REV0
-    EN_pD5V  = ON;  // For debugging
-    EN_pA5V  = OFF;
-    EN_nA5V  = OFF;
-#elif defined(FEB64REV1)
     switchonoff(OFF);
-#endif
-    SPup = SqPump = OFF;
-
-    // Reset Action
-    CmSd = CLEAR;  // rCTL not yet published
-
-    // Publish Registers state
-    DISABLE_INTERRUPTS;
-    user_data.control = rCTL;
-    user_data.status  = rCSR;
-    ENABLE_INTERRUPTS;
+    SPup = SqPump = OFF;   // Clear Qpump and card status
+    CmSd = CLEAR;          // Reset action
+    publishCtlCsr();       // Publish Registers state
   } // Manual Shutdown
-
-  //-----------------------------------------------------------------------------
-  // Toggle Qpump ON/OFF based on Index
-  //  if (CqPump && !SsS && !SmSd) {
-  //
-  //    watchdog(10);
-  //
-  //    if (SqPump)
-  //      pca_operation(Q_PUMP_OFF);  // Toggle state
-  //    else 
-  //      pca_operation(Q_PUMP_ON);   // Toggle state
-  //
-  //    // Status will be based on the vQPump voltage during Voltage test
-  //    // Force Check on Qpump Voltage on next loop
-  //    bdoitNOW = ON;
-  //    // Reset Action
-  //    CqPump = CLEAR;
-  //
-  //    // Publish Registers state
-  //    DISABLE_INTERRUPTS;
-  //    user_data.control = rCTL;
-  //    ENABLE_INTERRUPTS;
-  //
-  //  } // Control Pump
-
-  watchdog(65);
 
   //-----------------------------------------------------------------------------
   // Toggle  Asum counter ON/OFF based on Index
   if (CAsum) {
-
-    watchdog(80);
-
-    if (ASUM_TESTN)
-      ASUM_TESTN = OFF;
-    else
-      ASUM_TESTN = ON;
-
-    // Set status based on port pin state
-    SAsum = ASUM_TESTN;
-
-    // Reset Action
-    CAsum = CLEAR;
-
-    // Publish Registers state
-    DISABLE_INTERRUPTS;
-    user_data.control = rCTL;
-    user_data.status  = rCSR;
-    ENABLE_INTERRUPTS;
-
+    if (ASUM_TESTN) ASUM_TESTN = OFF;
+    else            ASUM_TESTN = ON;
+    SAsum = ASUM_TESTN;   // Set status based on port pin state
+    CAsum = CLEAR;        // Reset Action
+    publishCtlCsr();      // Publish Registers state
   } // Asum
 
-  watchdog(65);
-
-  //
   //-----------------------------------------------------------------------------
   // Checking the eeprom control flag
   if (EEP_CTR_Flag) {
@@ -1268,11 +1135,11 @@ void user_loop(void) {
         eep_address = (float*)&eepage + (user_data.eeCtrSet & 0x000000ff);
         //Checking for the write request
         if (user_data.eeCtrSet & EEP_CTRL_WRITE){
-          *eep_address = user_data.eepValue;
-        //Checking for the read request
+          *eep_address = user_data.eepValue;  // Copy user_data into eepage structure
+          //Checking for the read request
         } else if (user_data.eeCtrSet & EEP_CTRL_READ) {
           DISABLE_INTERRUPTS;
-          user_data.eepValue = *eep_address;
+          user_data.eepValue = *eep_address;  // Publish eep value in user_data
           ENABLE_INTERRUPTS;
         } else {
           // Tell the user that inappropriate task has been requested
@@ -1285,12 +1152,12 @@ void user_loop(void) {
         user_data.eeCtrSet = EEP_CTRL_OFF_RANGE;
         ENABLE_INTERRUPTS;
       }
-   } else {
-    // Tell the user that invalid key has been provided
-    DISABLE_INTERRUPTS;
-    user_data.eeCtrSet = EEP_CTRL_INVAL_KEY;
-    ENABLE_INTERRUPTS;
-   }
+    } else {
+      // Tell the user that invalid key has been provided
+      DISABLE_INTERRUPTS;
+      user_data.eeCtrSet = EEP_CTRL_INVAL_KEY;
+      ENABLE_INTERRUPTS;
+    }
     EEP_CTR_Flag = CLEAR;
   }  // if eep
 
@@ -1298,17 +1165,13 @@ void user_loop(void) {
   // EEPROM Save procedure based on CTL bit
 #ifdef _ExtEEPROM_
   if (CeeS) {
-    watchdog(17);
-    //Check if we are here for the first time
+    // Check if we are here for the first time
     if (!eeprom_flag) {  // first in
       rCSR = user_data.status;
 
       // Update eepage with the current user_data variables
-      for(i=0;i<8;i++)
-        eepage.rasum[i] = user_data.rAsum[i];
-      for(i=0;i<64;i++) {
-        eepage.rbias[i] = user_data.rBias[i];
-      }
+      for(i=0;i<8;i++)  eepage.rasum[i] = user_data.rAsum[i];
+      for(i=0;i<64;i++) eepage.rbias[i] = user_data.rBias[i];
       eepage.rqpump = ((unsigned int) user_data.rQpump & 0x3FF);
       eepage.SWbias = user_data.swBias;
 
@@ -1317,18 +1180,13 @@ void user_loop(void) {
       //Temporary store the first address of data which has to be written
       eeptemp_source = (unsigned char*)&eepage;
     }
-    //EPROM clear request
-    if (CeeClr) {
-      eep_request = CLEAR_EEPROM;
-    } else {
-      eep_request = WRITE_EEPROM;
-    }
 
-    eeprom_channel = ExtEEPROM_Write_Clear (eeptemp_addr
-      , &(eeptemp_source)
-      , PAGE_SIZE
-      , eep_request
-      , &eeprom_flag);
+    // EEPROM clear request
+    if (CeeClr)  eep_request = WRITE_EEPROM;   //---PAA--- WAS CLEAR BUT WILL ERASE EEPROM!
+    else         eep_request = WRITE_EEPROM;
+
+    eeprom_channel = ExtEEPROM_Write_Clear (eeptemp_addr, &(eeptemp_source)
+                     , PAGE_SIZE, eep_request, &eeprom_flag);
 
     if (eeprom_channel == DONE) {
       SeeS = DONE;
@@ -1336,163 +1194,128 @@ void user_loop(void) {
       CeeS = CLEAR;
       //Set the active page
       user_data.eepage |= ((user_data.eepage & 0x07) << 5);
-    } else {
-      SeeS = FAILED;
-    }
+    } else  SeeS = FAILED;
 
-    // Publish Qpump state
-    // Publish Registers state
-    DISABLE_INTERRUPTS;
-    user_data.control = rCTL;
-    user_data.status  = rCSR;
-    ENABLE_INTERRUPTS;
-  }
-#endif
+    publishCtlCsr();      // Publish Registers state
+  } // eep Save
+
   //-----------------------------------------------------------------------------
   // EEPROM Restore procedure based on CTL bit
   if (CeeR) {
-    watchdog(18);
     rCSR = user_data.status;
-
-#ifdef _ExtEEPROM_
-    //NW read to eepage(active page) instead of eepage2
-    channel = ExtEEPROM_Read (PageAddr[(unsigned char)(user_data.eepage & 0x07)]
-    , (unsigned char*)&eepage, PAGE_SIZE);
-#endif
-
-    if (channel == DONE){
-      CeeR = CLEAR;
+    // Read the active page
+    channel = ExtEEPROM_Read (PageAddr[(unsigned char)(user_data.eepage & 0x07)], (unsigned char*)&eepage, PAGE_SIZE);
+    if (channel == DONE) {
       SeeR = DONE;
-    } else
-      SeeR = FAILED;
+ 
+      // Publish user_data new settings
+      DISABLE_INTERRUPTS;
+      for(i=0;i<8;i++)  user_data.rAsum[i] = eepage.rasum[i];
+      for(i=0;i<64;i++) user_data.rBias[i] = ltc1665mirror[i] = eepage.rbias[i];
+      user_data.rQpump = (unsigned int) (eepage.rqpump & 0x3FF);
+      user_data.swBias = eepage.SWbias;
+      ENABLE_INTERRUPTS;
 
-    // Publish user_data new settings
-    DISABLE_INTERRUPTS;
-    for(i=0;i<8;i++)
-      user_data.rAsum[i] = eepage.rasum[i];
-    for(i=0;i<64;i++) {
-      user_data.rBias[i] = ltc1665mirror[i] = eepage.rbias[i];
-    }
-    // Force a DAC Setting on next loop
-    bDacdoitNOW = ON;
+      bDacdoitNOW = ON;        // Force a DAC Setting on next loop
 
-    user_data.rQpump = (unsigned int) (eepage.rqpump & 0x3FF);
-    user_data.swBias = eepage.SWbias;
+      // Update adc2mscb_table[adcChannel].Offst values for current and offset
+      updateAdc2Table();
+    } else  SeeR = FAILED;
 
-    ENABLE_INTERRUPTS;
-
-    // Update adc2mscb_table[adcChannel].Offst values for current and offset
-    updateAdc2Table();
-    
-    // Publish Registers state
-    DISABLE_INTERRUPTS;
-    user_data.control = rCTL;
-    user_data.status  = rCSR;
-    ENABLE_INTERRUPTS;
-  }
+    CeeR = CLEAR;       // Reset action
+    publishCtlCsr();    // Publish Registers state
+  }  // eep Restore
+#endif
 
   //-----------------------------------------------------------------------------
   // Auto calibration for the iBiasOffset
   if (Ccal) {
-    watchdog(19);
     switch (calState) {
- case 10:
-   // Check Card ON Qpump ON to start with:
-   rCSR = user_data.status;
-   if (SPup && SqPump && (user_data.swBias == 0xff)) {
-     Scal = ON;
-     // Publish Registers state
-     DISABLE_INTERRUPTS;
-     user_data.status  = rCSR;
-     ENABLE_INTERRUPTS;
-     calState = 15;
-   } else { 
-     SeeS = CLEAR;
-     Ccal = CLEAR;
-     Scal = OFF;
-     calState = 0;   // unknown state
-     // Publish Registers state
-     DISABLE_INTERRUPTS;
-     user_data.control = rCTL;
-     user_data.status  = rCSR;
-     ENABLE_INTERRUPTS;
-   }
-   break;
- case 15:
-   // Remember previous rQpump & Switch and set Cal value
-   calQpumpSave = user_data.rQpump;
-   calSwSave    = user_data.swBias;
+    case 10:
+      // Check Card ON Qpump ON to start with:
+      rCSR = user_data.status;
+      if (SPup && SqPump && (user_data.swBias == 0xff)) {
+        Scal = ON;
+        // Publish Registers state
+        DISABLE_INTERRUPTS;
+        user_data.status  = rCSR;
+        ENABLE_INTERRUPTS;
+        calState = 15;
+      } else { 
+        SeeS = CLEAR;
+        Ccal = CLEAR;
+        Scal = OFF;
+        calState = 0;   // unknown state
+        // Publish Registers state
+        publishCtlCsr();
+      }
+      break;
+    case 15:
+      // Remember previous rQpump & Switch and set Cal value
+      calQpumpSave = user_data.rQpump;
+      calSwSave    = user_data.swBias;
 #ifdef _LTC1669_
-   LTC1669_SetDAC(ADDR_LTC1669, LTC1669_INT_BG_REF, eepage.calQpump);
+      LTC1669_SetDAC(ADDR_LTC1669, LTC1669_INT_BG_REF, eepage.calQpump);
 #endif
-   // Reset eePage Offset array
-   for (k=0;k<8;k++) eepage.iBiasOffset[k] = 0.0;
-   calState = 30;
-   // Reset calTime to current time
-   calTime = uptime();
-   break;
- case 30:
-   // Wait 10 seconds
-   if ((uptime() - calTime) > 10) {
-     calCount = 0;
-     calState = 40;
-   }
-   break;
- case 40:
-   // Read Offset N times
-   if (calCount < calNumber) {
-     if (adcChannel == 0) {
-       calCount++;
-       for (k=0;k<8;k++) {
-         eepage.iBiasOffset[k] += (float) user_data.rIBMon[k];
-       }
-     }
-   } else calState = 50;
-   break;
- case 50:
-   // Compute average
-   for (k=0;k<8;k++) {
-     ftemp = eepage.iBiasOffset[k] / calNumber;
-     eepage.iBiasOffset[k] = ftemp;
-   }
-   // Update ADC Table
-   updateAdc2Table();
-   calState = 60;
-   break;
- case 60:
-   // Restore Qpump value
+      // Reset eePage Offset array
+      for (k=0;k<8;k++) eepage.iBiasOffset[k] = 0.0;
+      calState = 30;
+      // Reset calTime to current time
+      calTime = uptime();
+      break;
+    case 30:
+      // Wait 10 seconds
+      if ((uptime() - calTime) > 10) {
+        calCount = 0;
+        calState = 40;
+      }
+      break;
+    case 40:
+      // Read Offset N times
+      if (calCount < calNumber) {
+        if (adcChannel == 0) {
+          calCount++;
+          for (k=0;k<8;k++) eepage.iBiasOffset[k] += (float) user_data.rIBMon[k];
+        }
+      } else calState = 50;
+      break;
+    case 50:
+      // Compute average
+      for (k=0;k<8;k++) {
+        ftemp = eepage.iBiasOffset[k] / calNumber;
+        eepage.iBiasOffset[k] = ftemp;
+      }
+      // Update ADC Table
+      updateAdc2Table();
+      calState = 60;
+      break;
+    case 60:
+      // Restore Qpump value
 #ifdef _LTC1669_
-   LTC1669_SetDAC(ADDR_LTC1669, LTC1669_INT_BG_REF, calQpumpSave);
+      LTC1669_SetDAC(ADDR_LTC1669, LTC1669_INT_BG_REF, calQpumpSave);
 #endif
-   // Clear the Calibration command
-   Ccal = CLEAR;
-   calState = 0;   // unknown state
-   Scal = OFF;
-   // Write eepage to EEprom
-   CeeS = ON;
-   // Publish Registers state
-   DISABLE_INTERRUPTS;
-   user_data.control = rCTL;
-   user_data.status  = rCSR;
-   ENABLE_INTERRUPTS;
-   break;
- default:
-   break;
+      // Clear the Calibration command
+      Ccal = CLEAR;
+      calState = 0;   // unknown state
+      Scal = OFF;
+      // eepage written to EEprom
+      CeeS = ON;
+      // Publish Registers state
+      publishCtlCsr();
+      break;
+    default:
+      break;
     }
     DISABLE_INTERRUPTS;
     user_data.debugsmb = calState;
     ENABLE_INTERRUPTS;
-  }
+  }  // Calibration
 
   //-----------------------------------------------------------------------------
-  //
   // General loop delay
-  watchdog(20);
   DISABLE_INTERRUPTS;
   user_data.debugsmb = smbdebug;
   ENABLE_INTERRUPTS;
   timing=0;
   delay_ms(10);
-  //
-  // General loop delay
 }  // End of User loop

@@ -18,6 +18,8 @@ $Id$
 #define ADT7486A_ADDR1 0x48
 #define ADT7486A_ADDR2 0x4B
 #define ADT7486A_ADDR3 0x4A
+#define ADT7486A_ADDR4 0x48
+
 //BS Temperature testing
 #define TEMP_ThRESHOLD  27
 #define SST_TIME         5 //In us
@@ -51,40 +53,6 @@ $Id$
 #define CONVER_FAC2 65536.0f
 
 /**********************************************************************************/
-#ifdef FEB64REV0
-//2 of the 3 cards use LTC2497 instead of LTC2495
-char code adc_convert[] = { 1, 3, 5, 7, 1, 3, 5, 7, 0, 2, 4, 6, 0, 2, 4, 6 };
-// External ADC channel conversion table
-struct ADC2MSCB_TABLE {
-char mscbIdx;
-char current;
-float Coef;
-signed int Offst;
-};
-struct ADC2MSCB_TABLE xdata adc2mscb_table[16] = {
-{1, V_A2MTABLE, 100, 0.2278},   {3, V_A2MTABLE, 100, 0.2278}
-, {5, V_A2MTABLE, 100, 0.2278}, {7, V_A2MTABLE, 100, 0.2278}
-, {7, I_A2MTABLE, 1000, 0},     {5, I_A2MTABLE, 1000, 0}
-, {3, I_A2MTABLE, 1000, 0},     {1, I_A2MTABLE, 1000, 0}
-, {0, V_A2MTABLE, 100, 0.2278}, {2, V_A2MTABLE, 100, 0.2278}
-, {4, V_A2MTABLE, 100, 0.2278}, {6, V_A2MTABLE, 100, 0.2278}
-, {6, I_A2MTABLE, 1000, 0},     {4, I_A2MTABLE, 1000, 0}
-, {2, I_A2MTABLE, 1000, 0},     {0, I_A2MTABLE, 1000, 0}
-};
-#define CONVER_FAC1  65536.0f
-float code Mon_Coef[]={  100,  100,  100, 100
-                      , 1000, 1000, 1000, 1000
-                      ,  100,  100,  100, 100
-                      , 1000, 1000, 1000, 1000};
-
-
-float code Mon_Offst[]={  0.2278, 0.2278, 0.2278, 0.2278
-                         , 0, 0, 0, 0
-                         , 0.2278, 0.2278, 0.2278, 0.2278
-                         , 0, 0, 0, 0};
-#elif defined(FEB64REV1)
-
-/**********************************************************************************/
 // External ADC channel, gain conversion table
 struct ADC2MSCB_TABLE {
 int gain;
@@ -105,7 +73,6 @@ struct ADC2MSCB_TABLE xdata adc2mscb_table[16] = {
 , {GAIN1 , 2, V_A2MTABLE,   101.1, 225}, {GAIN1 , 0, V_A2MTABLE, 101.1, 230}
 };
 #define CONVER_FAC1 0
-#endif
 
 /**********************************************************************************/
 // charge pump state for PCA control
@@ -129,16 +96,6 @@ float offset;
 };
 
 /**********************************************************************************/
-#ifdef FEB64REV0
-struct IADC_TABLE xdata iadc_table[8] = {
-{IntGAIN1, 41.448, -0.3464}   , {IntGAIN1, 2.496587, 0}
-, {IntGAIN1, 4.025, -0.06}    , {IntGAIN1, 4.025, -0.054}
-, {IntGAIN1 , 8.4534, -18.622}, {IntGAIN1 , 0.237, 0}
-, {IntGAIN1 , 0.475, 0}       , {IntGAIN1 , 0.237, 0}
-};
-
-/**********************************************************************************/
-#elif defined(FEB64REV1)
 //   LvQ, LiQ,  Lp6Vd, Lp6Va, Ln6Va , Lp6Ia, Lp6Ia , Lp6Id
 struct IADC_TABLE xdata iadc_table[8] = {
   {IntGAIN2, 50.5,       0.0}, {IntGAIN8, 10000.0/8.0, 0.0}
@@ -151,7 +108,6 @@ struct IADC_TABLE xdata iadc_table[8] = {
 //pDVmon +6V readback conversion:   24.40k/6.04k  = 3.980132
 //pAVmon +6V readback conversion:   24.40k/6.04k  = 3.980132
 //nAVmon -6V readback conversion:   17k/2k        = 8.5 [At 0V input -Vin = 2.206V x 8.5 = 18.751]
-#endif
 
 /**********************************************************************************/
 // External EEPROM variables
@@ -289,17 +245,6 @@ unsigned char xdata ltc1665mirror [64];
 #define OFF    0
 #define FAILED 0
 #define CLEAR  0
-
-
-// Vreg Enable port assignment
-#ifdef FEB64REV0
-sbit EN_pD5V = P3 ^ 4;
-sbit EN_pA5V = P3 ^ 3;
-sbit EN_nA5V = P3 ^ 2;
-#elif defined(FEB64REV1)
-// P3.4, P3.3 are spares
-sbit REG_EN  = P3 ^ 2;
-#endif
 
 // CTL register
 unsigned char bdata rCTL;
