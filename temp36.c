@@ -224,10 +224,10 @@ int eepageAddrConvert(unsigned int index)
   int add;
   //if index is even
   if(!(index%2))
-    add=index/2+18;
+    add = index/2 + 18 + 4; // offset from the eepage struct
     //if index is odd
   else
-    add=index/2;
+    add = index/2 + 4;  // offset from the eepage struct
   return add;
 }
 
@@ -432,6 +432,8 @@ unsigned char user_func(unsigned char *data_in, unsigned char *data_out)
 /*---- User loop function ------------------------------------------*/
 void user_loop(void)
 {
+   int j;
+
 #ifdef _ADT7486A_
   // Read the external temperature from each chip that is connected to SST_LINE1
   // Corresponds to Temp01,03,05...17
@@ -591,9 +593,10 @@ void user_loop(void)
       //Checking for the special instruction
       if (user_data.eeCtrSet & EEP_CTRL_KEY){
       //convert the index value to fit the address of the eepage structure, temp offset only
-      if(((int)(user_data.eeCtrSet & 0x000000ff)) < TEMPOFF_LAST_INDX)
-        eep_address = (int*)(&eepage) + eepageAddrConvert((int)(user_data.eeCtrSet & 0x000000ff));
-       else
+      if(((int)(user_data.eeCtrSet & 0x000000ff)) < TEMPOFF_LAST_INDX) {
+        j =  eepageAddrConvert((int)(user_data.eeCtrSet & 0x000000ff));
+        eep_address = (int*)(&eepage) + j;
+       } else 
         eep_address = (int*)(&eepage) + (int)(user_data.eeCtrSet & 0x000000ff);
       //Checking for the write request
       if (user_data.eeCtrSet & EEP_CTRL_WRITE){
@@ -605,21 +608,17 @@ void user_loop(void)
               user_data.eepValue = *eep_address;
           ENABLE_INTERRUPTS;
           } else {
-
-               // Tell the user that inappropriate task has been requested
-               DISABLE_INTERRUPTS;
-               user_data.eepValue = EEP_CTRL_INVAL_REQ;
-               ENABLE_INTERRUPTS;
-         }
-  
+           // Tell the user that inappropriate task has been requested
+           DISABLE_INTERRUPTS;
+           user_data.eepValue = EEP_CTRL_INVAL_REQ;
+           ENABLE_INTERRUPTS;
+          }
       } else {
-
           // Tell the user that invalid key has been provided
          DISABLE_INTERRUPTS;
          user_data.eepValue = EEP_CTRL_INVAL_KEY;
          ENABLE_INTERRUPTS;
       }
-
       EEP_CTR_FLAG = CLEAR;
    }
 
@@ -639,11 +638,9 @@ void user_loop(void)
       else 
          eep_request = WRITE_EEPROM;
       
-      eeprom_wstatus = ExtEEPROM_Write_Clear (eeptemp_addr
-                                        , &(eeptemp_source)                           
-                            , PAGE_SIZE
-                            , eep_request       // W / Clear
-                            , &eeprom_flag);    // Check to see if 
+      eeprom_wstatus = ExtEEPROM_Write_Clear (eeptemp_addr, &(eeptemp_source), PAGE_SIZE
+                                                         , eep_request       // W / Clear
+                                                         , &eeprom_flag);    // Check to see if 
                                           //everything has been written
       if (eeprom_wstatus == DONE) {
          SeeS = DONE;
@@ -663,8 +660,9 @@ void user_loop(void)
    //Reading from the EEPROM
    if (CeeR) {
       rCSR = user_data.status;
-      eeprom_rstatus = ExtEEPROM_Read  (eeptemp_addr,
-      (unsigned char*)&eepage, PAGE_SIZE);
+      //Temporary store the first address of page
+      eeptemp_addr = PageAddr[(unsigned char)(user_data.eepage & 0x07)];
+      eeprom_rstatus = ExtEEPROM_Read  (eeptemp_addr, (unsigned char*)&eepage, PAGE_SIZE);
       if (eeprom_rstatus == DONE){
          CeeR = CLEAR;
          SeeR = DONE;
