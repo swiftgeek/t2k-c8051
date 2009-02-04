@@ -19,6 +19,8 @@ $Id$
 #define ADT7486A_ADDR2 0x4B
 #define ADT7486A_ADDR3 0x4A
 #define ADT7486A_ADDR4 0x48
+#define SST_LINE1         1
+#define SST_LINE2         2
 
 //BS Temperature testing
 #define TEMP_ThRESHOLD  27
@@ -213,11 +215,11 @@ struct EEPAGE xdata eepage2; //NW testing
 #define IDXCTL            2
 #define IDXQVOLT          6
 #define IDXBSWITCH        5
-#define IDXASUM          44
-#define IDXSST           40
-#define IDXBIAS          52
-#define IDXEEP_CTL      141
-#define IDXASUM_CTL     142
+#define IDXASUM          47
+#define IDXSST           19
+#define IDXBIAS          55
+#define IDXEEP_CTL      144
+#define IDXASUM_CTL     145
  
 #define SERIALN_LENGTH 4
 #define SERIALN_ADD    (0x600)  // Fixed as sitting at the first byte of the EEPROM
@@ -289,8 +291,9 @@ sbit IntssTT  = rESR ^ 1;  //0x200
 sbit ExtssTT  = rESR ^ 2;  //0x400
 sbit EEPROM   = rESR ^ 3;  //0x800
 
-sbit RdssT   = rESR ^ 4;  //0x1000
-//sbit xxx      = rESR ^ 5 //0x2000
+sbit pcbssTT  = rESR ^ 4;  //0x1000
+sbit RdssT    = rESR ^ 5;  //0x2000
+
 //sbit xxx      = rESR ^ 6 //0x4000
 //sbit xxx      = rESR ^ 7 //0x8000
 
@@ -300,7 +303,7 @@ sbit RdssT   = rESR ^ 4;  //0x1000
 // correspond to the rESR bit assignment
 // All the Vreg U/I, uC/Board/FGD Temperature
 #define UCTEMPERATURE_MASK   0x0100
-#define BTEMPERATURE_MASK    0x0200
+#define BTEMPERATURE_MASK    0x1200
 #define FGDTEMPERATURE_MASK  0x0400
 #define VOLTAGE_MASK         0x001C
 #define CURRENT_MASK         0x00E0
@@ -330,6 +333,9 @@ float nAIMon;
 float pAIMon;
 float pDIMon;
 float uCTemp;
+float adcTemp;
+float afterTemp;
+float regTemp;
 float Temp[8];
 float VBMon[8];
 float IBMon[8];

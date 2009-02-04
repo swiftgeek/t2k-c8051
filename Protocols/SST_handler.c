@@ -97,7 +97,7 @@ void SST_Clear(int SST_LINE) {
      SST1 = 0;
 #ifdef MORE_THAN_ONE_LINE
   else if(SST_LINE==2)					
-  	  SST2 = 0;
+  	 SST2 = 0;
 #endif
   delay_ms(SST_CLEAR_DELAY); //clear to 0's
 }
@@ -110,16 +110,14 @@ high 3/4 cycle of t_Bit and the rest of it low
 */
 void SST_DrvHigh(int SST_LINE) {
   // Drive high for 0.75 * T_BIT
-  if(SST_LINE==1)
-  {
+  if(SST_LINE==1) {
      SST1 = 1;
      delay_us(T_H1);
      SST1 = 0; //drive the rest of T_BIT low
      delay_us(T_BIT - T_H1);
   }
 #ifdef MORE_THAN_ONE_LINE
-  else if(SST_LINE==2)
-  {
+  else if(SST_LINE==2) {
      SST2 = 1;
      delay_us(T_H1);
      SST2 = 0; //drive the rest of T_BIT low
@@ -136,16 +134,14 @@ high for 1/4 cycle of t_Bit and the rest of it low.
 */
 void SST_DrvLow(int SST_LINE) {
   // Drive high for 0.25 * T_BIT
-  if(SST_LINE==1)
-  {
+  if(SST_LINE==1) {
      SST1 = 1;
      delay_us(T_H0);
      SST1 = 0; //drive the rest of T_BIT low
      delay_us(T_BIT - T_H0);
   }
 #ifdef MORE_THAN_ONE_LINE
-  else if(SST_LINE==2)
-  {
+  else if(SST_LINE==2) {
      SST2 = 1;
      delay_us(T_H0);
      SST2 = 0; //drive the rest of T_BIT low
@@ -164,8 +160,7 @@ unsigned char SST_DrvClientResponse(int SST_LINE) {
 
   // Drive SST to logic "0" (high 1/4, low 3/4) to let Client
   // drive SST to its desired state
-  if(SST_LINE==1)
-  {
+  if(SST_LINE==1) {
      SST1 = 1; //Drv high (originator drives SST bus high to toggle client's response
      delay_us (1);
      SST1 = 0;
@@ -183,22 +178,18 @@ unsigned char SST_DrvClientResponse(int SST_LINE) {
      SFRPAGE  = CPT0_PAGE;
 #endif	
 #endif
-     if(SST_ClientResponse1 == 1)
+     if(SST_ClientResponse1 == 1) {
   //if the comparator output is high, then return 1
-     {
         delay_us(2 * T_H0);
         return 1;
-     }
-     else
+     } else {
      //if the comparator output is low, then return 0
-     {
-        delay_us(2 * T_H0);
-        return 0;
+       delay_us(2 * T_H0);
+       return 0;
      }
   }
 #ifdef MORE_THAN_ONE_LINE
-  else if(SST_LINE==2)
-  {
+  else if(SST_LINE==2) {
      SST2 = 1; //Drv high (originator drives SST bus high to toggle client's response
      delay_us (1);
      SST2 = 0;
@@ -206,21 +197,18 @@ unsigned char SST_DrvClientResponse(int SST_LINE) {
      delay_us(T_BIT / 2.0); //delay for half of T_BIT time
 
 #if defined(CPU_C8051F120)
-     SFRPAGE  = CPT1_PAGE;	
+     SFRPAGE  = CPT0_PAGE;	
 #endif
-     if(SST_ClientResponse2 == 1)
+     if(SST_ClientResponse2 == 1) {
   //if the comparator output is high, then return 1
-     {
-        delay_us(2 * T_H0);
-        return 1;
-     }
-     else
-     //if the comparator output is low, then return 0
-     {
-        delay_us(2 * T_H0);
-        return 0;
-     }
-   }
+       delay_us(2 * T_H0);
+       return 1;
+     } else {
+      //if the comparator output is low, then return 0
+      delay_us(2 * T_H0);
+      return 0;
+    }
+  } // Client1
 #endif
 }
 
@@ -232,8 +220,8 @@ Write a single byte to the SST device.
 */
 void SST_WriteByte(unsigned char datByte, int SST_LINE) {
   //declare local variables
-  unsigned char toBeDrv = 0;
-  int i = 0;
+  unsigned char xdata toBeDrv = 0;
+  int xdata i = 0;
 
   for(i = 7; i >= 0; i--) //8bits in 1 byte
   {
@@ -260,9 +248,9 @@ Read a single byte from the SST device.
 @return Device Client byte response
 */
 unsigned char SST_ReadByte(int SST_LINE) {
-  unsigned char din = 0;
-  unsigned char dataReceived = 0;
-  signed char j = 0;
+  unsigned char xdata din = 0;
+  unsigned char xdata dataReceived = 0;
+  signed char xdata j = 0;
 
   for(j = 7; j >= 0; j--) {
     // Get single bit from comparator
