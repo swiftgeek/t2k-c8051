@@ -110,8 +110,8 @@ sbit CAsum_Flag     = bChange ^ 7;
 
 //
 // RESET output pin for PCA9539 (PIO) and LTC1665 (DACx8)
-sbit DACRESETN      = P1 ^ 3;
-sbit PCARESETN      = P1 ^ 1;
+sbit DACRESETN      = P1 ^ 0;
+sbit PCARESETN      = P1 ^ 2;
 //
 // ASUM port
 sbit ASUM_SYNC      = P1 ^ 7;
@@ -429,13 +429,15 @@ void switchonoff(unsigned char command)
 #ifdef _LTC1665_
     //-----------------------------------------------------------------------------
     // SPI Dac (Bias voltages, 64 channels)
+    //SST and PCARESETN is maintained ==1 and PP
+    // P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn | .3:SST_DRV2 .2:PCARESETN .1:SST_DRV1 .0:DACRESETN 
     SFRPAGE  = CONFIG_PAGE;
     P2MDOUT |= 0x18; // Set SPI_MOSI and SPI_SCK in PP
     P0MDOUT |= 0xC0; // Set BIAS_DAC_CSn1 and BIAS_DAC_CSn2 in PP
     P3MDOUT |= 0x63; // Set BIAS_DAC_CSn3,4,5,6 in PP
     P2MDOUT |= 0x60; // Set BIAS_DAC_CSn7,8 in PP
-    P1MDOUT |= 0x0A; // Set SST_DRV2, SST_DRV1 in PP
-    DACRESETN  = 1;  // in OD for now
+    P1MDOUT |= 0x01; // Set DACRESETN in PP
+    DACRESETN  = 1;
     LTC1665_Init();
 #endif
 
@@ -470,6 +472,12 @@ void switchonoff(unsigned char command)
 
 #ifdef _LTC2495_
     LTC2495_Init();
+#endif
+
+#ifdef _ADT7486A_
+    //SST and PCARESETN is maintained ==1 and PP
+    // P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn | .3:SST_DRV2 .2:PCARESETN .1:SST_DRV1 .0:DACRESETN 
+    P1MDOUT |= 0x08; // Set SST_DRV2 in PP
 #endif
 
 #ifdef _PCA9539_
@@ -519,19 +527,18 @@ void switchonoff(unsigned char command)
 
     //SPI communication for EEPROM is maintained
     // P2.7:SPARE1   .6:CSn7      .5:CSn6     .4:SPIMOSI | .3:SPISCK   .2:RAMHLDn   .1:SPIMISO  .0:RAMWPn 
-    P2MDOUT &= 0x1F;
+    P2MDOUT &= 0x1F; // Set OD
     P2 &= 0x0F;
 
     //SST and PCARESETN is maintained ==1 and PP
-    // P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn | .3:SST_DRV2 .2:PIORESETN .1:SST_DRV1 .0:DACRESETN 
-    P1MDOUT  |= 0x0F;  // in PP
-    DACRESETN = 1;
+    // P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn | .3:SST_DRV2 .2:PCARESETN .1:SST_DRV1 .0:DACRESETN 
+    P1MDOUT  &= ~0xF9;  // in OD
     PCARESETN = 1;
-    P1 &= ~0x0A;  // SST1, SST2 set Low
+    P1 = 0x06;  // SST2, PCARESETN set High
 
     // mscb communication
     // P0.7:CSn1     .6:CSn0      .5:485TXEN  .4:QPUMPCLK| .3:SMBCLK   .2:SMBDAT    .1:Rx       .0:Tx 
-    P0MDOUT &= 0x20;
+    P0MDOUT &= 0xC0;  // Set OD
     P0 &= ~0xC0;  // Set CS1,0 to Low
   }
 }
@@ -605,6 +612,8 @@ void user_init(unsigned char init)
 
   //-----------------------------------------------------------------------------
   // Reset LTC1665 (DACx8), Reset PCA9539 (PIO)
+  //SST and PCARESETN is maintained ==1 and PP
+  // P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn | .3:SST_DRV2 .2:PCARESETN .1:SST_DRV1 .0:DACRESETN 
   SFRPAGE  = CONFIG_PAGE;
   P1MDOUT |= 0x5;   // PIO/DACRESETN in PP
   DACRESETN = 1;    // No reset 

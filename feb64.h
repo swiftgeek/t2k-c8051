@@ -179,9 +179,9 @@ struct EEPAGE xdata eepage = {
 // 0x1F - HvQ, HiQ, Hp6Vd, Hp6Va, Hp6Va,  Hp6Ia, Hp6Ia,  Hp6Id
  ,73.0, 0.1, 6.5, 6.5, -5.5, 0.2, 0.8, 0.2
 // 0x27 - LuC Temperature,  HuC Temperature
- ,18., 50.
+ ,10., 50.
 // 0x29 - LSST Temperature,  HSST Temperature
- ,18. ,30.
+ ,10. ,30.
 // 0x2B - LVQ, HVQ (V)
  ,-1.0 ,1.0
 // 0x2D - LVQ, HVQ (V)
