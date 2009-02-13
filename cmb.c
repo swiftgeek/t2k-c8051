@@ -21,6 +21,8 @@ $Id$
 
 #include "Devices/adc_internal.h"
 
+#include "Protocols/CMB_SPI_handler.h"
+
 #ifdef   _ADT7486A_
 #include "Devices/ADT7486A_tsensor.h"
 #endif
@@ -35,12 +37,8 @@ char code  node_name[] = "cmb";
 char idata svn_rev_code[] = "$Rev$";
 
 //-----------------------------------------------------------------------------
-// Port declaration
-sbit SC_DEBUG0   = P2 ^ 5;
-sbit SC_DEBUG1   = P2 ^ 6;
-sbit SC_DEBUG2   = P2 ^ 7;
 sbit CFG_RECOVER = P2 ^ 0;
-sbit WATCHDOG    = P2 ^ 1;
+sbit CMB_CSn     = P2 ^ 1;
 sbit CLK_SEL     = P0 ^ 7;
 sbit V4_ENn      = P2 ^ 3;
 sbit V4_OCn      = P2 ^ 4;
@@ -53,6 +51,7 @@ unsigned char idata _n_sub_addr = 1;
 unsigned char xdata channel;
 unsigned long xdata tempTime=0, sstTime=0;
 unsigned char xdata eeprom_channel, channel;
+unsigned int xdata crate_add=0, pca_add=0;
 
 //-----------------------------------------------------------------------------
 // Global bit register
@@ -133,6 +132,26 @@ void publishAll() {
 
 //-----------------------------------------------------------------------------
 //
+void CMB_SPI_WriteByte(unsigned char cmbdata) {
+    CMB_CSn = 0;
+    CMBSPI_WriteByte(0x01);
+    CMBSPI_WriteByte(cmbdata);
+    CMB_CSn = 1;
+}
+
+//-----------------------------------------------------------------------------
+//
+unsigned char CMB_SPI_ReadByte(void) {
+unsigned char cmbdata;
+    CMB_CSn = 0;
+    CMBSPI_WriteByte(0x02);
+    cmbdata = CMBSPI_ReadByteRising();
+    CMB_CSn = 1;
+    return cmbdata;
+}
+
+//-----------------------------------------------------------------------------
+//
 void PublishVariable(float xdata * pvarDest, float varSrce, bit errbit) {
     DISABLE_INTERRUPTS;
     *pvarDest = varSrce;
@@ -149,7 +168,7 @@ void switchonoff(unsigned char command)
     // Turn ON card
     SFRPAGE  = CONFIG_PAGE;
     P2MDOUT &= ~0x08;     // V4_ENn(P2.3) OD
-    V4_ENn = 0;   // ON
+    V4_ENn = 0;           // ON
 
     rESR = 0x0000;   // Reset error status at each Power UP
     rCSR = user_data.status;
@@ -163,7 +182,25 @@ void switchonoff(unsigned char command)
     user_data.error  = rESR;
     ENABLE_INTERRUPTS;
 
-  } else if(command==OFF) {
+     // Setup CMB SPI ports   
+    P2MDOUT |= 0x20;  // CMB_SPI_SCK  (P2.5) PP
+    P2MDOUT |= 0x40;  // CMB_SPI_MOSI (P2.6) PP
+    P2MDOUT &= ~0x80; // CMB_SPI_MISO (P2.7) OD
+    P2MDOUT |= 0x02; //  CMB_CS       (P2.1) PP
+    CMB_CSn = 1;
+
+    CMBSPI_Init();
+
+    delay_ms(1000);
+    CMB_SPI_WriteByte(~pca_add);
+    delay_us(100);
+    user_data.eepage = CMB_SPI_ReadByte();
+    delay_us(100);
+    CMB_SPI_WriteByte(~pca_add);
+    delay_us(100);
+    user_data.spare = CMB_SPI_ReadByte();
+
+ } else if(command==OFF) {
     // Switch all the ports to open drain except for...
     SFRPAGE  = CONFIG_PAGE;
     V4_ENn = 1;
@@ -202,8 +239,8 @@ Application specific init and in/output routines
 /*---- User init function ------------------------------------------*/
 void user_init(unsigned char init)
 {
-  char xdata i, pca_add=0;
-  unsigned int xdata crate_add=0, board_address=0;
+  char xdata i;
+  unsigned int xdata board_address=0;
 
  /* Format the SVN and store this code SVN revision into the system */
   for (i=0;i<4;i++) {
@@ -312,21 +349,9 @@ void user_init(unsigned char init)
   SFRPAGE = CONFIG_PAGE;
   P2MDOUT &= ~0x10;  // V4_OC(P2.4) OD for read
 
-  // 
-  // Watchdog state
-  P2MDOUT &= ~0x02;  // WATCHDOG(P2.1) OD for read
 
   // Configure Recovery
   P2MDOUT |= 0x01;  // CFG_RECOVER(P2.0) PP for write
-
-/*
-  // Debug0
-  P2MDOUT &= ~0x20;  // SC_DEBUG0(P2.5) OD
-  // Debug1
-  P2MDOUT &= ~0x40;  // SC_DEBUG0(P2.6) OD
-  // Debug2
-  P2MDOUT &= ~0x80;  // SC_DEBUG0(P2.7) OD
-*/
 
   //-----------------------------------------------------------------------------
   // Power up the card for now
@@ -438,6 +463,20 @@ void user_loop(void) {
     delay_us(9);
     Ccfg = 0; 
   } // Configure_recovery
+
+  //-----------------------------------------------------------------------------
+  // Debug1 Write/Read Address
+  if (Cdeb1) {
+
+    // Write Crate address to the CMB register
+    CMB_SPI_WriteByte(~pca_add);
+
+    delay_us(105);
+
+    // Read Crate address from the CMB Register
+    user_data.spare = CMB_SPI_ReadByte();
+    Cdeb1 = 0; 
+  } // 
 
 #ifdef _ExtEEPROM_
   //-----------------------------------------------------------------------------
@@ -610,7 +649,7 @@ void user_loop(void) {
 
   //
   // Read Watchdog state
-  Swdog = WATCHDOG;  // Watchdog state
+//  Swdog = WATCHDOG;  // Watchdog state
 
   //
   // Read Over current switch
