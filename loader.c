@@ -32,12 +32,13 @@ $Id$
 //
 // Global declarations
 //-----------------------------------------------------------------------------
-char code  node_name[] = "loader";
-
+ char code  node_name[] = "loader";
+ unsigned long code snlocal;
 //
 // Declare globally the number of sub-addresses to framework
-unsigned char idata _n_sub_addr = 1;
-int timeout = 0;
+ unsigned long xdata currentTime=0;
+ unsigned char idata _n_sub_addr = 1;
+ int timeout = 0, progFlag, lstructFlag;
 
 #ifdef L_FEB64
 // Vreg Enable port assignment Rev 1 ONLY
@@ -80,10 +81,10 @@ void user_init(unsigned char init)
 {
   char xdata pca_add=0;
   unsigned int xdata crate_add=0, board_address=0;
-  unsigned long SNWp;
-  unsigned int  structSzeWp;
+
 
   if (init) {}
+
 
   // Initialize control and status
   user_data.control    = 0;
@@ -222,35 +223,44 @@ void user_init(unsigned char init)
   }
 
   //
+  // snlocal is set by the Jtag Programmer
+  // In this case bypass the user command as we're in auto-programming
+  progFlag = 0;
+  if ((snlocal > 73000000) && (snlocal < 73800000)) progFlag = 1;
+
+ /*  DONE below
+  //
   // Read S/N and struct size only from Protected page
   // S/N ans Strtsze at the same location for all the cards
   ExtEEPROM_Read(WP_START_ADDR, (unsigned char*)&SNWp, SERIALN_LENGTH);
   ExtEEPROM_Read(WP_START_ADDR+SERIALN_LENGTH, (unsigned char*)&structSzeWp, 2);
   DISABLE_INTERRUPTS;
-  user_data.serialN     = SNWp;
   user_data.serialNWp   = SNWp;
   user_data.structszeWp = structSzeWp;
   ENABLE_INTERRUPTS;
+ */
 
+  // Read WP page as we need to figure out if the 
+  // memory contains valid information or if it is empty
+  ExtEEPROM_Read(WP_START_ADDR, (unsigned char*)&eepageWp, PAGE_SIZE);
+  DISABLE_INTERRUPTS;
+  user_data.serialNWp   = eepageWp.SerialN;
+  user_data.structszeWp = eepageWp.structsze;
+  ENABLE_INTERRUPTS;
+ 
   // Read Page 0 in temporatry struct as we need to figure out if the 
   // memory contains valid information or if it is empty
-  ExtEEPROM_Read(page_addr[0], (unsigned char*)&eepage2, PAGE_SIZE);
+  ExtEEPROM_Read(page_addr[0], (unsigned char*)&eepage0, PAGE_SIZE);
   DISABLE_INTERRUPTS;
-  user_data.serialN0   = eepage2.SerialN;
-  user_data.structsze0 = eepage2.structsze;
+  user_data.serialN0   = eepage0.SerialN;
+  user_data.structsze0 = eepage0.structsze;
   ENABLE_INTERRUPTS;
-  // If no match use Wp structure
-  if ((eepage2.luCTlimit != eepage.luCTlimit) || (eepage2.structsze != user_data.structsze0)) {
+ 
+  // If it doesn't match use local eepage structure
+  // If it matches keep option to use eepage0 (P0) or local struct
+  lstructFlag = 1;
+  if (eepage.structsze != eepage0.structsze) lstructFlag = 0;
 
-  // Check Structure size and publish it (above)
-  // If the size doesn't match use the struct definition
-    DISABLE_INTERRUPTS;
-    user_data.status = 0xFF;
-    ENABLE_INTERRUPTS;
-  } else {
-  //
-  // Use Flash memory as initial parameters.
-  memcpy(  (unsigned char*)&eepage, (unsigned char*)&eepage2, PAGE_SIZE);
   //
   // Possible extra initialization
 #ifdef L_FEB64
@@ -258,7 +268,7 @@ void user_init(unsigned char init)
 #elif defined (L_CMB)
 #elif defined (L_TEMP36)
 #endif
-  }
+
 }
 
 /*---- User write function -----------------------------------------*/
@@ -292,32 +302,54 @@ void user_loop(void)
 {
   unsigned char FAILED=0;
 
+  // Bypass if progflag is ON as we expect the S/N to be provided 
+  // by the programmer
+  // Wait 1 second before initiating command
+  if (((uptime() - currentTime) > 1) && progFlag) {
+     // S/N coming from programmer, issue the EEPROM save
+	 // forcing the local struct to WP and P0
+	 EEPROM_FLAG = 1;
+  }
+     
   // Wait for the EEPROM_FLAG to be set
   if(EEPROM_FLAG) {
-    // Update S/N from mscb to eepage
-    eepage.SerialN = user_data.serialN;
-    eepage.structsze = PAGE_SIZE;
+    if (progFlag) {
+      // programmer loop
+	  // use local struct for Wp and P0
+      eepage.SerialN = snlocal;
+    } else {
+	  // manual request
+      if (user_data.control & 0x1) {
+	    // Use local struct for WP and P0
+	    // Update S/N from mscb to eepage
+	    eepage.SerialN = user_data.serialN;
+	    }
+      if (user_data.control & 0x2) {
+	      // Use P0 but update S/N from WP
+	      // Update S/N from mscb to eepage
+        // ONLY if the struct size matches
+		    if (lstructFlag)  {
+          memcpy ((char *) &eepage, (char *) &eepage0, PAGE_SIZE);
+		      eepage.SerialN = user_data.serialN;
+        }
+      }
+    } // progFlag
 
-  if (user_data.control & 0x2) {
-    // Write Struct to the Protected Memory
+    // Use Wp as temporary storage for checking S/N
+    memset((char *) &eepageWp, 0x00, PAGE_SIZE);
+
+    // Write local struct
     FAILED = ExtEEPROM_WriteProtect((unsigned char*)&eepage, PAGE_SIZE);
     if(!FAILED) {
       DISABLE_INTERRUPTS;
       user_data.status = 1;
       ENABLE_INTERRUPTS;
     }
-  } else {
-    // Write page[0] to the Protected Memory
-    FAILED = ExtEEPROM_WriteProtect((unsigned char*)&eepage2, PAGE_SIZE);
-    if(!FAILED) {
-      DISABLE_INTERRUPTS;
-      user_data.status = 1;
-      ENABLE_INTERRUPTS;
-    }
-  }
-    // Check S/N readback
-    FAILED = ExtEEPROM_Read(WP_START_ADDR,(unsigned char*)&eepage2, PAGE_SIZE);
-    if(!FAILED && (user_data.serialN == eepage2.SerialN)) {
+
+    // Check S/N readback on WP 
+    FAILED = ExtEEPROM_Read(WP_START_ADDR,(unsigned char*)&eepageWp, PAGE_SIZE);
+    user_data.structszeWp = eepageWp.structsze;
+    if(!FAILED && (user_data.serialN == eepageWp.SerialN)) {
       DISABLE_INTERRUPTS;
       user_data.status |= (1<<1);
       ENABLE_INTERRUPTS;
@@ -331,10 +363,13 @@ void user_loop(void)
       ENABLE_INTERRUPTS;
     }
 
-    // Check S/N readback
-    FAILED = ExtEEPROM_Read(page_addr[0],(unsigned char*)&eepage2, PAGE_SIZE);
+    // Use Wp as temperary storage for checking S/N
+    memset((char *) &eepageWp, 0x00, PAGE_SIZE);
 
-    if(!FAILED && (user_data.serialN == eepage2.SerialN)) {
+    // Check S/N readback
+    FAILED = ExtEEPROM_Read(page_addr[0],(unsigned char*)&eepageWp, PAGE_SIZE);
+    user_data.structszeWp = eepageWp.structsze;
+    if(!FAILED && (user_data.serialN == eepageWp.SerialN)) {
       DISABLE_INTERRUPTS;
       user_data.status |= (1<<3);
       ENABLE_INTERRUPTS;
@@ -344,12 +379,16 @@ void user_loop(void)
     if(user_data.status == 0xF) {
       DISABLE_INTERRUPTS;
       user_data.control = 0;
-      user_data.structsze0 = eepage2.structsze;
       EEPROM_FLAG=0;
       ENABLE_INTERRUPTS;
     }
     // if successful should read 0xF (00001111) in status
-  }
-  delay_ms(1);
+  	// Reset the S/N programmer  flag
+  	progFlag = 0;
+
+  } // EEPROM_FLAG
+
+  delay_ms(500);
+
 }
 

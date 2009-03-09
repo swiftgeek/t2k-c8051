@@ -18,7 +18,7 @@
 #define WRITE         0x00
 
 //Defining the page mapping      NP[0..2]  0x600 Protected
-unsigned int xdata page_addr[] = {0x000,0x200,0x400,0x600};
+unsigned int xdata page_addr[] = {0x000, 0x200, 0x400, 0x600};
 
 #define ADDR_PCA9539   0x74
 // PCA9539 Macro Definitions
@@ -141,9 +141,9 @@ struct EEPAGE xdata eepage = {
 // 0x1F - HvQ, HiQ, Hp6Vd, Hp6Va, Hp6Va,  Hp6Ia, Hp6Ia,  Hp6Id
  ,73.0, 0.1, 6.5, 6.5, -5.5, 0.2, 0.8, 0.2
 // 0x27 - LuC Temperature,  HuC Temperature
- ,18., 50.
+ ,10., 50.
 // 0x29 - LSST Temperature,  HSST Temperature
- ,18. ,30.
+ ,10. ,30.
 // 0x2B - LVQ, HVQ (V)
  ,-1.0 ,1.0
 // 0x2D - LVQ, HVQ (V)
@@ -222,6 +222,7 @@ struct EEPAGE xdata eepage={
 // Macro EEPAGE size independently of the BOARD
 #define PAGE_SIZE  sizeof(eepage)
 // EEPROM page for loader confirmation
-struct EEPAGE xdata eepage2;
+struct EEPAGE xdata eepage0;
+struct EEPAGE xdata eepageWp;
 
 #endif  // _LOADER_H_
