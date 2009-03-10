@@ -538,7 +538,7 @@ void switchonoff(unsigned char command)
 
     // mscb communication
     // P0.7:CSn1     .6:CSn0      .5:485TXEN  .4:QPUMPCLK| .3:SMBCLK   .2:SMBDAT    .1:Rx       .0:Tx 
-    P0MDOUT &= 0xC0;  // Set OD
+    P0MDOUT &= 0xE0;  // Set OD, Keep RS484_ENABLE uin PP
     P0 &= ~0xC0;  // Set CS1,0 to Low
   }
 }
