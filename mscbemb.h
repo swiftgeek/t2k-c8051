@@ -480,7 +480,7 @@ sbit RS485_ENABLE = P0 ^ 3; //MSCB communication enable port
 #include <c8051F120.h>
 #define CPU_C8051F120
 
-#define LED_0 P3 ^ 4 
+#define LED_0 P2 ^ 7 
 #if defined(LED_1) 
 #undef LED_1
 #endif
@@ -530,6 +530,11 @@ sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
 #define MSCB_SPI_SCK  P1 ^ 2
 #define MSCB_SPI_MISO P1 ^ 6
 #define MSCB_SPI_MOSI P1 ^ 1
+
+// CMB SPI
+#define CMB_SPI_SCK   P2 ^ 5  // PP
+#define CMB_SPI_MOSI  P2 ^ 6  // PP
+#define CMB_SPI_MISO  P2 ^ 7  // OD 
 
 //EEPROM
 #define RAM_CHIP_SELECT    P1 ^ 7
