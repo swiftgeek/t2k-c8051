@@ -59,6 +59,7 @@ unsigned char bdata bChange;
 // Local flag
 sbit bCPupdoitNOW   = bChange ^ 0;
 sbit EEP_CTR_Flag   = bChange ^ 1;
+sbit bMeasuredOnce  = bChange ^ 2;
 
 //-----------------------------------------------------------------------------
 // User Data structure declaration
@@ -277,6 +278,8 @@ void user_init(unsigned char init)
   //
   // Group setting
   sys_info.group_addr  = 400;
+  
+  bMeasuredOnce = 0;
 
   //-----------------------------------------------------------------------------
   // Initial setting for communication and overall ports (if needed).
@@ -600,6 +603,7 @@ void user_loop(void) {
 
     // Update time
     tempTime = uptime();
+    bMeasuredOnce = 1;
   }
 
   yield();
@@ -635,14 +639,15 @@ void user_loop(void) {
 
   //-----------------------------------------------------------------------------
   // Main Current and Voltage Monitoring
-  pfData = &(user_data.pDI4Mon);
-  for (channel=0; channel<INTERNAL_N_CHN ; channel++) {
-    if ((pfData[channel] < eepage.lVIlimit[channel])
-     || (pfData[channel] > eepage.uVIlimit[channel])) {
-        rESR |= (1<<channel); // out of range
+  if (bMeasuredOnce) {
+    pfData = &(user_data.pDI4Mon);
+    for (channel=0; channel<INTERNAL_N_CHN ; channel++) {
+      if ((pfData[channel] < eepage.lVIlimit[channel])
+       || (pfData[channel] > eepage.uVIlimit[channel])) {
+          rESR |= (1<<channel); // out of range
+      }
     }
   }
-
   DISABLE_INTERRUPTS;
   user_data.error   = rESR;
   ENABLE_INTERRUPTS;
