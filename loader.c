@@ -226,7 +226,7 @@ void user_init(unsigned char init)
   // snlocal is set by the Jtag Programmer
   // In this case bypass the user command as we're in auto-programming
   progFlag = 0;
-  if ((snlocal > 73000000) && (snlocal < 73800000)) progFlag = 1;
+  if ((snlocal > 76300000) && (snlocal < 76800000)) progFlag = 1;
 
  /*  DONE below
   //
@@ -317,6 +317,7 @@ void user_loop(void)
       // programmer loop
 	  // use local struct for Wp and P0
       eepage.SerialN = snlocal;
+      user_data.serialN = eepageWp.SerialN;
     } else {
 	  // manual request
       if (user_data.control & 0x1) {
