@@ -204,6 +204,7 @@ void switchonoff(unsigned char command)
  } else if(command==OFF) {
     // Switch all the ports to open drain except for...
     SFRPAGE  = CONFIG_PAGE;
+    P2MDOUT = 0;
     V4_ENn = 1;
   }
 }
