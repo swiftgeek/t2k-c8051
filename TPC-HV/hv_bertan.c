@@ -21,7 +21,7 @@ unsigned char idata _n_sub_addr = 1;
 char code node_name[] = "TPC_HV";
 char idata svn_rev_code[] = "$Rev$";
 
-#define MAX_VOLTAGE 25000  // maximum voltage in Volts - this is a hard limit
+#define MAX_VOLTAGE 30000  // maximum voltage in Volts - this is a hard limit
 //#define MAX_VOLTAGE 1250    // maximum voltage in Volts - for testing
 #define MAX_CURRENT 75     // maximum current im micro Ampere - this is a hard limit
 //#define MAX_CURRENT 500     // maximum current im micro Ampere - for testing
