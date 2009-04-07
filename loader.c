@@ -38,7 +38,7 @@ $Id$
 // Declare globally the number of sub-addresses to framework
  unsigned long xdata currentTime=0;
  unsigned char idata _n_sub_addr = 1;
- int timeout = 0, progFlag, lstructFlag;
+ int timeout = 0, progFlag, lstructFlag, doneonce=0;
 
 #ifdef L_FEB64
 // Vreg Enable port assignment Rev 1 ONLY
@@ -226,8 +226,7 @@ void user_init(unsigned char init)
   // snlocal is set by the Jtag Programmer
   // In this case bypass the user command as we're in auto-programming
   progFlag = 0;
-  if ((snlocal > 76300000) && (snlocal < 76800000)) progFlag = 1;
-
+  if ((snlocal > 76000000) && (snlocal < 76800000)) progFlag = 1;
  /*  DONE below
   //
   // Read S/N and struct size only from Protected page
@@ -312,12 +311,12 @@ void user_loop(void)
   }
      
   // Wait for the EEPROM_FLAG to be set
-  if(EEPROM_FLAG) {
+  if(EEPROM_FLAG && (doneonce == 0)) {
     if (progFlag) {
       // programmer loop
 	  // use local struct for Wp and P0
       eepage.SerialN = snlocal;
-      user_data.serialN = eepageWp.SerialN;
+      user_data.serialN = snlocal;
     } else {
 	  // manual request
       if (user_data.control & 0x1) {
@@ -386,6 +385,7 @@ void user_loop(void)
     // if successful should read 0xF (00001111) in status
   	// Reset the S/N programmer  flag
   	progFlag = 0;
+    doneonce = 1;
 
   } // EEPROM_FLAG
 
