@@ -64,7 +64,7 @@ unsigned char xdata ADT7486A_addrArray[] = {0x48, 0x49, 0x4A};
 #define VREF         3.293f
 
 MSCB_INFO_VAR code vars[] = {
-  2, UNIT_BYTE,     0, 0, 0,           "Shutdown"  , &user_data.error,         // 0
+  1, UNIT_BYTE,     0, 0, 0,           "Shutdown"  , &user_data.error,         // 0
   1, UNIT_BYTE,     0, 0, 0,           "Control"   , &user_data.control,       // 1
   1, UNIT_BYTE,     0, 0, 0,           "Status"    , &user_data.status,        // 2 
 
@@ -203,9 +203,9 @@ void user_write(unsigned char index) reentrant
     ON5 = !(user_data.control & 0x20);
     user_data.status = user_data.control;
     user_data.control = 0;
+    user_data.error   = 0;
+    rESR = 0;
   }
-  ;
-
    return;
 }
 
@@ -276,6 +276,11 @@ void user_loop(void)
     ADT7486A_Cmd(ADT7486A_addrArray[j], GetExt1Temp, SST_LINE1, &user_data.temperature[i+0]);
     ADT7486A_Cmd(ADT7486A_addrArray[j], GetExt2Temp, SST_LINE1, &user_data.temperature[i+1]);
   }
+
+  for (i=0;i<6;i++) {
+    if ((user_data.temperature[i] > 50.0) && (user_data.temperature[i] < 200.))
+        rESR |= (i<<(i+2));
+  }
 #endif
 
 #ifdef _ADT7486A_
@@ -296,10 +301,20 @@ void user_loop(void)
    }
   ENABLE_INTERRUPTS;
 
-// Report shutdown 
-  rESR = !SHDWN;
+// Report hardware shutdown 
+  rESR |= !SHDWN;
+
+// Publish error status
   DISABLE_INTERRUPTS;
   user_data.error = rESR; 
   ENABLE_INTERRUPTS;
+
+// Shutdown board if temperature too high
+  if (rESR) {
+    ON1 = ON2 = ON3 = ON4 = ON5 = ON6 = 1;
+    DISABLE_INTERRUPTS;
+    user_data.status = 0;
+    ENABLE_INTERRUPTS;
+  }
  
 }
