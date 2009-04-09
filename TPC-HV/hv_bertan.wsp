@@ -386,7 +386,7 @@ Docking=True
 MRUDockID=0
 MRUDockLeftPos=1
 MRUDockTopPos=5
-MRUDockRightPos=1677
+MRUDockRightPos=1272
 MRUDockBottomPos=233
 MRUFloatStyle=4
 MRUFloatXPos=-1879048192
@@ -398,7 +398,7 @@ MDIChild=False
 PctWidth=1000000
 MRUFloatCX=300
 MRUFloatCY=180
-MRUHorzDockCX=1676
+MRUHorzDockCX=1271
 MRUHorzDockCY=228
 MRUVertDockCX=300
 MRUVertDockCY=180
@@ -417,7 +417,7 @@ MRUDockID=59421
 MRUDockLeftPos=5
 MRUDockTopPos=-2
 MRUDockRightPos=30
-MRUDockBottomPos=721
+MRUDockBottomPos=657
 MRUFloatStyle=4
 MRUFloatXPos=-1879048192
 MRUFloatYPos=0
@@ -431,7 +431,7 @@ MRUFloatCY=180
 MRUHorzDockCX=300
 MRUHorzDockCY=180
 MRUVertDockCX=25
-MRUVertDockCY=723
+MRUVertDockCY=659
 MRUDockingState=0
 DockingStyle=61440
 TypeID=0
@@ -1067,7 +1067,7 @@ MRUDockID=0
 MRUDockLeftPos=0
 MRUDockTopPos=-2
 MRUDockRightPos=180
-MRUDockBottomPos=721
+MRUDockBottomPos=657
 MRUFloatStyle=4
 MRUFloatXPos=-1879048192
 MRUFloatYPos=1017
@@ -1081,7 +1081,7 @@ MRUFloatCY=180
 MRUHorzDockCX=300
 MRUHorzDockCY=180
 MRUVertDockCX=180
-MRUVertDockCY=723
+MRUVertDockCY=659
 MRUDockingState=0
 DockingStyle=61440
 TypeID=0
@@ -1252,7 +1252,7 @@ MRUDockID=0
 MRUDockLeftPos=36
 MRUDockTopPos=-2
 MRUDockRightPos=189
-MRUDockBottomPos=721
+MRUDockBottomPos=657
 MRUFloatStyle=4
 MRUFloatXPos=-1879048192
 MRUFloatYPos=1017
@@ -1266,7 +1266,7 @@ MRUFloatCY=180
 MRUHorzDockCX=300
 MRUHorzDockCY=180
 MRUVertDockCX=153
-MRUVertDockCY=723
+MRUVertDockCY=659
 MRUDockingState=0
 DockingStyle=61440
 TypeID=0
@@ -1529,7 +1529,7 @@ Docking=True
 MRUDockID=59419
 MRUDockLeftPos=0
 MRUDockTopPos=-1
-MRUDockRightPos=1677
+MRUDockRightPos=1272
 MRUDockBottomPos=26
 MRUFloatStyle=8196
 MRUFloatXPos=-1879048192
@@ -1541,7 +1541,7 @@ MDIChild=False
 PctWidth=1000000
 MRUFloatCX=438
 MRUFloatCY=29
-MRUHorzDockCX=1677
+MRUHorzDockCX=1272
 MRUHorzDockCY=27
 MRUVertDockCX=80
 MRUVertDockCY=845
@@ -1591,14 +1591,14 @@ Title=File
 Buttons=AABOAAAAAABABOAAAAAADABOAAAAAAAAAAAAAAAADCBOAAAAAACCBOAAAAAAFCBOAAAAAAAAAAAAAAAAHABOAAAAAA
 [WorkState_v1_1.DockState.Bar-44]
 BarID=59402
-XPos=1257
+XPos=1223
 YPos=26
 MRUWidth=111
 Docking=True
 MRUDockID=59419
-MRUDockLeftPos=1257
+MRUDockLeftPos=1223
 MRUDockTopPos=26
-MRUDockRightPos=1368
+MRUDockRightPos=1334
 MRUDockBottomPos=56
 MRUFloatStyle=8196
 MRUFloatXPos=-1
@@ -1731,7 +1731,7 @@ Buttons=FJAIAAAAAAHJAIAAAAAACNAIAAAAAAGNAIAAAAAALBAIAAAAAAAAAAAAAAAADHAIAAAAAAPG
 BarID=59399
 XPos=311
 YPos=26
-MRUWidth=3193
+MRUWidth=3469
 Docking=True
 MRUDockID=59419
 MRUDockLeftPos=311
@@ -1805,9 +1805,18 @@ LargeButtons=False
 ptn_Child1=MainFrame
 ptn_Child2=ChildFrames
 [WorkState_v1_1.Frames.MainFrame]
-WindowPlacement=MCAAAAAACAAAAAAADAAAAAAAPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPAAAAAAAAAAAAAAAAAAFAAAAACODAAAAA
-Title=Silicon Laboratories IDE
+WindowPlacement=MCAAAAAAAAAAAAAABAAAAAAAPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPMDAAAAAAKBAAAAAAMDFAAAAAMPDAAAAA
+Title=Silicon Laboratories IDE - hv_bertan.c
 [WorkState_v1_1.Frames.ChildFrames]
+ptn_Child1=Document-0
+[WorkState_v1_1.Frames.ChildFrames.Document-0]
+ptn_Child1=ViewFrame-0
+[WorkState_v1_1.Frames.ChildFrames.Document-0.ViewFrame-0]
+DocPathName=C:\_T2K\c8051\TPC-HV\hv_bertan.c
+DocumentString=Source File
+DocTemplateIndex=0
+WindowPlacement=MCAAAAAAAAAAAAAABAAAAAAAPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPAAAAAAAAAAAAAAAALJCAAAAAJJBAAAAA
+IsActiveChildFrame=True
 [WorkState_v1_1.ProjectTarget]
 ProjectTarget=SC88F000
 [WorkState_v1_1.WorkSpaceName]
@@ -1829,13 +1838,13 @@ HITECHPRO=0
 [WorkState_v1_1.Assembler]
 Assembler=C:\Keil\C51\BIN\a51.exe
 [WorkState_v1_1.AssFlag]
-AssFlag=XR GEN DB EP NOMOD51 
+AssFlag=XR GEN DB EP NOMOD51
 [WorkState_v1_1.AssFormat]
 AssFormat=<Executable Name> <Input File(s)> <Flags> 
 [WorkState_v1_1.Compiler]
 Compiler=C:\Keil\C51\BIN\C51.exe
 [WorkState_v1_1.CompFlag]
-CompFlag=DB OE BR DEFINE(TPC_HV_GPIB_310)  SB CD OT(8,Size) 
+CompFlag=DB OE BR DEFINE(TPC_HV_GPIB_310)  SB CD OT(8,Size)
 [WorkState_v1_1.CompFormat]
 CompFormat=<Executable Name> <Input File(s)> <Flags> 
 [WorkState_v1_1.RunOptimizer]
@@ -1843,7 +1852,7 @@ RunOptimizer=0
 [WorkState_v1_1.Linker]
 Linker=C:\Keil\C51\BIN\BL51.EXE
 [WorkState_v1_1.LinkFlag]
-LinkFlag=RS(256) PL(68) PW(78)  code(?PR?UPGRADE?MSCBMAIN (0x3200)) 
+LinkFlag=RS(256) PL(68) PW(78)  code(?PR?UPGRADE?MSCBMAIN (0x3200))
 [WorkState_v1_1.LinkFormat]
 LinkFormat=<Executable Name> <Input File(s)> TO <Output File> <Flags> 
 [WorkState_v1_1.PreprocFlag]
