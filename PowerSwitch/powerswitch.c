@@ -70,7 +70,7 @@ MSCB_INFO_VAR code vars[] = {
 
   4, UNIT_VOLT,     0, 0, MSCBF_FLOAT, "in Volt1"  , &user_data.value[0],     // 3 2.4 0x0c
   4, UNIT_VOLT,     0, 0, MSCBF_FLOAT, "in Volt2"  , &user_data.value[1],     // 4 2.5 0x0d
-  4, UNIT_VOLT,     0, 0, MSCBF_FLOAT, "in Volt3"  , &user_data.value[2],     // 5 ??  ??
+  4, UNIT_VOLT,     0, 0, MSCBF_FLOAT, "in Volt3"  , &user_data.value[2],     // 5 3.4 0x14
 
   4, UNIT_VOLT,     0, 0, MSCBF_FLOAT, "outVolt1"  , &user_data.value[3],    // 6  1.1 0x01
   4, UNIT_VOLT,     0, 0, MSCBF_FLOAT, "outVolt2"  , &user_data.value[4],    // 7  1.0 0x00
@@ -80,11 +80,11 @@ MSCB_INFO_VAR code vars[] = {
   4, UNIT_VOLT,     0, 0, MSCBF_FLOAT, "outVolt6"  , &user_data.value[8],    // 11 1.4 0x04
 
   4, UNIT_AMPERE,     0, 0, MSCBF_FLOAT, "outcur1"  ,   &user_data.value[9],    // 12 1.7 0x07
-  4, UNIT_AMPERE,     0, 0, MSCBF_FLOAT, "outCur2"  ,   &user_data.value[10],    // 13 1.6 0x06
-  4, UNIT_AMPERE,     0, 0, MSCBF_FLOAT, "outCur3"  ,   &user_data.value[11],    // 14 2.1 0x09
-  4, UNIT_AMPERE,     0, 0, MSCBF_FLOAT, "outCur4"  ,   &user_data.value[12],    // 15 2.0 0x08
-  4, UNIT_AMPERE,     0, 0, MSCBF_FLOAT, "outCur5"  ,   &user_data.value[13],    // 16 2.3 0x0b
-  4, UNIT_AMPERE,     0, 0, MSCBF_FLOAT, "outCur6"  ,   &user_data.value[14],    // 17 2.2 0x0a
+  4, UNIT_AMPERE,     0, 0, MSCBF_FLOAT, "outCur2"  ,   &user_data.value[10],   // 13 1.6 0x06
+  4, UNIT_AMPERE,     0, 0, MSCBF_FLOAT, "outCur3"  ,   &user_data.value[11],   // 14 2.1 0x09
+  4, UNIT_AMPERE,     0, 0, MSCBF_FLOAT, "outCur4"  ,   &user_data.value[12],   // 15 2.0 0x08
+  4, UNIT_AMPERE,     0, 0, MSCBF_FLOAT, "outCur5"  ,   &user_data.value[13],   // 16 2.3 0x0b
+  4, UNIT_AMPERE,     0, 0, MSCBF_FLOAT, "outCur6"  ,   &user_data.value[14],   // 17 2.2 0x0a
 
   4, UNIT_CELSIUS,  0, 0, MSCBF_FLOAT, "Temp1"  ,   &user_data.temperature[0], // 18
   4, UNIT_CELSIUS,  0, 0, MSCBF_FLOAT, "Temp2"  ,   &user_data.temperature[1], // 19 
@@ -260,7 +260,7 @@ float read_voltage(unsigned char channel, float coeff, float offset)
 //Read 6 ADT7486A SST diode Temperature
 //Read 15 voltages
 
-unsigned char code adc_index[] = {0xc, 0xd, 0x14, 0x1, 0x0, 0x3, 0x2, 0x5, 0x4, 0x7, 0x6, 0x9, 0x8, 0xb, 0xa};
+unsigned char code adc_index[] = {0xc, 0xd, 0x14, 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb};
 float code            coeff[]  = {2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00}; 
 float code           offset[]  = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
