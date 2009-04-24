@@ -91,8 +91,8 @@ float xdata calNumber = 10.0;
 char  xdata calQpumpSave=0, calSwSave=0;
 unsigned long xdata currentTime=0, sstTime=0,sstExtTime=0, calTime=0;
 unsigned char xdata eeprom_channel,channel, chipAdd, chipChan;
-unsigned char xdata BiasIndex, AsumIndex;
-unsigned long xdata loopcnt = 0;
+unsigned char xdata BiasIndex, AsumIndex, NodeOK=0;
+// unsigned long xdata loopcnt = 0;
 
 // Global bit register
 unsigned char bdata bChange;
@@ -108,7 +108,6 @@ sbit LTC1665_Flag   = bChange ^ 4;
 sbit LTC1669_Flag   = bChange ^ 5;
 sbit EEP_CTR_Flag   = bChange ^ 6;
 sbit CAsum_Flag     = bChange ^ 7;
-
 //
 // RESET output pin for PCA9539 (PIO) and LTC1665 (DACx8)
 sbit DACRESETN      = P1 ^ 0;
@@ -361,12 +360,30 @@ void updateAdc2Table(void)
 
 //-----------------------------------------------------------------------------
 // Watchdog counter function
+#if 0
 void watchdog(short int state)
 {
   loopcnt++;
   DISABLE_INTERRUPTS;
   user_data.watchdog = ((loopcnt<<16) | (state & 0xFFFF));
   ENABLE_INTERRUPTS;
+}
+#endif
+
+//-----------------------------------------------------------------------------
+// Physical backplane address retrieval
+unsigned int NodeAdd_get(void)
+{
+  unsigned int xdata crate_add=0;
+  char xdata pca_add=0;
+
+  PCA9539_Read(BACKPLANE_READ, &pca_add, 1);
+  //C C C C C C 0 B B is the MSCB Addr[8..0], 9 bits
+  //Modifying what the board reads from the PCA
+  //Externally, the crate address are reversed
+  crate_add= ((~pca_add)<<1)  & 0x01F8;
+  //Internally, the board address are not reversed
+  return (crate_add | ((pca_add) & 0x0003));
 }
 
 //-----------------------------------------------------------------------------
@@ -535,7 +552,7 @@ void switchonoff(unsigned char command)
     // P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn | .3:SST_DRV2 .2:PCARESETN .1:SST_DRV1 .0:DACRESETN 
     P1MDOUT  &= ~0xF9;  // in OD
     PCARESETN = 1;
-    P1 = 0x06;  // SST2, PCARESETN set High
+    P1 |= 0x06;  // SST2, PCARESETN set High
 
     // mscb communication
     // P0.7:CSn1     .6:CSn0      .5:485TXEN  .4:QPUMPCLK| .3:SMBCLK   .2:SMBDAT    .1:Rx       .0:Tx 
@@ -551,9 +568,8 @@ Application specific init and in/output routines
 /*---- User init function ------------------------------------------*/
 void user_init(unsigned char init)
 {
-  char xdata i, pca_add=0;
+  char xdata i;
   float xdata temperature;
-  unsigned int xdata crate_add=0, board_address=0;
   unsigned char xdata swConversion=0;
   // Inititialize local variables
 
@@ -567,8 +583,6 @@ void user_init(unsigned char init)
     (svn_rev_code[7]-'0')*100+
     (svn_rev_code[8]-'0')*10+
     (svn_rev_code[9]-'0');
-
-  board_address = cur_sub_addr();
 
   //-----------------------------------------------------------------------------
   // default settings, set only when uC-EEPROM is being erased and written
@@ -637,16 +651,8 @@ void user_init(unsigned char init)
   PCA9539_WriteByte(BACKPLANE_INPUT_ENABLE);
   delay_us(10);
   
- //-----------------------------------------------------------------------------
-  // Physical backplane address retrieval
-  PCA9539_Read(BACKPLANE_READ, &pca_add, 1);
-  //C C C C C C 0 B B is the MSCB Addr[8..0], 9 bits
-  //Modifying what the board reads from the PCA
-  //Externally, the crate address are reversed
-  crate_add= ((~pca_add)<<1)  & 0x01F8;
-  //Internally, the board address are not reversed
-  board_address = crate_add | ((pca_add) & 0x0003);
-  sys_info.node_addr   = board_address;
+  // Get Node Address from PCA
+  sys_info.node_addr   = NodeAdd_get();
 #endif
 
   //-----------------------------------------------------------------------------
@@ -874,6 +880,12 @@ void user_loop(void) {
   char xdata ltc1665_index, ltc1665_chipChan, ltc1665_chipAdd;
 
   timing=1;
+
+  if (!NodeOK && uptime()) {
+    // Get Node Address from PCA
+    sys_info.node_addr   = NodeAdd_get();
+    NodeOK = 1;
+  }
 
   //External ADC for REV0 cards
   //-----------------------------------------------------------------------------
