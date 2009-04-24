@@ -33,6 +33,7 @@ CODE(?PR?UPGRADE?MSCBMAIN (0xD000))
 // P0.7:CSn1     .6:CSn0      .5:485TXEN  .4:QPUMPCLK| .3:SMBCLK   .2:SMBDAT    .1:Rx       .0:Tx 
 
 $Id$
+
 \********************************************************************/
 
 #include <stdio.h>
@@ -805,7 +806,7 @@ void user_write(unsigned char index) reentrant
     //                  w 142 0x4 (sync = 0)
     ASUM_SYNC   =  user_data.asumCtl & 0x1;
     ASUM_TESTN  = (user_data.asumCtl & 0x2) >> 1;
-    ASUM_PWDN   = (user_data.asumCtl & 0x4) >> 1;
+    ASUM_PWDN   = (user_data.asumCtl & 0x4) >> 2;
   }
 }
 
