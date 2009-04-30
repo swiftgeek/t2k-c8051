@@ -663,23 +663,23 @@ void user_loop(void) {
       }
     }
   }
-  DISABLE_INTERRUPTS;
-  user_data.error   = rESR;
-  ENABLE_INTERRUPTS;
 
-  //
   // Read FPGA Status
   fpgaStatus = CMB_SPI_ReadByte(CMBSPI_RSTATUS);
-  // Set Signal Loss link error
+  // Set Signal Loss link Status
   SLinkOn = fpgaStatus & 0x01;
   // ASUM lock bits
-  if ((fpgaStatus >> 4) != 0)
-    AsumLock = SET;
+  AsumLock = ((fpgaStatus>>4) == 0) ? 1 : 0;   // Set ASUMLostLock error (unlock!)
 
   // Read Over current switch
   V4_OC = (V4_OCn == 0) ? 1 : 0;
 
-  //
+  // Publish U/I monitoring, ASUM lock, Over Current errors
+  // No action taken on ASUM lock and Over Current YET! See below.
+  DISABLE_INTERRUPTS;
+  user_data.error   = rESR;
+  ENABLE_INTERRUPTS;
+
   // Take action based on ERROR
   // Currently only the Temperature are considered
   if (SPup && (rESR & ( UFTEMPERATURE_MASK | BTEMPERATURE_MASK))) {
@@ -692,7 +692,6 @@ void user_loop(void) {
     SPup = ON;
   }
 
-  //
   // Publish Control, Error and Status.
-  publishCtlCsr();
+  publishAll();
 } 
