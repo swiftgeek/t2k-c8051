@@ -176,6 +176,7 @@ Writing to the status register
 @param status Status would determine the value of WPEN,BP0,BP1
               bits of status register
 */
+/*
 unsigned char ExtEEPROM_WriteStatusReg(unsigned char status) {
   ExtEEPROM_WriteEnable();
   RAM_CSn = 0;
@@ -188,7 +189,7 @@ unsigned char ExtEEPROM_WriteStatusReg(unsigned char status) {
     return EEP_BUSY;
    return EEP_READY;
 }
-
+*/
 //
 //-----------------------------------------------------------------
 /**

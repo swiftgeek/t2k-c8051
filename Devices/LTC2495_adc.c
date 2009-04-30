@@ -35,10 +35,11 @@ void LTC2495_StartConversion(unsigned char addr, unsigned char channel, unsigned
 	watchdog_refresh(0);
 
 	buffer[0] = (channel >> 1) | LTC2495_CMD_SGL | LTC2495_CMD_SELECT;
-	if(channel & 0x01) buffer[0] |= 0x08; 
 
-  //	buffer[1] = LTC2495_ENABLE2 | gain;
- 	buffer[1] = LTC2495_ENABLE2 | LTC2495_CMD2_SPD | gain;  //DB - set speed to x2
+	if(channel & 0x01) buffer[0] |= 0x08; //odd channels offset by 8 in single ended mode
+
+  	buffer[1] = LTC2495_ENABLE2 | gain;
+ //	buffer[1] = LTC2495_ENABLE2 | LTC2495_CMD2_SPD | gain;  //DB - set speed to x2
 
   watchdog_refresh(0);
 
@@ -64,10 +65,11 @@ unsigned char LTC2495_ReadConversion(unsigned char addr
 	watchdog_refresh(0);
 
 	buffer[0] = (channel >> 1) | LTC2495_CMD_SGL | LTC2495_CMD_SELECT;
-	if(channel & 0x01) buffer[0] |= 0x08;
 
-  // buffer[1] = LTC2495_ENABLE2 | gain;
-	buffer[1] = LTC2495_ENABLE2 | LTC2495_CMD2_SPD | gain;  //DB - set speed to x2
+	if(channel & 0x01) buffer[0] |= 0x08; //odd channels offset by 8 in single ended mode
+
+  buffer[1] = LTC2495_ENABLE2 |gain;
+//	buffer[1] = LTC2495_ENABLE2 | LTC2495_CMD2_SPD | gain;  //DB - set speed to x2
 
   // Wait for the SMBus to clear
   SMBus_Wait();
@@ -77,25 +79,22 @@ unsigned char LTC2495_ReadConversion(unsigned char addr
   SMBus_EnableACKPoll();
   SMBus_Start();
 
-/*
+
 	if(((value & 0xC0000000) == 0xC0000000) || ((value & 0xC0000000) == 0x00000000)) {
-		// Over/Under-range
+		// Over/Under-range: +ive over range = 0x11 -ive over range = 0x00
 		validRange = 0;
 	}
 
-	if(!(value & 0x80000000)) {
+	if(!(value & 0x80000000)) { // -ive value = 0x01
 		// extend sign
-		value = value >> 14;
-		value |= 0xFFFF0000;
+		value = value >> 14; // shift 8 for 32 to 24 filled from the left
+		value |= 0xFFFF0000; // shift 6 for zero's in the data register (Total 14)
 	} else {
-		value = value >> 14;
+		value = value >> 14; // +ive vale = 0x10
 		value &= 0x0000FFFF;
 	}
-*/
-  // shift 8 for 32 to 24 filled from the left
-  // shift 6 for zero of the data register
-	*pResult = value>>14;
-  validRange = 1;
+  
+	*pResult = value;
 	return validRange;
 }
 #endif

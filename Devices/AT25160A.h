@@ -34,8 +34,8 @@ sbit RAM_WPn  = RAM_WRITE_PROTECT;   // The Write Protection signal to enable/di
 #define AT2516_WRITE 0x02  						//Write Data to Memory Array
 
 #define MAX_PAGE_SIZE      0x200
-#define WP_START_ADDR	     0x0600
-#define WP_FINAL_ADDR	     0x07FF
+#define WP_START_ADDR	   0x0600
+#define WP_FINAL_ADDR	   0x07FF
 
 #define AT2516_MAX_BYTE 32
 #define AT2516_PROTECTION 0x84					//Setting the bits of Status register: 
