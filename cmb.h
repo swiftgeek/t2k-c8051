@@ -112,9 +112,9 @@ sbit CmSd     = rCTL ^ 7;
 
 // CSR Register
 unsigned char bdata rCSR;
-sbit SPup     = rCSR ^ 0;
+sbit SPup     = rCSR ^ 0;  // 1 = Power ON
 sbit SLinkOn  = rCSR ^ 1;  // 1 = Link ON
-sbit SXclk    = rCSR ^ 2;
+sbit SXclk    = rCSR ^ 2;  // 1 = External Clock
 sbit Swdog    = rCSR ^ 3;
 sbit SeeS     = rCSR ^ 4;
 sbit SeeR     = rCSR ^ 5;
