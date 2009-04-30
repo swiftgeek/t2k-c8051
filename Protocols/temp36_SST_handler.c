@@ -219,6 +219,8 @@ void SST_WriteByte(unsigned char datByte, int SST_LINE) {
   //declare local variables
   unsigned char toBeDrv = 0;
   int i = 0;
+  SST_LINE &= 0xFF;
+
   if(SST_LINE==1)
   {
      for(i = 7; i >= 0; i--) //8bits in 1 byte
