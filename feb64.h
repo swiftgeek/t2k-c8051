@@ -174,9 +174,9 @@ struct EEPAGE xdata eepage = {
  , 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
  , 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
 // Backdoor option offset 0x17 in Float
-// 0x17 - LvQ, LiQ,  Lp6Vd, Lp6Va, Ln6Va , Lp6Ia, Lp6Ia , Lp6Id
+// 0x17 - LvQ, LiQ,  Lp6Vd, Lp6Va, Ln6Va , Lp6Id, Lp6Ia , Lp6Id
  ,30.0, 0.0, 5.5, 5.5, -6.5, 0.0, 0.0, 0.0
-// 0x1F - HvQ, HiQ, Hp6Vd, Hp6Va, Hp6Va,  Hp6Ia, Hp6Ia,  Hp6Id
+// 0x1F - HvQ, HiQ, Hp6Vd, Hp6Va, Hp6Va,  Hp6Id, Hp6Ia,  Hp6Id
  ,73.0, 0.1, 6.5, 6.5, -5.5, 0.2, 0.8, 0.2
 // 0x27 - LuC Temperature,  HuC Temperature
  ,10., 50.
@@ -275,16 +275,17 @@ sbit SmSd     = rCSR ^ 7;
 //The low and high bytes are switched in the bdata section of the memory
 //This is the reason that the sbit declarations do not appear to match
 //the documentation but they actually do.
+//LvQ, LiQ,  Lp6Vd, Lp6Va, Ln6Va , Lp6Id, Lp6Ia , Lp6Id
 unsigned int bdata rESR;
-sbit vQpump   = rESR ^ 8;  //0x1
-sbit iQpump   = rESR ^ 9;  //0x2
-sbit vReg1    = rESR ^ 10; //0x4
-sbit vReg2    = rESR ^ 11; //0x8
+sbit vQpump   = rESR ^ 8;  //0x1  VQpump
+sbit iQpump   = rESR ^ 9;  //0x2  IQpump
+sbit vReg1    = rESR ^ 10; //0x4  +6Vd
+sbit vReg2    = rESR ^ 11; //0x8  +6Va
 
-sbit vReg3    = rESR ^ 12; //0x10
-sbit iReg1    = rESR ^ 13; //0x20
-sbit iReg2    = rESR ^ 14; //0x40
-sbit iReg3    = rESR ^ 15; //0x80
+sbit vReg3    = rESR ^ 12; //0x10 -6Va
+sbit iReg1    = rESR ^ 13; //0x20 +6Id
+sbit iReg2    = rESR ^ 14; //0x40 +6Ia
+sbit iReg3    = rESR ^ 15; //0x80 -6Id
 
 sbit uCT      = rESR ^ 0;  //0x100
 sbit IntssTT  = rESR ^ 1;  //0x200
