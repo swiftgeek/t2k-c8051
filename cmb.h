@@ -113,8 +113,8 @@ sbit CmSd     = rCTL ^ 7;
 // CSR Register
 unsigned char bdata rCSR;
 sbit SPup     = rCSR ^ 0;
-sbit SXclk    = rCSR ^ 1;
-sbit SLos     = rCSR ^ 2;
+sbit SLinkOn  = rCSR ^ 1;  // 1 = Link ON
+sbit SXclk    = rCSR ^ 2;
 sbit Swdog    = rCSR ^ 3;
 sbit SeeS     = rCSR ^ 4;
 sbit SeeR     = rCSR ^ 5;
@@ -143,8 +143,8 @@ sbit Vreg2ssTT = rESR ^ 3;  //0x800
 
 sbit RdssT     = rESR ^ 4;  //0x1000
 sbit EEPROM    = rESR ^ 5;  //0x2000
-//sbit xxx      = rESR ^ 6; //0x4000
-sbit V4_OC     = rESR ^ 7; //0x8000
+sbit AsumLock  = rESR ^ 6;  //0x4000 1= any of 4 not lock
+sbit V4_OC     = rESR ^ 7;  //0x8000
 
 // Shutdown mask
 // Shut down the card only if any of the following bits in the rESR register is set

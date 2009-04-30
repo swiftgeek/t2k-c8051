@@ -10,6 +10,7 @@ JTAG:
 0 2 0 18 (with power/4V)
 define(CMB) define(_ADT7486A_) define(_ExtEEPROM_) 
 Program Size: data=169.0 xdata=459 code=14211
+Program Size: data=147.1 xdata=483 code=15450 // April 27/09
 
 $Id$
 \********************************************************************/
@@ -50,7 +51,7 @@ unsigned char idata _n_sub_addr = 1;
 //
 unsigned char xdata channel;
 unsigned long xdata tempTime=0, sstTime=0;
-unsigned char xdata eeprom_channel, channel;
+unsigned char xdata eeprom_channel, channel, NodeOK=0;
 unsigned int xdata crate_add=0, pca_add=0;
 
 //-----------------------------------------------------------------------------
@@ -133,22 +134,22 @@ void publishAll() {
 
 //-----------------------------------------------------------------------------
 //
-void CMB_SPI_WriteByte(unsigned char cmbdata) {
+void CMB_SPI_WriteByte(unsigned char cmbinst, unsigned char cmbdata) {
     CMB_CSn = 0;
-    CMBSPI_WriteByte(0x01);
+    CMBSPI_WriteByte(cmbinst);
     CMBSPI_WriteByte(cmbdata);
     CMB_CSn = 1;
 }
 
 //-----------------------------------------------------------------------------
 //
-unsigned char CMB_SPI_ReadByte(void) {
-unsigned char cmbdata;
+unsigned char CMB_SPI_ReadByte(unsigned char cmbinst) {
+    unsigned char cdata;
     CMB_CSn = 0;
-    CMBSPI_WriteByte(0x02);
-    cmbdata = CMBSPI_ReadByteRising();
+    CMBSPI_WriteByte(cmbinst);
+    cdata = CMBSPI_ReadByteRising();
     CMB_CSn = 1;
-    return cmbdata;
+    return cdata;
 }
 
 //-----------------------------------------------------------------------------
@@ -158,6 +159,26 @@ void PublishVariable(float xdata * pvarDest, float varSrce, bit errbit) {
     *pvarDest = varSrce;
     if (errbit) user_data.error = rESR;
     ENABLE_INTERRUPTS;
+}
+
+//-----------------------------------------------------------------------------
+// Physical backplane address retrieval
+unsigned int NodeAdd_get(void)
+{
+  //
+  //-----------------------------------------------------------------------------
+  // Address retrieval
+  // Configure and read the address
+  // C C C C C C 1 0 0 is the MSCB Addr[8..0], 9 bits
+  // Modifying what the board reads from the Pins 
+  SFRPAGE = CONFIG_PAGE;
+  // Change p3 to digital input
+  P3MDOUT = 0x00;
+  P3=0xFF;
+  // Read crate address
+  pca_add= P3;
+  crate_add= ((~pca_add)<<3)  & 0x01F8;
+  return ( (crate_add &  0x01FC) | 0x0004);
 }
 
 //-----------------------------------------------------------------------------
@@ -193,13 +214,13 @@ void switchonoff(unsigned char command)
     CMBSPI_Init();
 
     delay_ms(1000);
-    CMB_SPI_WriteByte(~pca_add);
+    CMB_SPI_WriteByte(CMBSPI_WADDRESS, ~pca_add);
     delay_us(100);
-    user_data.eepage = CMB_SPI_ReadByte();
+    user_data.eepage = CMB_SPI_ReadByte(CMBSPI_RADDRESS);
     delay_us(100);
-    CMB_SPI_WriteByte(~pca_add);
+    CMB_SPI_WriteByte(CMBSPI_WADDRESS, ~pca_add);
     delay_us(100);
-    user_data.spare = CMB_SPI_ReadByte();
+    user_data.spare = CMB_SPI_ReadByte(CMBSPI_RADDRESS);
 
  } else if(command==OFF) {
     // Switch all the ports to open drain except for...
@@ -242,7 +263,6 @@ Application specific init and in/output routines
 void user_init(unsigned char init)
 {
   char xdata i;
-  unsigned int xdata board_address=0;
 
  /* Format the SVN and store this code SVN revision into the system */
   for (i=0;i<4;i++) {
@@ -255,7 +275,7 @@ void user_init(unsigned char init)
     (svn_rev_code[8]-'0')*10+
     (svn_rev_code[9]-'0');
 
-  board_address = cur_sub_addr();
+  i = cur_sub_addr();
 
   if (init){
     user_data.FPGATemp = 0;
@@ -306,22 +326,6 @@ void user_init(unsigned char init)
   ADT7486A_Init(SST_LINE1);
 #endif
 
-  //
-  //-----------------------------------------------------------------------------
-  // Address retrieval
-  // Configure and read the address
-  // C C C C C C 1 0 0 is the MSCB Addr[8..0], 9 bits
-  // Modifying what the board reads from the Pins 
-  SFRPAGE = CONFIG_PAGE;
-  // Change p3 to digital input
-  P3MDOUT = 0x00;
-  P3=0xFF;
-  // Read crate address
-  pca_add= P3;
-  crate_add= ((~pca_add)<<3)  & 0x01F8;
-  board_address=(crate_add &  0x01FC) | 0x0004;
-  sys_info.node_addr   = board_address; 
-
 #ifdef _ExtEEPROM_
   //
   //-----------------------------------------------------------------------------
@@ -341,6 +345,9 @@ void user_init(unsigned char init)
   DISABLE_INTERRUPTS;
   ENABLE_INTERRUPTS;
 #endif
+
+  // Get Node Address from P3 port
+  sys_info.node_addr   = NodeAdd_get();
 
   //-----------------------------------------------------------------------------
   // Clock Selection P0.7 default to External Clock (LVDS)
@@ -413,10 +420,17 @@ void user_loop(void) {
   unsigned int xdata eeptemp_addr;
   //NW make sure eeptemp_source is stored in xdata
   unsigned char* xdata eeptemp_source;
-  unsigned char xdata eep_request;
+  unsigned char xdata eep_request, fpgaStatus, AsumLock;
   static  unsigned char xdata eeprom_flag = CLEAR;
   unsigned int *xdata rpfData;
   unsigned int xdata i, rvolt;
+
+  //-----------------------------------------------------------------------------
+  // Get node Address after 1" of running time
+  if (!NodeOK && uptime()) {
+    sys_info.node_addr   = NodeAdd_get();
+    NodeOK = 1;
+  }
 
   //-----------------------------------------------------------------------------
   // Power Up based on CTL bit
@@ -456,7 +470,7 @@ void user_loop(void) {
   } // Switch Clock
 
   //-----------------------------------------------------------------------------
-  // Config Pulse
+  // Config Pulse, FPGA code requires 3 consecutive pulses
   if (Ccfg) {
     for (i=0;i<3;i++) {
      CFG_RECOVER = 1;
@@ -473,12 +487,12 @@ void user_loop(void) {
   if (Cdeb1) {
 
     // Write Crate address to the CMB register
-    CMB_SPI_WriteByte(~pca_add);
+    CMB_SPI_WriteByte(CMBSPI_WADDRESS, ~pca_add);
 
     delay_us(105);
 
     // Read Crate address from the CMB Register
-    user_data.spare = CMB_SPI_ReadByte();
+    user_data.spare = CMB_SPI_ReadByte(CMBSPI_RADDRESS);
     Cdeb1 = 0; 
   } // 
 
@@ -654,10 +668,14 @@ void user_loop(void) {
   ENABLE_INTERRUPTS;
 
   //
-  // Read Watchdog state
-//  Swdog = WATCHDOG;  // Watchdog state
+  // Read FPGA Status
+  fpgaStatus = CMB_SPI_ReadByte(CMBSPI_RSTATUS);
+  // Set Signal Loss link error
+  SLinkOn = fpgaStatus & 0x01;
+  // ASUM lock bits
+  if ((fpgaStatus >> 4) != 0)
+    AsumLock = SET;
 
-  //
   // Read Over current switch
   V4_OC = (V4_OCn == 0) ? 1 : 0;
 
