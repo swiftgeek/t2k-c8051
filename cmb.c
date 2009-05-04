@@ -209,6 +209,7 @@ void switchonoff(unsigned char command)
     P2MDOUT |= 0x40;  // CMB_SPI_MOSI (P2.6) PP
     P2MDOUT &= ~0x80; // CMB_SPI_MISO (P2.7) OD
     P2MDOUT |= 0x02; //  CMB_CS       (P2.1) PP
+    P2MDOUT |= 0x01; //  CFG_RECOVER  (P2.0) PP
     CMB_CSn = 1;
 
     CMBSPI_Init();
@@ -360,7 +361,7 @@ void user_init(unsigned char init)
   SFRPAGE = CONFIG_PAGE;
   P2MDOUT &= ~0x10;  // V4_OC(P2.4) OD for read
 
-
+  //-----------------------------------------------------------------------------
   // Configure Recovery
   P2MDOUT |= 0x01;  // CFG_RECOVER(P2.0) PP for write
 
@@ -472,13 +473,13 @@ void user_loop(void) {
   //-----------------------------------------------------------------------------
   // Config Pulse, FPGA code requires 3 consecutive pulses
   if (Ccfg) {
-    for (i=0;i<3;i++) {
+    for (i=0;i<4;i++) {
      CFG_RECOVER = 1;
      delay_us(1);
      CFG_RECOVER = 0;
      delay_us(1);
     }
-    delay_us(9);
+    delay_us(10);
     Ccfg = 0; 
   } // Configure_recovery
 
@@ -667,7 +668,7 @@ void user_loop(void) {
   // Read FPGA Status
   fpgaStatus = CMB_SPI_ReadByte(CMBSPI_RSTATUS);
   // Set Signal Loss link Status
-  SLinkOn = fpgaStatus & 0x01;
+  SLinkOn = (fpgaStatus & 0x01) ? 0 : 1;       // Shows as 1 = Link ON
   // ASUM lock bits
   AsumLock = ((fpgaStatus>>4) == 0) ? 1 : 0;   // Set ASUMLostLock error (unlock!)
 
