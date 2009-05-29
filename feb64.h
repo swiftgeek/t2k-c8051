@@ -65,16 +65,16 @@ signed int Offst;
 };
 
 struct ADC2MSCB_TABLE xdata adc2mscb_table[16] = {
-  {GAIN32, 1, I_A2MTABLE, 10000, 22},    {GAIN32, 3, I_A2MTABLE, 10000, 127}
-, {GAIN32, 5, I_A2MTABLE, 10000, 7176},  {GAIN32, 7, I_A2MTABLE, 10000, 1840}
+  {GAIN32, 1, I_A2MTABLE, 1000, 22},    {GAIN32, 3, I_A2MTABLE, 1000, 127}
+, {GAIN32, 5, I_A2MTABLE, 1000, 7176},  {GAIN32, 7, I_A2MTABLE, 1000, 1840}
 , {GAIN1 , 7, V_A2MTABLE,   101.1, 230}, {GAIN1 , 5, V_A2MTABLE, 101.1, 230}
 , {GAIN1 , 3, V_A2MTABLE,   101.1, 230}, {GAIN1 , 1, V_A2MTABLE, 101.1, 230}
-, {GAIN32, 0, I_A2MTABLE, 10000, 3178},  {GAIN32, 2, I_A2MTABLE, 10000, 1800}
-, {GAIN32, 4, I_A2MTABLE, 10000, 925},   {GAIN32, 6, I_A2MTABLE, 10000, 4895}
+, {GAIN32, 0, I_A2MTABLE, 1000, 3178},  {GAIN32, 2, I_A2MTABLE, 1000, 1800}
+, {GAIN32, 4, I_A2MTABLE, 1000, 925},   {GAIN32, 6, I_A2MTABLE, 1000, 4895}
 , {GAIN1 , 6, V_A2MTABLE,   101.1, 24},  {GAIN1 , 4, V_A2MTABLE, 101.1, 230}
 , {GAIN1 , 2, V_A2MTABLE,   101.1, 225}, {GAIN1 , 0, V_A2MTABLE, 101.1, 230}
 };
-#define CONVER_FAC1 0
+#define CONVER_FAC1 0xFFFFFFFF   // Force large number in case of OR or UR
 
 /**********************************************************************************/
 // charge pump state for PCA control
