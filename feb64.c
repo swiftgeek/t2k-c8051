@@ -427,7 +427,7 @@ void switchonoff(unsigned char command)
     REG_EN = ON;
 
     //-----------------------------------------------------------------------------
-    // Setup the ASUM ports (P1.7, 6,5)
+    // Setup the ASUM ports (P1.7, 6, 5)
     P1MDOUT |= 0xE0;  // Sync, Test, PowerDwnN Push-pull
 
     // Pulse the serializer (ASUM)
@@ -502,7 +502,7 @@ void switchonoff(unsigned char command)
     //-----------------------------------------------------------------------------
     // SMB Bias Voltage switches
     SFRPAGE = CONFIG_PAGE;
-    P1MDOUT |= 0x08;
+//    P1MDOUT |= 0x04;  // PCARESETN in PP
     PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
     delay_us(10);
     PCA9539_WriteByte(BIAS_OUTPUT_ENABLE);
@@ -807,9 +807,9 @@ void user_write(unsigned char index) reentrant
   // --- ASum Hidden Register
   if (index == IDXASUM_CTL) {
     //-PAA- At boot the Sync is high for 1sec while power is up
-    // to shutdown sync w 142 0x4
-    // to restart       w 142 0x5 (Sync + pwd)
-    //                  w 142 0x4 (sync = 0)
+    // to shutdown sync w 145 0x4
+    // to restart       w 145 0x5 (Sync + pwd)
+    //                  w 145 0x4 (sync = 0)
     ASUM_SYNC   =  user_data.asumCtl & 0x1;
     ASUM_TESTN  = (user_data.asumCtl & 0x2) >> 1;
     ASUM_PWDN   = (user_data.asumCtl & 0x4) >> 2;
@@ -893,7 +893,7 @@ void user_loop(void) {
   LTC2497_StartConversion(ADDR_LTC2497, adcChannel);
   // Make sure the result is valid!
   if(!LTC2497_ReadConversion(ADDR_LTC2497, adcChannel, &result)) {
-    result = -CONVER_FAC1;
+    result = CONVER_FAC1;
   }
   adc_value = ((float)((result) + CONVER_FAC1) * (float)(EXT_VREF / CONVER_FAC2));
   adc_value = (adc_value * adc2mscb_table[adcChannel].Coef + adc2mscb_table[adcChannel].Offst);
@@ -924,7 +924,7 @@ void user_loop(void) {
     result = -CONVER_FAC1;
   }
 
-  adc_value = ((float)((result - adc2mscb_table[adcChannel].Offst) + CONVER_FAC1) * (float)(EXT_VREF / CONVER_FAC2));
+  adc_value = ((float)((result - adc2mscb_table[adcChannel].Offst)) * (float)(EXT_VREF / CONVER_FAC2));
   adc_value = (adc_value * adc2mscb_table[adcChannel].Coef) ;
   //dividing by the gain
   adc_value /= pow(2, (adc2mscb_table[adcChannel].gain + adc2mscb_table[adcChannel].current));
@@ -1118,7 +1118,7 @@ void user_loop(void) {
 
   //-----------------------------------------------------------------------------
   // Finally take action based on ERROR register
-  if (rESR & (VOLTAGE_MASK | UCTEMPERATURE_MASK | BTEMPERATURE_MASK | FGDTEMPERATURE_MASK)) {
+  if (rESR & (VOLTAGE_MASK | UCTEMPERATURE_MASK | BTEMPERATURE_MASK)) {
     SPup = SqPump = OFF;
     switchonoff(OFF);
     SsS = ON;
