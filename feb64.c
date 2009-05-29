@@ -495,6 +495,7 @@ void switchonoff(unsigned char command)
 #ifdef _ADT7486A_
     //SST and PCARESETN is maintained ==1 and PP
     // P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn | .3:SST_DRV2 .2:PCARESETN .1:SST_DRV1 .0:DACRESETN 
+    SFRPAGE = CONFIG_PAGE;
     P1MDOUT |= 0x08; // Set SST_DRV2 in PP
 #endif
 
@@ -502,7 +503,7 @@ void switchonoff(unsigned char command)
     //-----------------------------------------------------------------------------
     // SMB Bias Voltage switches
     SFRPAGE = CONFIG_PAGE;
-//    P1MDOUT |= 0x04;  // PCARESETN in PP
+    P1MDOUT |= 0x04;  // PCARESETN in PP
     PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
     delay_us(10);
     PCA9539_WriteByte(BIAS_OUTPUT_ENABLE);
