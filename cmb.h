@@ -84,7 +84,7 @@ struct EEPAGE xdata eepage = {
  , 10., 50.
 // 0x14 - LSST Temperature,  HSST Temperature
  , 10. ,50.
-// 0x33 - SST channel 1 offset[0..3]
+// 0x16 - SST channel 1 offset[0..3]
  , 0.0, 0.0, 0.0, 0.0
 };
 
