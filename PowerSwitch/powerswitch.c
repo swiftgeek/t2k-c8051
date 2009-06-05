@@ -91,11 +91,19 @@ MSCB_INFO_VAR code vars[] = {
   4, UNIT_CELSIUS,  0, 0, MSCBF_FLOAT, "Temp3"  ,   &user_data.temperature[2], // 20
   4, UNIT_CELSIUS,  0, 0, MSCBF_FLOAT, "Temp4"  ,   &user_data.temperature[3], // 21
   4, UNIT_CELSIUS,  0, 0, MSCBF_FLOAT, "Temp5"  ,   &user_data.temperature[4], // 22
-  4, UNIT_CELSIUS,  0, 0, MSCBF_FLOAT, "Temp5"  ,   &user_data.temperature[5], // 23
+  4, UNIT_CELSIUS,  0, 0, MSCBF_FLOAT, "Temp6"  ,   &user_data.temperature[5], // 23
 
   4, UNIT_CELSIUS,  0, 0, MSCBF_FLOAT, "inTemp1"  ,   &user_data.localtemp[0], // 24
   4, UNIT_CELSIUS,  0, 0, MSCBF_FLOAT, "inTemp2"  ,   &user_data.localtemp[1], // 25
   4, UNIT_CELSIUS,  0, 0, MSCBF_FLOAT, "inTemp3"  ,   &user_data.localtemp[2], // 26
+
+  4, UNIT_CELSIUS,  0, 0, MSCBF_FLOAT, "LTemp1"  ,   &user_data.limit[0], // 27
+  4, UNIT_CELSIUS,  0, 0, MSCBF_FLOAT, "LTemp2"  ,   &user_data.limit[1], // 28 
+  4, UNIT_CELSIUS,  0, 0, MSCBF_FLOAT, "LTemp3"  ,   &user_data.limit[2], // 29
+  4, UNIT_CELSIUS,  0, 0, MSCBF_FLOAT, "LTemp4"  ,   &user_data.limit[3], // 30
+  4, UNIT_CELSIUS,  0, 0, MSCBF_FLOAT, "LTemp5"  ,   &user_data.limit[4], // 31
+  4, UNIT_CELSIUS,  0, 0, MSCBF_FLOAT, "LTemp6"  ,   &user_data.limit[5], // 32
+
   0
 };
 
@@ -144,6 +152,8 @@ void user_init(unsigned char init)
     user_data.control = 0;
     user_data.status = 0;
     sys_info.node_addr = cur_sub_addr();
+    for (i=0;i<6;i++)
+     user_data.limit[i] = 50.0;
   }
 
   // 0: open-drain, 1: push-pull
@@ -278,7 +288,7 @@ void user_loop(void)
   }
 
   for (i=0;i<6;i++) {
-    if ((user_data.temperature[i] > 50.0) && (user_data.temperature[i] < 200.))
+    if ((user_data.temperature[i] > user_data.limit[i]) && (user_data.temperature[i] < 200.))
         rESR |= (i<<(i+2));
   }
 #endif

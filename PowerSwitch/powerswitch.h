@@ -18,6 +18,7 @@ struct user_data_type {
   float         value[15];
   float         temperature[6];
   float         localtemp[3];
+  float         limit[6];
 };
 
 struct user_data_type xdata user_data;
