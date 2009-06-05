@@ -176,7 +176,7 @@ struct EEPAGE xdata eepage = {
 // Backdoor option offset 0x17 in Float
 // 0x17 - LvQ, LiQ,  Lp6Vd, Lp6Va, Ln6Va , Lp6Id, Lp6Ia , Lp6Id
  ,30.0, 0.0, 5.5, 5.5, -6.5, 0.0, 0.0, 0.0
-// 0x1F - HvQ, HiQ, Hp6Vd, Hp6Va, Hp6Va,  Hp6Id, Hp6Ia,  Hp6Id
+// 0x1F - HvQ, HiQ,  Hp6Vd, Hp6Va, Hn6Va,  Hp6Id, Hp6Ia,  Hp6Id
  ,73.0, 0.1, 6.5, 6.5, -5.5, 0.2, 0.8, 0.2
 // 0x27 - LuC Temperature,  HuC Temperature
  ,10., 50.
@@ -184,11 +184,11 @@ struct EEPAGE xdata eepage = {
  ,10. ,30.
 // 0x2B - LVQ, HVQ (V)
  ,-1.0 ,1.0
-// 0x2D - LVQ, HVQ (V)
+// 0x2D - LIQ, HIQ (uA)
  ,-0.1 ,1.0
 // 0x2F - LVBias, HVBias (V)
  ,0.0 ,73.0
-// 0x31 - LIBias, LVBias (uA)
+// 0x31 - LIBias, LIBias (uA)
  ,0.0 ,10.0
 // 0x33 - SST channel 1 offset[0..3]
  ,0.0, 0.0, 0.0, 0.0
@@ -283,9 +283,9 @@ sbit vReg1    = rESR ^ 10; //0x4  +6Vd
 sbit vReg2    = rESR ^ 11; //0x8  +6Va
 
 sbit vReg3    = rESR ^ 12; //0x10 -6Va
-sbit iReg1    = rESR ^ 13; //0x20 +6Id
+sbit iReg1    = rESR ^ 13; //0x20 -6Ia
 sbit iReg2    = rESR ^ 14; //0x40 +6Ia
-sbit iReg3    = rESR ^ 15; //0x80 -6Id
+sbit iReg3    = rESR ^ 15; //0x80 +6Id
 
 sbit uCT      = rESR ^ 0;  //0x100
 sbit IntssTT  = rESR ^ 1;  //0x200
