@@ -289,7 +289,7 @@ void user_loop(void)
 
   for (i=0;i<6;i++) {
     if ((user_data.temperature[i] > user_data.limit[i]) && (user_data.temperature[i] < 200.))
-        rESR |= (i<<(i+2));
+        rESR |= (1<<(i+2));
   }
 #endif
 
