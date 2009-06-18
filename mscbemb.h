@@ -116,6 +116,9 @@
 #ifdef treval_12x    // Evaluation card
 #define TREVAL_12X
 #endif
+#ifdef p0dps
+#define P0DPS
+#endif
 
 /*---- CPU specific items ------------------------------------------*/
 
@@ -598,9 +601,9 @@ sbit RS485_ENABLE = P0 ^ 2; //MSCB communication enable port
 #define MSCB_SPI_MOSI P2 ^ 5 
 
 // EEPROM
-//#define RAM_CHIP_SELECT    P2 ^ 0
-//#define RAM_HOLD_DOWN      P2 ^ 3
-//#define RAM_WRITE_PROTECT  P2 ^ 2
+#define RAM_CHIP_SELECT    P2 ^ 0
+#define RAM_HOLD_DOWN      P2 ^ 3
+#define RAM_WRITE_PROTECT  P2 ^ 2
 
 // SHT
 #define SHT_DATA1 P1^2
@@ -620,7 +623,6 @@ sbit RS485_ENABLE = P0 ^ 2; //MSCB communication enable port
 #endif
 // sbit DEBUG_PIN = P3 ^ 3;
    
-#define LED_ON 0 //defines LED "ON" as forcing the specified pin to low
 
 //
 // FEB64 Loader
@@ -646,6 +648,7 @@ sbit RS485_ENABLE = P0 ^ 2; //MSCB communication enable port
 // RS485
 #define LED_0 P2 ^ 7 
 sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
+#define LED_ON 0 //defines LED "ON" as forcing the specified pin to low
 
 //
 // CMB Loader
@@ -663,6 +666,7 @@ sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
 
 #define LED_0 P2 ^ 2 
 sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
+#define LED_ON 0 //defines LED "ON" as forcing the specified pin to low
 
 //
 // LPB Loader
@@ -689,6 +693,7 @@ sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
 #define RAM_WRITE_PROTECT  P2 ^ 0
 #define LED_0 P0 ^ 7 
 sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
+#define LED_ON 0 //defines LED "ON" as forcing the specified pin to low
 
 //
 // TEMP36 Loader
@@ -704,6 +709,8 @@ sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
 #define RAM_HOLD_DOWN      P2 ^ 3
 #define RAM_WRITE_PROTECT  P2 ^ 2
 #define LED_0 P2 ^ 7 
+#define LED_1 P2 ^ 6
+#define LED_ON 1
 sbit RS485_ENABLE = P0 ^ 2; //MSCB communication enable port
 
 #endif  // LOADER 
@@ -745,7 +752,13 @@ sbit RS485_ENABLE = P0 ^ 3;
 #define LED_ON 0
 sbit RS485_ENABLE = P0 ^ 2;
 /*--------------------------------*/
-
+#elif defined(P0DPS)
+#include <c8051F410.h>
+#define CPU_C8051F410
+sbit RS485_ENABLE = P0 ^ 6;
+#define LED_0 P0 ^ 2
+#define LED_1 P0 ^ 7
+#define LED_ON 1
 #else
 #error Please define SCS_xxx or HVR_xxx in project options
 #endif
@@ -773,7 +786,7 @@ sbit RS485_ENABLE = P0 ^ 2;
 #endif
 
 /* map SBUF0 & Co. to SBUF */
-#if !defined(CPU_C8051F020) && !defined(CPU_C8051F120) && !defined(CPU_C8051F310) && !defined(CPU_C8051F320)
+#if !defined(CPU_C8051F020) && !defined(CPU_C8051F120) && !defined(CPU_C8051F310) && !defined(CPU_C8051F320)&& !defined(CPU_C8051F410)
 #define SCON0    SCON
 #define SBUF0    SBUF
 #define TI0      TI
@@ -793,6 +806,9 @@ sbit RS485_ENABLE = P0 ^ 2;
 #elif defined(CPU_C8051F120)
 #define EEPROM_OFFSET 0xE000 // 0xE000-0xEFFF = 4kB
 #define N_EEPROM_PAGE      8 // 8 pages @ 512 bytes
+#elif defined(CPU_C8051F410)
+#define EEPROM_OFFSET 0x6000 // 0x6000-0x63FF = 1kB
+#define N_EEPROM_PAGE      2 // 8 pages @ 512 bytes
 #else
 #define EEPROM_OFFSET 0x6000 // 0x6000-0x6FFF = 4kB
 #define N_EEPROM_PAGE      8 // 8 pages @ 512 bytes
@@ -846,6 +862,15 @@ char putchar1(char c);                   // putchar cannot be used with LCD supp
          _nop_(); \
 }
 #elif defined(CPU_C8051F310)
+#define DELAY_US(_us) { \
+   unsigned char _i,_j; \
+   for (_i = (unsigned char) _us; _i > 0; _i--) { \
+      _nop_(); \
+      for (_j=3 ; _j>0 ; _j--) \
+         _nop_(); \
+   } \
+}
+#elif defined(CPU_C8051F410)
 #define DELAY_US(_us) { \
    unsigned char _i,_j; \
    for (_i = (unsigned char) _us; _i > 0; _i--) { \
