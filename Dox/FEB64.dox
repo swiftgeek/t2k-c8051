@@ -34,24 +34,23 @@ temperature monitoring and control/monitoring of the high voltage fed to the MPP
 
 @section feb64operation Operation
 - By default at power up the main elements of the card are kept unpowered.
-- By default configuration from page 1 of the onboard memory is
+- By default configuration from the EEPROM page 0 of the onboard memory is
 restored.
 
 - <b>To power up the card</b>:
-- CTL register : Set bit ^ 0 [0x1]
-- The CSR register will shows bit ^ 0 = 1/0 (1=on, 0=off)
+ - Write 0x1 to Control Register (MSCB(2))
+
+- The CSR register will show bit ^ 0 = 1/0 (1=on, 0=off)
 
 - <b>To power up the Charge pump</b>:
-- CTL register : Set bit ^ 1 [0x2] <i> this is a toggeling bit</i>
-- The CSR register will shows bit ^ 1 = 1/0 (1=on, 0=off)
-
-- <b>To power down the Charge pump</b>:
-- CTL register : Set bit ^ 1 [0x2] <i> this is a toggeling bit</i>
-- The CSR register will shows bit ^ 1 = 1/0 (1=on, 0=off)
+- The Charge Punmp is by default turned ON during the Card power up.
+- The CSR register will show bit ^ 1 = 1/0 (1=on, 0=off)
 
 - <b>To power down the card</b>:
 - CTL register : Set bit ^ 7 [0x80]  Manual Shutdown
-- The CSR register will shows bit ^ 0 = 1/0 (1=on, 0=off)
+- The CSR register will show:
+ - bit ^ 0 = 1/0 (1=on, 0=off)
+ - bit ^ 7 = 1/0 (1=Manual Shutdown done)
 
 @section febconvension Label convention
 @code
@@ -164,17 +163,19 @@ Board Temperature fault                            0x0200
 FGD detector Temperature fault                     0x0400
 EEPROM  R/W error                                  0x0800
 SST protocol error                                 0x1000
-
+read SST error                                     0x2000
+@endcode
+@code
 MSCB(2): Control    8bit U               0 (0x00/00000000) (WO)
 Turn ON Card                                         0x01
-Turn ON Charge Pump Voltage                          0x02
 Toggle Asum counter                                  0x04
 Initiate self-calibration procedure                  0x08
 Save current setting to EEPAGEx                      0x10
 Restore EEPAGEx to memory                            0x20
 Clear EEPAGEx                                        0x40
 Manual Card shutdown                                 0x80
-
+@endcode
+@code
 MSCB(3): Status     8bit U               3 (0x03/00000011) (RO)
 Card ON                                              0x01
 Charge Pump Voltage ON                               0x02
@@ -184,7 +185,8 @@ EEPAGEx save operation complete                      0x10
 EEPAGEx restore operation complete                   0x20
 System Shutdown                                      0x40
 Manual card shutdown                                 0x80
-
+@endcode
+@code
 MSCB(4): EEPage     8bit U               0 (0x00/00000000) (WO)
 EEPAGE number                                      [0..3]
 @endcode
@@ -274,16 +276,20 @@ See @ref feb64_limits
 @section feb64-SST MSCB Registers
 @code
 MSCB(15): uCTemp    32bit F     33.4 deg. celsius        (RO)
+MSCB(16): adcTemp   32bit F     33.4 deg. celsius        (RO)
+MSCB(17): aftTemp   32bit F     33.4 deg. celsius        (RO)
+MSCB(18): regTemp   32bit F     33.4 deg. celsius        (RO)
 
-MSCB(40): ssTemp0   32bit F     28.0806 deg. celsius     (RO)
-MSCB(41): ssTemp1   32bit F     28.2681 deg. celsius     (RO)
-MSCB(42): ssTemp2   32bit F     27.69 deg. celsius       (RO)
-MSCB(43): ssTemp3   32bit F     28.0181 deg. celsius     (RO)
+MSCB(19): ssTemp0   32bit F     28.0806 deg. celsius     (RO)
+MSCB(20): ssTemp1   32bit F     28.2681 deg. celsius     (RO)
+MSCB(21): ssTemp2   32bit F     27.69 deg. celsius       (RO)
+MSCB(22): ssTemp3   32bit F     28.0181 deg. celsius     (RO)
 
 MSCB(1): Error     16bit U               0 (0x0000)      (RO)
 micro-controller Temperature fault          0x0100
 Board Temperature fault                     0x0200
 SST protocol error                          0x1000
+read SST error                              0x2000
 @endcode
 
 @section DataSheets
@@ -298,27 +304,27 @@ Monitor periodically (~1HZ) the temperature within the FGD detector at the bus b
 position using the @ref SSTProtocol.
 
 @section Description
-same physical device used for the baord temperature.
+same physical device used for the board temperature.
 
 @section tempmscb MSCB Registers
 @code
-MSCB(16): Temp0     32bit F         21.7994 deg. celsius  (RO)
-MSCB(17): Temp1     32bit F         21.7994 deg. celsius  (RO)
-MSCB(18): Temp2     32bit F         21.8775 deg. celsius  (RO)
-MSCB(19): Temp3     32bit F         21.7212 deg. celsius  (RO)
-MSCB(20): Temp4     32bit F         21.8462 deg. celsius  (RO)
-MSCB(21): Temp5     32bit F         21.7212 deg. celsius  (RO)
-MSCB(22): Temp6     32bit F         21.8462 deg. celsius  (RO)
-MSCB(23): Temp7     32bit F          21.815 deg. celsius  (RO)
+MSCB(23): Temp0     32bit F         21.7994 deg. celsius  (RO)
+MSCB(24): Temp1     32bit F         21.7994 deg. celsius  (RO)
+MSCB(25): Temp2     32bit F         21.8775 deg. celsius  (RO)
+MSCB(26): Temp3     32bit F         21.7212 deg. celsius  (RO)
+MSCB(27): Temp4     32bit F         21.8462 deg. celsius  (RO)
+MSCB(28): Temp5     32bit F         21.7212 deg. celsius  (RO)
+MSCB(29): Temp6     32bit F         21.8462 deg. celsius  (RO)
+MSCB(30): Temp7     32bit F          21.815 deg. celsius  (RO)
 
 MSCB(1): Error      16bit U               0 (0x0000) (RO)
 FGD detector Temperature fault               0x0400
 SST protocol error                           0x1000
+read SST error                               0x2000
 @endcode
 
 @section Condition
-Board shutdown in case of over limit measurements
-Around 30 degC.
+Board shutdown in case of over limit measurements around 30 degC.
 See @ref feb64_limits
 
 @section Location
@@ -373,23 +379,23 @@ MSCB(6): rQpump     16bit U             906 (0x038A) byte   (WO)
 MSCB(7): VBias      32bit F         69.9437 volt            (RO)
 MSCB(8): IBias      32bit F          0.9975 milliampere     (RO)
 
-MSCB(24): VBMon0    32bit F         70.1584 volt            (RO)
-MSCB(25): VBMon1    32bit F         11.1906 volt            (RO)
-MSCB(26): VBMon2    32bit F          70.195 volt            (RO)
-MSCB(27): VBMon3    32bit F         70.1468 volt            (RO)
-MSCB(28): VBMon4    32bit F         70.1757 volt            (RO)
-MSCB(29): VBMon5    32bit F         69.4225 volt            (RO)
-MSCB(30): VBMon6    32bit F         70.2277 volt            (RO)
-MSCB(31): VBMon7    32bit F         70.1892 volt            (RO)
+MSCB(31): VBMon0    32bit F         70.1584 volt            (RO)
+MSCB(32): VBMon1    32bit F         11.1906 volt            (RO)
+MSCB(33): VBMon2    32bit F          70.195 volt            (RO)
+MSCB(34): VBMon3    32bit F         70.1468 volt            (RO)
+MSCB(35): VBMon4    32bit F         70.1757 volt            (RO)
+MSCB(36): VBMon5    32bit F         69.4225 volt            (RO)
+MSCB(37): VBMon6    32bit F         70.2277 volt            (RO)
+MSCB(38): VBMon7    32bit F         70.1892 volt            (RO)
 
-MSCB(32): IBMon0    32bit F               0 microampere     (RO)
-MSCB(33): IBMon1    32bit F        0.786781 microampere     (RO)
-MSCB(34): IBMon2    32bit F               0 microampere     (RO)
-MSCB(35): IBMon3    32bit F        0.655651 microampere     (RO)
-MSCB(36): IBMon4    32bit F         47.0698 microampere     (RO)
-MSCB(37): IBMon5    32bit F         44.3995 microampere     (RO)
-MSCB(38): IBMon6    32bit F         15.5807 microampere     (RO)
-MSCB(39): IBMon7    32bit F         36.8834 microampere     (RO)
+MSCB(39): IBMon0    32bit F               0 microampere     (RO)
+MSCB(40): IBMon1    32bit F        0.786781 microampere     (RO)
+MSCB(41): IBMon2    32bit F               0 microampere     (RO)
+MSCB(42): IBMon3    32bit F        0.655651 microampere     (RO)
+MSCB(43): IBMon4    32bit F         47.0698 microampere     (RO)
+MSCB(44): IBMon5    32bit F         44.3995 microampere     (RO)
+MSCB(45): IBMon6    32bit F         15.5807 microampere     (RO)
+MSCB(46): IBMon7    32bit F         36.8834 microampere     (RO)
 @endcode
 
 @section Condition
@@ -434,7 +440,8 @@ MSCB(2): Control    8bit U               0 (0x00/00000000)  (WO)
 Turn ON Charge Pump Voltage                          0x02
 
 MSCB(3): Status     8bit U               3 (0x03/00000011)  (RO)
-Charge Pump Voltage ON                               0x02
+Card ON                                               --^
+Charge Pump Voltage ON                               --^
 
 MSCB(6): rQpump    16bit U             906 (0x038A)         (WO)
 
@@ -527,6 +534,7 @@ IBMon     100R    1.    16 bits (65536)    1.25V      5.96E-9
 <a href=http://www.linear.com/pc/downloadDocument.do?navId=H0,C1,C1155,C1001,C1152,P36273,D19179 >16bit ADC LTC2495<a/>
 */
 
+
 <!----------------------------------------------------------------->
 /*!@page biasvolt Bias Voltage 0..5V
 
@@ -540,70 +548,70 @@ When the DAQ output is set at 0V, the voltage across the corresponding MPPC is a
 
 @section biasscb MSCB Registers
 @code
-MSCB(52):  rBias00    8bit U              30 (0x1E/00011110) (RO)
-MSCB(53):  rBias01    8bit U              26 (0x1A/00011010) (RO)
-MSCB(54):  rBias02    8bit U              24 (0x18/00011000) (RO)
-MSCB(55):  rBias03    8bit U              24 (0x18/00011000) (RO)
-MSCB(56):  rBias04    8bit U              26 (0x1A/00011010) (RO)
-MSCB(57):  rBias05    8bit U              27 (0x1B/00011011) (RO)
-MSCB(58):  rBias06    8bit U              29 (0x1D/00011101) (RO)
-MSCB(59):  rBias07    8bit U              34 (0x22/00100010) (RO)
-MSCB(60):  rBias08    8bit U              21 (0x15/00010101) (RO)
-MSCB(61):  rBias09    8bit U              31 (0x1F/00011111) (RO)
-MSCB(62):  rBias10    8bit U              31 (0x1F/00011111) (RO)
-MSCB(63):  rBias11    8bit U              37 (0x25/00100101) (RO)
-MSCB(64):  rBias12    8bit U              24 (0x18/00011000) (RO)
-MSCB(65):  rBias13    8bit U              27 (0x1B/00011011) (RO)
-MSCB(66):  rBias14    8bit U              11 (0x0B/00001011) (RO)
-MSCB(67):  rBias15    8bit U              22 (0x16/00010110) (RO)
-MSCB(68):  rBias16    8bit U              28 (0x1C/00011100) (RO)
-MSCB(69):  rBias17    8bit U              29 (0x1D/00011101) (RO)
-MSCB(70):  rBias18    8bit U              21 (0x15/00010101) (RO)
-MSCB(71):  rBias19    8bit U               5 (0x05/00000101) (RO)
-MSCB(72):  rBias20    8bit U              36 (0x24/00100100) (RO)
-MSCB(73):  rBias21    8bit U              15 (0x0F/00001111) (RO)
-MSCB(74):  rBias22    8bit U              13 (0x0D/00001101) (RO)
-MSCB(75):  rBias23    8bit U              24 (0x18/00011000) (RO)
-MSCB(76):  rBias24    8bit U               7 (0x07/00000111) (RO)
-MSCB(77):  rBias25    8bit U              20 (0x14/00010100) (RO)
-MSCB(78):  rBias26    8bit U              16 (0x10/00010000) (RO)
-MSCB(79):  rBias27    8bit U              16 (0x10/00010000) (RO)
-MSCB(80):  rBias28    8bit U              10 (0x0A/00001010) (RO)
-MSCB(81):  rBias29    8bit U              12 (0x0C/00001100) (RO)
-MSCB(82):  rBias30    8bit U              24 (0x18/00011000) (RO)
-MSCB(83):  rBias31    8bit U              34 (0x22/00100010) (RO)
-MSCB(84):  rBias32    8bit U              26 (0x1A/00011010) (RO)
-MSCB(85):  rBias33    8bit U              27 (0x1B/00011011) (RO)
-MSCB(86):  rBias34    8bit U              16 (0x10/00010000) (RO)
-MSCB(87):  rBias35    8bit U              30 (0x1E/00011110) (RO)
-MSCB(88):  rBias36    8bit U              28 (0x1C/00011100) (RO)
-MSCB(89):  rBias37    8bit U              19 (0x13/00010011) (RO)
-MSCB(90):  rBias38    8bit U              20 (0x14/00010100) (RO)
-MSCB(91):  rBias39    8bit U              24 (0x18/00011000) (RO)
-MSCB(92):  rBias40    8bit U              12 (0x0C/00001100) (RO)
-MSCB(93):  rBias41    8bit U              23 (0x17/00010111) (RO)
-MSCB(94):  rBias42    8bit U              20 (0x14/00010100) (RO)
-MSCB(95):  rBias43    8bit U              34 (0x22/00100010) (RO)
-MSCB(96):  rBias44    8bit U              24 (0x18/00011000) (RO)
-MSCB(97):  rBias45    8bit U              13 (0x0D/00001101) (RO)
-MSCB(98):  rBias46    8bit U              28 (0x1C/00011100) (RO)
-MSCB(99):  rBias47    8bit U              23 (0x17/00010111) (RO)
-MSCB(100): rBias48    8bit U              24 (0x18/00011000) (RO)
-MSCB(101): rBias49    8bit U              29 (0x1D/00011101) (RO)
-MSCB(102): rBias50    8bit U              17 (0x11/00010001) (RO)
-MSCB(103): rBias51    8bit U               8 (0x08/00001000) (RO)
-MSCB(104): rBias52    8bit U              29 (0x1D/00011101) (RO)
-MSCB(105): rBias53    8bit U              20 (0x14/00010100) (RO)
-MSCB(106): rBias54    8bit U              23 (0x17/00010111) (RO)
-MSCB(107): rBias55    8bit U              33 (0x21/00100001) (RO)
-MSCB(108): rBias56    8bit U              31 (0x1F/00011111) (RO)
-MSCB(109): rBias57    8bit U              32 (0x20/00100000) (RO)
-MSCB(110): rBias58    8bit U              29 (0x1D/00011101) (RO)
-MSCB(111): rBias59    8bit U              31 (0x1F/00011111) (RO)
-MSCB(112): rBias60    8bit U              26 (0x1A/00011010) (RO)
-MSCB(113): rBias61    8bit U               7 (0x07/00000111) (RO)
-MSCB(114): rBias62    8bit U               8 (0x08/00001000) (RO)
-MSCB(115): rBias63    8bit U              31 (0x1F/00011111) (RO)
+MSCB(55):  rBias00    8bit U              30 (0x1E/00011110) (RO)
+MSCB(56):  rBias01    8bit U              26 (0x1A/00011010) (RO)
+MSCB(57):  rBias02    8bit U              24 (0x18/00011000) (RO)
+MSCB(58):  rBias03    8bit U              24 (0x18/00011000) (RO)
+MSCB(59):  rBias04    8bit U              26 (0x1A/00011010) (RO)
+MSCB(60):  rBias05    8bit U              27 (0x1B/00011011) (RO)
+MSCB(61):  rBias06    8bit U              29 (0x1D/00011101) (RO)
+MSCB(62):  rBias07    8bit U              34 (0x22/00100010) (RO)
+MSCB(63):  rBias08    8bit U              21 (0x15/00010101) (RO)
+MSCB(64):  rBias09    8bit U              31 (0x1F/00011111) (RO)
+MSCB(65):  rBias10    8bit U              31 (0x1F/00011111) (RO)
+MSCB(66):  rBias11    8bit U              37 (0x25/00100101) (RO)
+MSCB(67):  rBias12    8bit U              24 (0x18/00011000) (RO)
+MSCB(68):  rBias13    8bit U              27 (0x1B/00011011) (RO)
+MSCB(69):  rBias14    8bit U              11 (0x0B/00001011) (RO)
+MSCB(70):  rBias15    8bit U              22 (0x16/00010110) (RO)
+MSCB(71):  rBias16    8bit U              28 (0x1C/00011100) (RO)
+MSCB(72):  rBias17    8bit U              29 (0x1D/00011101) (RO)
+MSCB(73):  rBias18    8bit U              21 (0x15/00010101) (RO)
+MSCB(74):  rBias19    8bit U               5 (0x05/00000101) (RO)
+MSCB(75):  rBias20    8bit U              36 (0x24/00100100) (RO)
+MSCB(76):  rBias21    8bit U              15 (0x0F/00001111) (RO)
+MSCB(77):  rBias22    8bit U              13 (0x0D/00001101) (RO)
+MSCB(78):  rBias23    8bit U              24 (0x18/00011000) (RO)
+MSCB(79):  rBias24    8bit U               7 (0x07/00000111) (RO)
+MSCB(80):  rBias25    8bit U              20 (0x14/00010100) (RO)
+MSCB(81):  rBias26    8bit U              16 (0x10/00010000) (RO)
+MSCB(82):  rBias27    8bit U              16 (0x10/00010000) (RO)
+MSCB(83):  rBias28    8bit U              10 (0x0A/00001010) (RO)
+MSCB(84):  rBias29    8bit U              12 (0x0C/00001100) (RO)
+MSCB(85):  rBias30    8bit U              24 (0x18/00011000) (RO)
+MSCB(86):  rBias31    8bit U              34 (0x22/00100010) (RO)
+MSCB(87):  rBias32    8bit U              26 (0x1A/00011010) (RO)
+MSCB(88):  rBias33    8bit U              27 (0x1B/00011011) (RO)
+MSCB(89):  rBias34    8bit U              16 (0x10/00010000) (RO)
+MSCB(90):  rBias35    8bit U              30 (0x1E/00011110) (RO)
+MSCB(91):  rBias36    8bit U              28 (0x1C/00011100) (RO)
+MSCB(92):  rBias37    8bit U              19 (0x13/00010011) (RO)
+MSCB(93):  rBias38    8bit U              20 (0x14/00010100) (RO)
+MSCB(94):  rBias39    8bit U              24 (0x18/00011000) (RO)
+MSCB(95):  rBias40    8bit U              12 (0x0C/00001100) (RO)
+MSCB(96):  rBias41    8bit U              23 (0x17/00010111) (RO)
+MSCB(97):  rBias42    8bit U              20 (0x14/00010100) (RO)
+MSCB(98):  rBias43    8bit U              34 (0x22/00100010) (RO)
+MSCB(99):  rBias44    8bit U              24 (0x18/00011000) (RO)
+MSCB(100): rBias45    8bit U              13 (0x0D/00001101) (RO)
+MSCB(101): rBias46    8bit U              28 (0x1C/00011100) (RO)
+MSCB(102): rBias47    8bit U              23 (0x17/00010111) (RO)
+MSCB(103): rBias48    8bit U              24 (0x18/00011000) (RO)
+MSCB(104): rBias49    8bit U              29 (0x1D/00011101) (RO)
+MSCB(105): rBias50    8bit U              17 (0x11/00010001) (RO)
+MSCB(106): rBias51    8bit U               8 (0x08/00001000) (RO)
+MSCB(107): rBias52    8bit U              29 (0x1D/00011101) (RO)
+MSCB(108): rBias53    8bit U              20 (0x14/00010100) (RO)
+MSCB(109): rBias54    8bit U              23 (0x17/00010111) (RO)
+MSCB(110): rBias55    8bit U              33 (0x21/00100001) (RO)
+MSCB(111): rBias56    8bit U              31 (0x1F/00011111) (RO)
+MSCB(112): rBias57    8bit U              32 (0x20/00100000) (RO)
+MSCB(113): rBias58    8bit U              29 (0x1D/00011101) (RO)
+MSCB(114): rBias59    8bit U              31 (0x1F/00011111) (RO)
+MSCB(115): rBias60    8bit U              26 (0x1A/00011010) (RO)
+MSCB(116): rBias61    8bit U               7 (0x07/00000111) (RO)
+MSCB(117): rBias62    8bit U               8 (0x08/00001000) (RO)
+MSCB(118): rBias63    8bit U              31 (0x1F/00011111) (RO)
 @endcode
 
 @section DataSheet
@@ -621,14 +629,14 @@ The 8 logical signals from the 8 sums is then serialized and sent to the CMB for
 
 @section asummscb MSCB Registers
 @code
-MSCB(44): rAsum0    16bit U               0 (0x0000) (WO)
-MSCB(45): rAsum1    16bit U               0 (0x0000) (WO)
-MSCB(46): rAsum2    16bit U               0 (0x0000) (WO)
-MSCB(47): rAsum3    16bit U               0 (0x0000) (WO)
-MSCB(48): rAsum4    16bit U               0 (0x0000) (WO)
-MSCB(49): rAsum5    16bit U               0 (0x0000) (WO)
-MSCB(50): rAsum6    16bit U               0 (0x0000) (WO)
-MSCB(51): rAsum7    16bit U               0 (0x0000) (WO)
+MSCB(47): rAsum0    16bit U               0 (0x0000) (WO)
+MSCB(48): rAsum1    16bit U               0 (0x0000) (WO)
+MSCB(49): rAsum2    16bit U               0 (0x0000) (WO)
+MSCB(50): rAsum3    16bit U               0 (0x0000) (WO)
+MSCB(51): rAsum4    16bit U               0 (0x0000) (WO)
+MSCB(52): rAsum5    16bit U               0 (0x0000) (WO)
+MSCB(53): rAsum6    16bit U               0 (0x0000) (WO)
+MSCB(54): rAsum7    16bit U               0 (0x0000) (WO)
 @endcode
 
 @section DataSheet
@@ -689,7 +697,8 @@ float vBiasOffset[8];
 @endcode
 
 The Write operation requires extra time. The completion of the Write operation is confirmed
-when and only when the control bit is turned off, status will reflect operation completion.
+when and only when the control bit is turned off, status will reflect operation completion
+as well.
 
 @section feb64-eeprom MSCB Registers
 @code
@@ -707,7 +716,7 @@ EEPAGE number                                       [0..3]
 
 @section Operation
 The following steps will be used to store data into the page 2 of the external EEPROM.
--# w 4 2      // Set EEpage 2 to access
+-# w 4 2      // Set EEpage 2 for operation.
 -# w 2 0x10   // Initiate Save command
 -# Wait for control bit turned off and status turned on.
 
@@ -728,13 +737,21 @@ please contact FGD-Slow Control Software team (midas@triumf.ca)...
 <br>(L:Lower limit,H:Higher limit,p:Positive,n:Negative,d:Digital,a:Analog)
 @code
 // Unit in Volt, Ampere, Celsius deg.
-// 0x17 - LvQ, LiQ,  Lp6Vd, Lp6Va, Ln6Va , Lp6Ia, Lp6Ia , Lp6Id
-       ,30.0, 0.0, 5.5, 5.5, -6.5, 0.0, 0.0, 0.0
-// 0x1F - HvQ, HiQ, Hp6Vd, Hp6Va, Hp6Va,  Hp6Ia, Hp6Ia,  Hp6Id
-       ,73.0, 0.1, 6.5, 6.5, -5.5, 0.2, 0.8, 0.2
+// 0x17 - LvQ, LiQ,  Lp6Vd, Lp6Va, Ln6Va , Lp6Id, Lp6Ia , Lp6Id
+ ,30.0, 0.0, 5.5, 5.5, -6.5, 0.0, 0.0, 0.0
+// 0x1F - HvQ, HiQ,  Hp6Vd, Hp6Va, Hn6Va,  Hp6Id, Hp6Ia,  Hp6Id
+ ,73.0, 0.1, 6.5, 6.5, -5.5, 0.2, 0.8, 0.2
 // 0x27 - LuC Temperature,  HuC Temperature
-        ,18., 50.
+ ,10., 50.
 // 0x29 - LSST Temperature,  HSST Temperature
-        ,18. ,30.
+ ,10. ,30.
+// 0x2B - LVQ, HVQ (V)
+ ,-1.0 ,1.0
+// 0x2D - LIQ, HIQ (uA)
+ ,-0.1 ,1.0
+// 0x2F - LVBias, HVBias (V)
+ ,0.0 ,73.0
+// 0x31 - LIBias, LIBias (uA)
+ ,0.0 ,10.0
 @endcode
 */

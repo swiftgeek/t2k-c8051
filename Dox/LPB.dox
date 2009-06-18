@@ -1,17 +1,17 @@
-/*! @page LPB LPB board 
+/*! @page LPB LPB board
 
 @section lpbpurpose Purpose
-The Light Pulser Board (LPB) handles the operation of the LED light flasher foo all the 
+The Light Pulser Board (LPB) handles the operation of the LED light flasher for all the
 MPPC channels of one crate.
 
 @section LPBfunctions Functions
 - @ref lpbinternaluit : Board condition monitoring.
 - @ref lpbuimonitoring : Voltages and Currents monitoring.
 - @ref lpbboardtemperatures : Board and micro controller temperature monitoring.
-  
+
  * <center> Block Diagram layout.
  *  \image html LPB-block.jpg
- * </center> 
+ * </center>
 
 @section LPBoperation Card Operation
 - By default at power up the main elements of the card are kept unpowered.
@@ -20,12 +20,10 @@ MPPC channels of one crate.
  - CTL register : Set bit ^ 0 [0x1]
  - The CSR register will shows bit ^ 0 = 1/0 (1=on, 0=off)
 
-  
 - <b>To power down the card</b>:
  - CTL register : Set bit ^ 7 [0x80]  Manual Shutdown
  - The CSR register will shows bit ^ 0 = 1/0 (1=on, 0=off)
 
- 
 @section LPBlocation Location
 This card is located in each "crate" mounted on the surrounding structure
 of each FGD (24 crates per FGD). Each crate contains 1 LPB card.
@@ -35,8 +33,8 @@ of each FGD (24 crates per FGD). Each crate contains 1 LPB card.
 /*!@page lpbinternaluit LPB board condition monitoring
 
 @section Purpose
-Monitor periodically (~1Hz) all the DC Voltages required for the proper 
-operation of the LPB card. Corresponding current consumption is also 
+Monitor periodically (~1Hz) all the DC Voltages required for the proper
+operation of the LPB card. Corresponding current consumption is also
 monitored as well as the local board temperature and the FPGA inner temperature.
 The LPB can be controlled for the following operation:
 - Manual Power Up sequence, ie: turn ON all the DC Voltage (Def:OFF)
@@ -51,15 +49,49 @@ The LPB can be controlled for the following operation:
 
 @section cmb-internal MSCB Registers
 @code
-MSCB(?): Float: ssTemp[3..0] : Board Temperature [C]   
-MSCB(?) : WORD : Error^2 : +6Vdigital error []
-MSCB(1) : WORD : Error^8 :  uCTemp error    []
-...
+MSCB(0) : SerialN   32bit U       76500098 (0x048F4C82) byte      (RO)
+MSCB(1) : Error      8bit U              0 (0x00/00000000) byte   (RO)
+IntssTT                                            0x0004
+Ext1ssTT                                           0x0008
+Ext2ssTT                                           0x0010
+EEPerror                                           0x0020
+                           0x0040
++6Vdigital Voltage fault                           0x0080
+micro-controller Temperature fault                 0x0100
+Board Temperature fault                            0x0200
+MSCB(2) : eepage     8bit U              0 (0x00/00000000) byte   (WO)
+MSCB(5) : DtoAshft  32bit F              0 volt                   (RO)
+MSCB(6) : pDVsc     32bit F        6.01265 volt                   (RO)
+MSCB(7) : pDIsc     32bit F    0.000976563 ampere                 (RO)
+MSCB(8) : pDV6      32bit F       0.809011 volt                   (RO)
+MSCB(9) : pDI6      32bit F              0 ampere                 (RO)
+MSCB(10): pDI5      32bit F              0 ampere                 (RO)
+MSCB(11): pDI33     32bit F              0 ampere                 (RO)
+MSCB(12): pDI18     32bit F              0 ampere                 (RO)
+MSCB(13): uCTemp    32bit F           38.5 deg. celsius           (RO)
+MSCB(14): IntTemp   32bit F        27.2525 deg. celsius           (RO)
+MSCB(15): 58Temp    32bit F        90.6743 deg. celsius           (RO)
+MSCB(16): 33Temp    32bit F        96.6275 deg. celsius           (RO)
+MSCB(17): SHTtemp   32bit F          24.33 deg. celsius           (RO)
+MSCB(18): RHumid    32bit F        43.2101 percent                (RO)
+MSCB(19): DtoAshft  32bit F              0 byte                   (RO)
+MSCB(20): rpDVsc    32bit F            602 byte                   (RO)
+MSCB(21): rpDIsc    32bit F              1 byte                   (RO)
+MSCB(22): rpDV6     32bit F             82 byte                   (RO)
+MSCB(23): rpDI6     32bit F              0 byte                   (RO)
+MSCB(24): rpDI5     32bit F              0 byte                   (RO)
+MSCB(25): rpDI33    32bit F              0 byte                   (RO)
+MSCB(26): rpDI18    32bit F              0 byte                   (RO)
+MSCB(27): rdac       8bit U              0 (0x00/00000000) byte   (WO)
+MSCB(28): watchdog   8bit U             77 (0x4D/01001101) byte   (RO)
+MSCB(29): spare2    16bit U              0 (0x0000) byte          (RO)
+MSCB(30): eepValue  32bit F              0 byte                   (RW)
+MSCB(31): eeCtrSet  32bit U              0 (0x00000000) byte      (WO)
 @endcode
-*/                         
+*/
 
 /*!<!----------------------------------------------------------------->*/
-/*!@page lpbuimonitoring Vreg U/I Monitoring 
+/*!@page lpbuimonitoring Vreg U/I Monitoring
 
 @section monitoringpurpose Purpose
 Obtain continuous information regarding the LPB voltage and current of the regulators.
@@ -68,40 +100,44 @@ This information is compared to pre-set parameters for possible actions.
 @section VoltageMonSec Voltage monitoring
 * <center> Diagram and Equations for monitoring voltage:
 * \image html VoltageMon.jpg
-* </center> 
+* </center>
 
 <center> Table of values associated with VMon </center>
 @code
-Usource   R1       R2         Attenuation   #of bits       VREF,Vref    (VREF/# of bits)   Offset      ConverFactor (V/Byte)
-+DIG_4V   18k/1%   6.04k/1%   0.2512479     10 bits(1024)  2.43V         0.002373          N/A         0.00944
+Usource   R1       R2      Attenuation   #of bits        VREF,Vref   (VREF/# of bits)  Offset      ConverFactor (V/Byte)
++6Vdd     6.8K    2.2K     4.091         10 bits(1024)   2.43V       0.002373          N/A         0.00944
++6Vss     6.8K    2.2K     4.091         10 bits(1024)   2.43V       0.002373          N/A         0.00944
 @endcode
 
-@section VMonExamples 
+@section VMonExamples
 * <center>
 *\image html VMonExample.jpg
 * </center>
 
+<!----------------------------------------------------------------->
 @section CurrentMonSec Current monitoring
 * <center> Diagram and equation for monitoring current:
 * \image html CurrentMon.jpg
-* </center> 
-
+* </center>
 
 <center>Table of values associated with IMon</center>
-@code 
-Isource    R1      1/Gain    #of bits          VREF      VREF/# of bits   ConversionFactor(mA/Byte)
-+DIG_4V    0.05R   100       10 bits (1024)    2.43V     0.002373         474.6
+@code
+Isource     R1      A/V    #of bits          VREF      A/DAC
++6Vss       0.05R   0.4    10 bits (1024)    2.43V     0.000949
++6Vdd       0.2R    0.4    10 bits (1024)    2.43V     0.000237
++5Vreg      0.2R    0.4    10 bits (1024)    2.43V     0.000237
++3.3Vreg    0.2R    0.4    10 bits (1024)    2.43V     0.000237
++1.8Vreg    0.2R    0.4    10 bits (1024)    2.43V     0.000237
 @endcode
 
-@section IMonExamples 
+@section IMonExamples
 * <center>
 *\image html IMonExample.jpg
 * </center>
 
 @section Condition
- - +I6a >= 10A : Board shutdown
+ - None for now : Board shutdown
  -
-....
 
 @section DataSheets
 <a hrf=http://www.chipcatalog.com/Datasheet/A0392B99E733E7F9E0AD6CB4C8AC3C4E.htm >INA194AIDBVT</a>
@@ -111,20 +147,19 @@ Isource    R1      1/Gain    #of bits          VREF      VREF/# of bits   Conver
 /*!@page lpbboardtemperatures Board Temperature monitoring
 
 @section Purpose
-Monitor periodically (~1Hz) the internal temperature of the micro-controller as well as the FPGA temperature.
+Monitor periodically (~1Hz) the internal temperature of the micro-controller as well as two location
+on the board close to the Voltage regulators.
 For the uC, the temperature is readout through its internal ADC[8].
-For board temperature, dedicated device ADT7486A used for the remote temperature has an internal sensor. This device uses a particular @ref SSTProtocol. 
+For board temperature, dedicated device ADT7486A used for the remote temperature has an internal sensor.
 
 @section Condition
-- T > 60degC : Shutdown LPB card.
+- None for now : Shutdown LPB card.
 
 @section cmb-SST MSCB Registers
 @code
-MSCB(?)  : Float  : ssTemp[3..0] : The LPB board temperature
-MSCB(?)  : Float  : uCTemp       : The SC's micro-controller internal temperature
-MSCB(?)  : Float  : FPGATemp     : The FPGA internal temperature
-MSCB(1)   : Word  : Error^8      : The micro-controller internal temperature exceeded its threshold
+MSCB(13): uCTemp    32bit F           38.5 deg. celsius           (RO)
+MSCB(14): IntTemp   32bit F        27.2525 deg. celsius           (RO)
+MSCB(15): 58Temp    32bit F        90.6743 deg. celsius           (RO)
+MSCB(16): 33Temp    32bit F        96.6275 deg. celsius           (RO)
 @endcode
-*/
-
 */

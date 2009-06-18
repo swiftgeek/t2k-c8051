@@ -2,7 +2,7 @@
 
 Online documentation for the slow control firmware code based
 on the 8051 micro-controller Silabs series 133 running under the MSCB OS.
-Describe the functionality and implementation of the slow control (SC)
+Described here beloaw are the functionalities and implementation of the slow control (SC)
 used in the different sub-projects of the FGD electronics.
 
 The <a href=http://ladd00.triumf.ca/viewcvs/fgddaq/trunk/slowcontrol/c8051 >SVN</a>
@@ -14,17 +14,20 @@ repository is organized as follow:
   - LPB    : Light Pulser Board
   - GSCIO  : General Slow Control IO
   - LOADER : Initial micro-Controlled (uC) firmware
-- Devices/
+  - TEMP36 : Project 36 channels Temperature readout
+  - /PowerSwitch/ : DCC 6 channnel Power switch
+  - /TPC-HV/ : Project Bertan HV control (GPIB)
+ - Devices/
   - All FEB64, CMB, LPB device drivers
-- Protocols/
+ - Protocols/
   - SPI, SMB, SST buses
-- Support/
+ - Support/
   - Supporting files for this documentation
-- Dox/
+ - Dox/
   - The plain ASCII documentation
-- html/
+ - html/
   - The web based documentation
-- Projects
+ - Projects
   - private development area 
 @endcode
 
@@ -32,7 +35,8 @@ repository is organized as follow:
 @arg @ref FEB64     Front End Board 64 channels MPPC readout.
 @arg @ref CMB       Crate Master Board controlling 4 FEB64.
 @arg @ref LPB       Light Pulser Board.
-@arg @ref TTB       TPC 36 Temperature sense Board.
+@arg @ref TEMP36    TPC 36 Temperature sense Board.
 @arg @ref GSCIO     General MSCB use mostly for Temperature/Humidity readout.
+@arg @ref PWRSWITCH 6 channel Power Switch for the DCC.
 */
 
