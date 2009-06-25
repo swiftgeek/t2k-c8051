@@ -1016,7 +1016,11 @@ void watchdog_refresh(unsigned char from_interrupt) reentrant
       EXT_WATCHDOG_PIN = !EXT_WATCHDOG_PIN;
 #else
 #if defined(CPU_C8051F310) || defined(CPU_C8051F320) || defined(CPU_C8051F410)
+#if defined(CPU_C8051F410)
+      PCA0CPH5 = 0x00;
+#else
       PCA0CPH4 = 0x00;
+#endif
 #else
       WDTCN = 0xA5;
 #endif
@@ -1053,13 +1057,22 @@ void watchdog_enable(unsigned char timeout)
 
 #ifndef EXT_WATCHDOG
 #if defined(CPU_C8051F310) || defined(CPU_C8051F320) || defined(CPU_C8051F410)
+#if defined(CPU_C8051F410)
+   PCA0MD   = 0x00;             // disable watchdog
+   PCA0CPL5 = 255;              // 65.5 msec @ 12 MHz
+   PCA0MD   = 0x40;             // enable watchdog
+   PCA0CPH5 = 0x00;             // reset watchdog
+
+   RSTSRC   = 0x06;             // enable missing clock detector and 
+#else                                // VDD monitor as reset source
    PCA0MD   = 0x00;             // disable watchdog
    PCA0CPL4 = 255;              // 65.5 msec @ 12 MHz
    PCA0MD   = 0x40;             // enable watchdog
    PCA0CPH4 = 0x00;             // reset watchdog
 
    RSTSRC   = 0x06;             // enable missing clock detector and 
-                                // VDD monitor as reset sourse
+                                // VDD monitor as reset source
+#endif
 #else /* CPU_C8051F310 */
 
    WDTCN    = 0x07;             // 95 msec (11.052 MHz) / 21msec (49 MHz)
@@ -1123,7 +1136,11 @@ void watchdog_int(void) reentrant
       EXT_WATCHDOG_PIN = !EXT_WATCHDOG_PIN;
 #else
 #if defined(CPU_C8051F310) || defined(CPU_C8051F320) || defined(CPU_C8051F410)
+#if defined(CPU_C8051F410)
+      PCA0CPH5 = 0x00;
+#else
       PCA0CPH4 = 0x00;
+#endif
 #else
       WDTCN = 0xA5;
 #endif
