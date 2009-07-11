@@ -266,7 +266,7 @@ FEB64 board temperature using @ref SSTProtocol
 @section Description
 For the uC, the temperature is readout through its internal ADC[8].
 For board temperature, dedicated device ADT7486A used for the remote temperature has an internal
-sensor. This device uses a particular @ref SSTProtocol.
+sensor (see @ref busboardtemperature), this device uses a particular @ref SSTProtocol.
 
 @section Condition
 Board shutdown in case of over limit measurements
@@ -304,7 +304,12 @@ Monitor periodically (~1HZ) the temperature within the FGD detector at the bus b
 position using the @ref SSTProtocol.
 
 @section Description
-same physical device used for the board temperature.
+The ADT7486 provides one internal and 2 remote temperature sensor monitoring.
+The remote sensors are NP junction. The same device is used for the TEMP36 card and two reports
+can be found here
+<a href=../support/TEMP36-report.pdf > Noel Wu's report </a>, 
+<a href=http://www.nd280.org/tpc/wp/wp2/temperature/temp-board-status-20090310.pdf >
+Blair Jamieson's report</a>.
 
 @section tempmscb MSCB Registers
 @code
@@ -329,7 +334,7 @@ See @ref feb64_limits
 
 @section Location
 On the perimeter of the FGD each section one temperature sensor for every 8
-consecutive MPPC.
+consecutive MPPC mounted on the bus board.
 
 @section DataSheets
 <a href=http://www.onsemi.com/pub_link/Collateral/ADT7484A-86A-D.PDF >Digital Temperature Sensor ADT7484A</a>
