@@ -23,7 +23,7 @@ Program Size: data=221.1 xdata=242 code=15704
 /* declare number of sub-addresses to framework */
 unsigned char idata _n_sub_addr = 1;
 
-char code node_name[] = "TPC_HV";
+char code node_name[] = "BERTANCC";
 char xdata svn_rev_code[] = "$Rev$";
 
 #define MAX_VOLTAGE 28000  // maximum voltage in Volts - this is a hard limit
@@ -41,7 +41,8 @@ unsigned char idata chn_bits=0;
 #define RAMP_DOWN          (1<<2)
 #define HV_LIMIT_CHANGED   (1<<3)
 #define CUR_LIMIT_CHANGED  (1<<4)
-
+#define CUR_LIMIT_BYPASS   (1<<7)
+int Ibypass = 0;
 float xdata u_actual;
 unsigned long xdata t_ramp;
 char xdata str[32], *buf;
@@ -210,10 +211,10 @@ void user_init (unsigned char init)
   }
   sprintf (user_data.warning, "current OK");
 
- // set_voltage_limit(user_data.u_limit);
- // set_current_limit(user_data.i_limit);
+  set_voltage_limit(user_data.u_limit);
+  set_current_limit(user_data.i_limit);
 
- // read_hvi();                                // check to see if hv is already on
+  read_hvi();                                // check to see if hv is already on
 
   if ( user_data.u_meas < 10 )               // bertan hv must be off
   {
@@ -242,6 +243,12 @@ void user_write(unsigned char index) reentrant  // index corresponds to MSCB_INF
    if (index == 1) {
       /* indicate new demand voltage */
       chn_bits |= DEMAND_CHANGED;
+   }
+
+   /* Bypass limit */
+   if (index == 0) {
+        if (user_data.status == CUR_LIMIT_BYPASS)
+          Ibypass = (Ibypass == 1) ? 0 : 1;
    }
 
    /* check voltage limit */
@@ -333,6 +340,7 @@ unsigned char send(unsigned char adr, char *str)
 
   /*---- address cycle ----*/
 
+//   GPIB_REN = 0;
    GPIB_ATN = 0;                // assert attention
    send_byte(0x3F);             // unlisten
    send_byte(0x5F);             // untalk
@@ -344,12 +352,14 @@ unsigned char send(unsigned char adr, char *str)
 //   len = strlen(str);
    for (i = 0; str[i] > 0; i++) {
       s = send_byte(str[i]);
+      GPIB_REN = 1;
       if (s == 0) return 0;
    }
 
    GPIB_EOI = 0;
    send_byte(0x0A);             // NL
    GPIB_EOI = 1;
+   GPIB_REN = 1;
 
    return i;
 }
@@ -362,7 +372,7 @@ unsigned char enter(unsigned char adr, char *str, unsigned char maxlen)
    unsigned int j;
 
   /*---- address cycle ----*/
-
+//   GPIB_REN = 0;
    GPIB_ATN = 0;                // assert attention
    send_byte(0x3F);             // unlisten
    send_byte(0x5F);             // untalk
@@ -394,10 +404,9 @@ unsigned char enter(unsigned char adr, char *str, unsigned char maxlen)
       if (GPIB_DAV == 1) {
          GPIB_NDAC = 1;
          GPIB_NRFD = 1;
+         GPIB_REN = 1;
          return 0;           // timeout
       }
-
-//      led_blink(1, 1, 100);     // signal data received
 
       GPIB_NRFD = 0;            // signal busy
 
@@ -427,7 +436,7 @@ unsigned char enter(unsigned char adr, char *str, unsigned char maxlen)
    send_byte(0x3F);             // unlisten
    send_byte(0x5F);             // untalk
    GPIB_ATN = 1;                // remove attention
-
+   GPIB_REN = 1;
    return i;
 }
 
@@ -496,6 +505,12 @@ void read_hvi(void)
 //-PAA For test
 //  sprintf(str, "N V12.345K 987.54U");
 
+  if (Ibypass) {
+    DISABLE_INTERRUPTS;
+    sprintf (user_data.warning, "Warning! Current Limit bypassed");
+    ENABLE_INTERRUPTS;
+    return;
+  }
   hv  =  str[8] - 48;
   hv += (str[7] - 48)*10;
   hv += (str[6] - 48)*100;

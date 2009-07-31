@@ -113,6 +113,9 @@
 #ifdef tpc_hv_gpib_310    // HV control through GPIB
 #define TPC_HV_GPIB_310
 #endif
+#ifdef tpc_hv_gpib_410	// HV control through GPIB
+#define TPC_HV_GPIB_410
+#endif
 #ifdef rf_gpib_310      // GPIB
 #define RF_GPIB_310
 #endif
@@ -396,7 +399,6 @@ sbit RS485_ENABLE = P0 ^ 3;
 // connected to a spare pin (NC) and secondary LED, LED_1, 
 // is made to be undefined. It is only used in mscbutil 
 // libraries and we don't have it physically.
-// 
  
 #define LED_0 P1 ^ 7 
 
@@ -426,6 +428,7 @@ sbit P1_0 = SST2_REF; // the bit that controls and reads from P1 ^ 0
 
 sbit RS485_ENABLE = P0 ^ 3; //MSCB communication enable port
 /*--------------------------------*/
+
 #elif defined(T2KASUM)
 #include <c8051F310.h>
 #define  CPU_C8051F310
@@ -661,6 +664,15 @@ sbit RS485_ENABLE = P0 ^ 3;
 #define LED_ON 1
 sbit RS485_ENABLE = P0 ^ 3;
 /*--------------------------------*/
+#elif defined(TPC_HV_GPIB_410)
+#include <c8051F410.h>
+#define CPU_C8051F410
+
+#define LED_0 P0 ^ 7
+#define LED_1 P0 ^ 2
+#define LED_ON 1
+sbit RS485_ENABLE = P0 ^ 6;
+/*--------------------------------*/
 #elif defined(TREVAL_12X)
 #include <c8051F120.h>
 #define CPU_C8051F120
@@ -698,8 +710,8 @@ sbit RS485_ENABLE = P0 ^ 2;
 #endif
 
 /* map SBUF0 & Co. to SBUF */
-#if !defined(CPU_C8051F020) && !defined(CPU_C8051F120) && !defined(CPU_C8051F310) && !defined(CPU_C8051F320)
-#define SCON0    SCON
+#if !defined(CPU_C8051F020) && !defined(CPU_C8051F120) && !defined(CPU_C8051F310) && !defined(CPU_C8051F320) && !defined(CPU_C8051F410)
+#define SCON0    SCON 
 #define SBUF0    SBUF
 #define TI0      TI
 #define RI0      RI
@@ -712,7 +724,7 @@ sbit RS485_ENABLE = P0 ^ 2;
 #define PS0      PS
 #endif
 
-#if defined(CPU_C8051F310) || defined(CPU_C8051F320)
+#if defined(CPU_C8051F310) || defined(CPU_C8051F320) || defined(CPU_C8051F410)
 #define EEPROM_OFFSET 0x3A00 // 0x3A00-0x3BFF = 0.5kB, 0x3C00 cannot be erased!
 #define N_EEPROM_PAGE      1 // 1 page  @ 512 bytes
 #elif defined(CPU_C8051F120)
@@ -771,6 +783,15 @@ char putchar1(char c);                   // putchar cannot be used with LCD supp
          _nop_(); \
 }
 #elif defined(CPU_C8051F310)
+#define DELAY_US(_us) { \
+   unsigned char _i,_j; \
+   for (_i = (unsigned char) _us; _i > 0; _i--) { \
+      _nop_(); \
+      for (_j=3 ; _j>0 ; _j--) \
+         _nop_(); \
+   } \
+}
+#elif defined(CPU_C8051F410)
 #define DELAY_US(_us) { \
    unsigned char _i,_j; \
    for (_i = (unsigned char) _us; _i > 0; _i--) { \

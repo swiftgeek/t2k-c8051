@@ -66,7 +66,7 @@ void send_remote_var(unsigned char i);
 #if defined(CPU_C8051F020) || defined(CPU_C8051F120)
 unsigned char xdata in_buf[64], out_buf[64]; /* limited by USB block size */
 #else
-unsigned char idata in_buf[20], out_buf[8];
+unsigned char idata in_buf[32], out_buf[32];
 #endif
 
 unsigned char idata i_in, last_i_in, final_i_in, i_out, cmd_len;
@@ -219,7 +219,7 @@ void setup(void)
    OSCXCN = 0x67;               // Crystal mode, Power Factor 22E6
    OSCICN = 0x08;               // CLKSL=1 (external)
 
-#elif defined(CPU_C8051F310) || defined(CPU_C8051F320)
+#elif defined(CPU_C8051F310) || defined(CPU_C8051F320) || defined(CPU_C8051F410)
 
    XBR0 = 0x01;                 // Enable RX/TX
    XBR1 = 0x40;                 // Enable crossbar
@@ -227,11 +227,21 @@ void setup(void)
 #ifdef SCS_320
    P0MDOUT = 0x18;              // P0.3:TX, P0.4:RS485 enable Push/Pull
 #else
+
+#ifdef CPU_C8051F410
+   P0MDOUT = 0x50;              // P0.4:TX, P0.6:RS485 enable Push/Pull
+#else
    P0MDOUT = 0x90;              // P0.4:TX, P0.7:RS485 enable Push/Pull
 #endif
 
+#endif
+
    /* Select internal quartz oscillator */
+#ifdef CPU_C8051F410
+   OSCICN = 0x87;               // IOSCEN=1, SYSCLK=24.5 MHz
+#else
    OSCICN = 0x83;               // IOSCEN=1, SYSCLK=24.5 MHz
+#endif 
    CLKSEL = 0x00;               // derive SYSCLK from internal source
 
 #else
@@ -255,7 +265,7 @@ void setup(void)
    sysclock_init();
 
    /* enable watchdog with default timeout */
-//   watchdog_enable(0);
+   watchdog_enable(0);
 
    /* default LED mode */
    for (i=0 ; i<N_LED ; i++)
@@ -1157,7 +1167,7 @@ void upgrade()
 #endif
 
    /* disable watchdog */
-#if defined(CPU_C8051F310) || defined(CPU_C8051F320)
+#if defined(CPU_C8051F310) || defined(CPU_C8051F320) || defined(CPU_C8051F410)
    PCA0MD = 0x00;
 #else
    WDTCN = 0xDE;
@@ -1279,7 +1289,7 @@ receive_cmd:
    
             pw = (char xdata *) (512 * page);
    
-#if defined(CPU_C8051F310) || defined (CPU_C8051F320)
+#if defined(CPU_C8051F310) || defined (CPU_C8051F320) || defined(CPU_C8051F410)
             FLKEY = 0xA5;          // write flash key code
             FLKEY = _flkey;
 #endif
@@ -1358,7 +1368,7 @@ erase_ok:
             if (!RI0) 
                goto receive_cmd;
 
-#if defined(CPU_C8051F310) || defined (CPU_C8051F320)
+#if defined(CPU_C8051F310) || defined (CPU_C8051F320) || defined(CPU_C8051F410)
             FLKEY = 0xA5;          // write flash key code
             FLKEY = _flkey;
 #endif
@@ -1372,7 +1382,7 @@ erase_ok:
 #endif
 
          /* disable write */
-#if !defined(CPU_C8051F310) && !defined(CPU_C8051F320)
+#if !defined(CPU_C8051F310) && !defined(CPU_C8051F320) && !defined(CPU_C8051F410)
          FLSCL = (FLSCL & 0xF0);
 #endif
          PSCTL = 0x00;
