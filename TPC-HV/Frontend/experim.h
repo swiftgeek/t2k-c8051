@@ -75589,7 +75589,7 @@ typedef struct {
   float     ulimit;
   float     ilimit;
   char      warning[32];
-  char      gpib_address;
+  INT       gpib_address;
 } HV_BERTAN_SETTINGS;
 
 #define HV_BERTAN_SETTINGS_STR(_name) char *_name[] = {\
@@ -75602,7 +75602,7 @@ typedef struct {
 "Ulimit = FLOAT : 0",\
 "Ilimit = FLOAT : 0",\
 "Warning = STRING : [32] ",\
-"gpib_address = CHAR : 10",\
+"gpib_address = INT : 10",\
 "",\
 NULL }
 

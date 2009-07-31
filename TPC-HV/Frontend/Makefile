@@ -84,7 +84,7 @@ SRC_DIR    = $(MIDASSYS)/src
 # comment out the line and run your own frontend as follow:
 # gmake UFE=my_frontend
 #
-UFE = scbertan
+UFE = ccbertan
 
 ####################################################################
 # Lines below here should not be edited
