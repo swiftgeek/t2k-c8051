@@ -1,0 +1,15 @@
+/*! \mainpage Power Switch projects
+
+Online documentation for the 6 channels Power Switch board MSCB projects
+The SVN structure should be as follow:
+- <base>
+ - Devices
+ - Protocols
+ - Dox
+ - Images
+ - Html
+ 
+@section Document Content
+  <br>
+*/
+

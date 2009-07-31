@@ -1,0 +1,66 @@
+<html>
+ <head>
+  <title>TPC Cathode HV control</title>
+ <!-- <meta http-equiv="Refresh" content="5">   -->
+
+ </head>
+
+<BODY>
+
+ <form name="form1" method="Get" action="/CS/HVBertan?exp=t2kgsc&">
+ <input value="t2kgsc" name="exp" type="hidden">
+   <table border=1 cellpadding=2 width="100%">
+	<tr><th colspan=2 bgcolor="#A0A0FF">TPC Cathode High Voltage Control</tr>
+	<tr><td width="50%"> <b><font color="#ff0000">Actions: </font></b>
+	<input value="Status" name="cmd" type="submit">
+	<input value="ODB"   name="cmd" type="submit">
+	</td><td>
+	<center> <a href="http://midas.triumf.ca"> >>>> Midas Help <<<< </a></center>
+	</td></tr>
+	</tr>
+   </table>
+
+<!--RF_0 channel selection -->
+ <table border=1 cellpadding=2 width="100%">
+<tr>
+<th colspan = "6" bgcolor="#A0A0FF"> High Voltage Bertan  (MSCB:
+GPIB Address <odb src="/Equipment/HV_BERTAN/Settings/HVB_0/gpib_address">/
+             <odb src="/Equipment/HV_BERTAN/Settings/HVB_1/gpib_address">/
+             <odb src="/Equipment/HV_BERTAN/Settings/HVB_2/gpib_address">  ) </th></tr>
+<tr valign="top" align="left">
+<th>TPC 1 (Upstram) </th><th>TPC 2 (middle) </th><th>TPC 3 (downstream) </th></tr>
+<td>
+<b>Measured Voltage <odb src="/Equipment/HV_BERTAN/Variables/HVB0[0]"> Volts</b><br>
+<b>Measured Current <odb src="/Equipment/HV_BERTAN/Variables/HVB0[1]"> uAmps</b><br>
+<b>Info Message: <odb src="/Equipment/HV_BERTAN/Settings/HVB_0/warning"></b><br>
+<b>Demand Voltage <odb src="/Equipment/HV_BERTAN/Settings/HVB_0/Udemand" edit=1> Volts</b><br>
+<b>Ramp up Voltage <odb src="/Equipment/HV_BERTAN/Settings/HVB_0/RampUp" edit=1> Volt/s</b><br>
+<b>Ramp down Voltage <odb src="/Equipment/HV_BERTAN/Settings/HVB_0/RampDown" edit=1> Volt/s</b><br>
+<b>Voltage limit <odb src="/Equipment/HV_BERTAN/Settings/HVB_0/Ulimit" edit=1> Volts</b><br>      		
+<b>Current limit <odb src="/Equipment/HV_BERTAN/Settings/HVB_0/Ilimit" edit=1> uAmps</b>
+</td>
+<td>
+<b>Measured Voltage <odb src="/Equipment/HV_BERTAN/Variables/HVB1[0]"> Volts</b><br>
+<b>Measured Current <odb src="/Equipment/HV_BERTAN/Variables/HVB0[1]"> uAmps</b><br>
+<b>Info Message: <odb src="/Equipment/HV_BERTAN/Settings/HVB_1/warning"></b><br>
+<b>Demand Voltage <odb src="/Equipment/HV_BERTAN/Settings/HVB_1/Udemand" edit=1> Volts</b><br>
+<b>Ramp up Voltage <odb src="/Equipment/HV_BERTAN/Settings/HVB_1/RampUp" edit=1> Volt/s</b><br>
+<b>Ramp down Voltage <odb src="/Equipment/HV_BERTAN/Settings/HVB_1/RampDown" edit=1> Volt/s</b><br>
+<b>Voltage limit <odb src="/Equipment/HV_BERTAN/Settings/HVB_1/Ulimit" edit=1> Volts</b><br>
+<b>Current limit <odb src="/Equipment/HV_BERTAN/Settings/HVB_1/Ilimit" edit=1> uAmps</b>
+</td>
+<td>
+<b>Measured Voltage <odb src="/Equipment/HV_BERTAN/Variables/HVB2[0]"> Volts</b><br>
+<b>Measured Current <odb src="/Equipment/HV_BERTAN/Variables/HVB2[1]"> uAmps</b><br>
+<b>Info Message: <odb src="/Equipment/HV_BERTAN/Settings/HVB_2/warning"></b><br>
+<b>Demand Voltage <odb src="/Equipment/HV_BERTAN/Settings/HVB_2/Udemand" edit=1> Volts</b><br>
+<b>Ramp up Voltage <odb src="/Equipment/HV_BERTAN/Settings/HVB_2/RampUp" edit=1> Volt/s</b><br>
+<b>Ramp down <odb src="/Equipment/HV_BERTAN/Settings/HVB_2/RampDown" edit=1> Volt/s</b><br>
+<b>Voltage limit <odb src="/Equipment/HV_BERTAN/Settings/HVB_2/Ulimit" edit=1> Volts</b><br>
+<b>Current limit <odb src="/Equipment/HV_BERTAN/Settings/HVB_2/Ilimit" edit=1> uAmps</b>
+</td>
+</table>
+</form>
+</body>
+</html>
+
