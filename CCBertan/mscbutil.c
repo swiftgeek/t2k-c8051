@@ -464,7 +464,7 @@ void uart_init(unsigned char port, unsigned char baud)
 
 \********************************************************************/
 {
-#if defined (CPU_C8051F310)           // 24.5 MHz
+#if defined (CPU_C8051F310) || defined(CPU_C8051F410)          // 24.5 MHz
    unsigned char code baud_table[] =
      {0x100 - 0,    //  N/A
       0x100 - 0,    //  N/A
@@ -591,7 +591,7 @@ void uart_init(unsigned char port, unsigned char baud)
 
       TMOD  = (TMOD & 0x0F)| 0x20; // Timer 1 8-bit counter with auto reload
 
-#if defined(CPU_C8051F310) || defined(CPU_C8051F320)
+#if defined(CPU_C8051F310) || defined(CPU_C8051F320) || defined(CPU_C8051F410)
       CKCON |= 0x08;               // use system clock
 #else
       T2CON &= ~30;                // User Timer 1 for baud rate
@@ -760,7 +760,7 @@ void sysclock_init(void)
 #elif defined(CPU_C8051F120)
    CKCON = 0x02;                // use SYSCLK/48 (98 MHz SYSCLK)
    TH0 = 0xAF;                  // load initial value
-#elif defined(CPU_C8051F310)
+#elif defined(CPU_C8051F310) || defined(CPU_C8051F410)
    CKCON = 0x00;                // use SYSCLK/12
    TH0 = 0xAF;                  // load initial value (24.5 MHz SYSCLK)
 #else
@@ -825,7 +825,7 @@ void timer0_int(void) interrupt 1
    TH0 = 0xEC;                  // for 24.5 MHz clock / 48
 #elif defined(CPU_C8051F120)
    TH0 = 0xAF;                  // for 98 MHz clock   / 48
-#elif defined(CPU_C8051F310)
+#elif defined(CPU_C8051F310) || defined(CPU_C8051F410)
    TH0 = 0xAF;                  // for 24.5 MHz clock / 12 
 #else
    TH0 = 0xDC;                  // reload timer values, let LSB freely run
@@ -1015,8 +1015,12 @@ void watchdog_refresh(unsigned char from_interrupt) reentrant
 #ifdef EXT_WATCHDOG
       EXT_WATCHDOG_PIN = !EXT_WATCHDOG_PIN;
 #else
-#if defined(CPU_C8051F310) || defined(CPU_C8051F320)
+#if defined(CPU_C8051F310) || defined(CPU_C8051F320) || defined(CPU_C8051F410)
+#if defined(CPU_C8051F410)
+      PCA0CPH5 = 0x00;
+#else
       PCA0CPH4 = 0x00;
+#endif
 #else
       WDTCN = 0xA5;
 #endif
@@ -1052,14 +1056,23 @@ void watchdog_enable(unsigned char timeout)
       watchdog_timeout = DEFAULT_WATCHDOG_TIMEOUT;
 
 #ifndef EXT_WATCHDOG
-#if defined(CPU_C8051F310) || defined(CPU_C8051F320)
+#if defined(CPU_C8051F310) || defined(CPU_C8051F320) || defined(CPU_C8051F410)
+#if defined(CPU_C8051F410)
+   PCA0MD   = 0x00;             // disable watchdog
+   PCA0CPL5 = 255;              // 65.5 msec @ 12 MHz
+   PCA0MD   = 0x40;             // enable watchdog
+   PCA0CPH5 = 0x00;             // reset watchdog
+
+   RSTSRC   = 0x06;             // enable missing clock detector and 
+#else                                // VDD monitor as reset source
    PCA0MD   = 0x00;             // disable watchdog
    PCA0CPL4 = 255;              // 65.5 msec @ 12 MHz
    PCA0MD   = 0x40;             // enable watchdog
    PCA0CPH4 = 0x00;             // reset watchdog
 
    RSTSRC   = 0x06;             // enable missing clock detector and 
-                                // VDD monitor as reset sourse
+                                // VDD monitor as reset source
+#endif
 #else /* CPU_C8051F310 */
 
    WDTCN    = 0x07;             // 95 msec (11.052 MHz) / 21msec (49 MHz)
@@ -1094,7 +1107,7 @@ void watchdog_disable(void)
    watchdog_timer = 0;
 #endif
 
-#if defined(CPU_C8051F310) || defined(CPU_C8051F320)
+#if defined(CPU_C8051F310) || defined(CPU_C8051F320) || defined(CPU_C8051F410)
    PCA0MD = 0x00;
 #else
    WDTCN  = 0xDE;
@@ -1122,8 +1135,12 @@ void watchdog_int(void) reentrant
 #ifdef EXT_WATCHDOG
       EXT_WATCHDOG_PIN = !EXT_WATCHDOG_PIN;
 #else
-#if defined(CPU_C8051F310) || defined(CPU_C8051F320)
+#if defined(CPU_C8051F310) || defined(CPU_C8051F320) || defined(CPU_C8051F410)
+#if defined(CPU_C8051F410)
+      PCA0CPH5 = 0x00;
+#else
       PCA0CPH4 = 0x00;
+#endif
 #else
       WDTCN = 0xA5;
 #endif
@@ -1156,7 +1173,7 @@ void delay_ms(unsigned int ms)
 
 void delay_us(unsigned int us)
 {
-#if defined(CPU_C8051F120) || defined(CPU_C8051F310)
+#if defined(CPU_C8051F120) || defined(CPU_C8051F310) || defined(CPU_C8051F410)
    unsigned char j;
 #endif
 
@@ -1172,7 +1189,7 @@ void delay_us(unsigned int us)
 #elif defined(CPU_C8051F120)
          for (j=22 ; j>0 ; j--)
              _nop_();
-#elif defined(CPU_C8051F310)
+#elif defined(CPU_C8051F310) || defined(CPU_C8051F410)
          _nop_();
          for (j=3 ; j>0 ; j--)
             _nop_();
@@ -1272,7 +1289,7 @@ void eeprom_write(void * src, unsigned char len, unsigned short *offset)
    for (i = 0; i < len; i++) {  // write data
       b = *s++;
 
-#if defined(CPU_C8051F310) || defined(CPU_C8051F320)
+#if defined(CPU_C8051F310) || defined(CPU_C8051F320) || defined(CPU_C8051F410)
       FLKEY = 0xA5;             // write flash key code
       FLKEY = _flkey;
 #endif
@@ -1320,7 +1337,7 @@ void eeprom_erase(void)
 #endif
    PSCTL = 0x03;                        // allow write and erase
 
-#if defined(CPU_C8051F310) || defined(CPU_C8051F320)
+#if defined(CPU_C8051F310) || defined(CPU_C8051F320) || defined(CPU_C8051F410)
    p = EEPROM_OFFSET;
    for (i=0 ; i<N_EEPROM_PAGE ; i++) {
       FLKEY = 0xA5;                        // write flash key code
