@@ -1,61 +1,57 @@
 /********************************************************************\
 
-  Name:      hv_bertan.c
+  Name:      ccbertan410.c
 
   Contents:  Application specific (user) part of Midas Slow Control
              Bus protocol for Bertan 225 Series 30 KV HV power supply
-                
+             Include RTC GMT
+Program Size: data=206.1 xdata=143 code=13689 without RTC_410
+Program Size: data=221.1 xdata=242 code=15704 
+             
   $Id$
-Program Size: data=185.1 xdata=103 code=13385  March 05/09
-Program Size: data=188.1 xdata=102 code=13392  March 06/09
 
 \********************************************************************/
 
-#include <stdio.h>          // needed for sprintf
-
+#include <c8051F410.h>
+#include <stdio.h>
+#include <math.h>
+#include <string.h>
+#include "Time.h"
+#include "SmaRTC.h"
 #include "mscbemb.h"
 
 /* declare number of sub-addresses to framework */
 unsigned char idata _n_sub_addr = 1;
 
-char code node_name[] = "TPC_HV";
-char idata svn_rev_code[] = "$Rev$";
+char code node_name[] = "BERTANCC";
+char xdata svn_rev_code[] = "$Rev$";
 
-#define MAX_VOLTAGE 30000  // maximum voltage in Volts - this is a hard limit
-//#define MAX_VOLTAGE 1250    // maximum voltage in Volts - for testing
+#define MAX_VOLTAGE 28000  // maximum voltage in Volts - this is a hard limit
 #define MAX_CURRENT 75     // maximum current im micro Ampere - this is a hard limit
-//#define MAX_CURRENT 500     // maximum current im micro Ampere - for testing
-#define MINDEL 100        // minimum delay in ms between ramp steps
+#define MINDEL 200        // minimum delay in ms between ramp steps
 #define TPC_R 393.4        // total TPC resistance (MOhms)
 #define IOFF -0.1718       // hv supply current offset
 
 #define GPIB_ADDR_0 4      // GPIB address for channel 0 
 
-/* configuration jumper */
-sbit JU0 = P3 ^ 4;              // negative module if forced to zero
-sbit JU1 = P3 ^ 2;              // low current module if forced to zero
-sbit JU2 = P3 ^ 1;
-
-/* geographic address */
-sbit GA_A0 = P0 ^ 1;            // 0=top, 1=bottom
-sbit GA_A1 = P0 ^ 0;
-sbit GA_A2 = P0 ^ 3;
-sbit GA_A3 = P0 ^ 2;
-sbit GA_A4 = P2 ^ 1;
-sbit GA_A5 = P2 ^ 0;
-
 unsigned char idata chn_bits=0;
-
 /* chn_bits defines... */
 #define DEMAND_CHANGED     (1<<0)
 #define RAMP_UP            (1<<1)
 #define RAMP_DOWN          (1<<2)
 #define HV_LIMIT_CHANGED   (1<<3)
 #define CUR_LIMIT_CHANGED  (1<<4)
-
+#define CUR_LIMIT_BYPASS   (1<<7)
+int Ibypass = 0;
 float xdata u_actual;
 unsigned long xdata t_ramp;
 char xdata str[32], *buf;
+
+#ifdef RTC_410
+unsigned long int ltime;
+char xdata mydate[24];
+#endif
+
 unsigned char xdata tiwp;
 
 /*---- Define variable parameters returned to CMD_GET_INFO command ----*/
@@ -80,7 +76,9 @@ struct {
    float u_limit;
    float i_limit;
    char  warning[32];
+   char date[24];
    unsigned char gpib_adr;
+   unsigned long mytime;
 } xdata user_data;
 
 MSCB_INFO_VAR code vars[] = {
@@ -94,26 +92,34 @@ MSCB_INFO_VAR code vars[] = {
    4, UNIT_VOLT,            0, 0, MSCBF_FLOAT, "Ulimit",  &user_data.u_limit,     // 6
    4, UNIT_AMPERE, PRFX_MICRO, 0, MSCBF_FLOAT, "Ilimit",  &user_data.i_limit,     // 7
   32, UNIT_STRING,          0, 0,           0, "warning", &user_data.warning,     // 8
-   1, UNIT_BYTE,            0, 0, MSCBF_HIDDEN, "GPIB Adr",&user_data.gpib_adr,   // 9
+#ifdef RTC_410
+  24, UNIT_STRING,          0, 0,           0,  "GMT Date",&user_data.date[0],    // 9
+#endif
+   1, UNIT_BYTE,            0, 0, MSCBF_HIDDEN, "GPIB Adr",&user_data.gpib_adr,   // 10
+#ifdef RTC_410
+   4, UNIT_BYTE,            0, 0, MSCBF_HIDDEN, "GMT Epok",&user_data.mytime,     // 11
+#endif
    0
 };
 
 MSCB_INFO_VAR *variables = vars;
 
+#ifdef CPU_C8051F410
 #define GPIB_DATA P2
 
-/* GPIB control/status bits DB40 */
-sbit GPIB_EOI  = P1 ^ 1;          // Pin 5
-sbit GPIB_DAV  = P1 ^ 2;          // Pin 6
-sbit GPIB_NRFD = P1 ^ 3;          // Pin 7
-sbit GPIB_NDAC = P1 ^ 4;          // Pin 8
-sbit GPIB_IFC  = P1 ^ 5;          // Pin 9
-sbit GPIB_SRQ  = P1 ^ 6;          // Pin 10
-sbit GPIB_ATN  = P1 ^ 7;          // Pin 11
-sbit GPIB_REM  = P1 ^ 0;          // Pin 17
+/* GPIB control/status bits DB24 */
+sbit GPIB_REN  = P1 ^ 0;          // REMOTE ENABLE, 	Pin 9
+sbit GPIB_EOI  = P1 ^ 1;          // END-OR-IDENTIFY, 	Pin 10
+sbit GPIB_DAV  = P1 ^ 2;          // DATA VALID,		Pin 11
+sbit GPIB_NRFD = P1 ^ 3;          // NOT READY FOR DATA,Pin 12
+sbit GPIB_NDAC = P1 ^ 4;          // NOT DATA ACCEPTED,	Pin 13
+sbit GPIB_IFC  = P1 ^ 5;          // INTERFACE CLEAR,	Pin 14
+sbit GPIB_SRQ  = P1 ^ 6;          // SERVICE REQUEST,	Pin 15
+sbit GPIB_ATN  = P1 ^ 7;          // ATTENTION,			Pin 16
 
-sbit BUF_CLE   = P0 ^ 7;
-sbit BUF_DATAE = P3 ^ 4;
+sbit BUF_CLE   = P0 ^ 0;   // P0.
+sbit BUF_DATAE = P0 ^ 3;   // P0.3
+#endif
 
 /********************************************************************\
 
@@ -138,7 +144,7 @@ extern SYS_INFO sys_info;
 
 void user_init (unsigned char init)
 {
-  int i;
+  char xdata i;
   /* Format the SVN and store this code SVN revision into the system */
   for (i = 0; i < 4; i++) {
     if (svn_rev_code[6 + i] < 48) {
@@ -147,7 +153,20 @@ void user_init (unsigned char init)
   }
   sys_info.svn_revision = (svn_rev_code[6] - '0') * 1000 +
     (svn_rev_code[7] - '0') * 100 +
-    (svn_rev_code[8] - '0') * 10 + (svn_rev_code[9] - '0');
+    (svn_rev_code[8] - '0') * 10 +
+    (svn_rev_code[9] - '0');
+
+//	P0MDIN = 0xFF;						// default 0xFF all digital pins
+// 	P1MDIN = 0xFF;
+//	P2MDIN = 0xFF;
+
+  P0MDOUT = 0x18;					// Default OD 485TX, TXD
+  P1MDOUT = 0x00;					// OD
+  P2MDOUT = 0xFF;					// OD
+
+  P0 = 0x03;    // default 0xFF
+  P1 = 0xFF;
+  P2 = 0xFF;
 
   /* set initial state of lines */
   GPIB_DATA = 0xFF;
@@ -158,7 +177,7 @@ void user_init (unsigned char init)
   GPIB_IFC = 1;
   GPIB_SRQ = 1;
   GPIB_ATN = 1;
-  GPIB_REM = 1;
+  GPIB_REN = 1;
 
   BUF_CLE = 0;			// Enable buffers
   BUF_DATAE = 0;
@@ -168,9 +187,9 @@ void user_init (unsigned char init)
   delay_ms (1);
   GPIB_IFC = 1;
 
-//  GPIB_ATN = 0;
-//  send_byte (0x14);		// DCL
-//  GPIB_ATN = 1;
+  GPIB_ATN = 0;
+  send_byte (0x14);		// DCL
+  GPIB_ATN = 1;
   
   user_data.gpib_adr = GPIB_ADDR_0;
   
@@ -208,6 +227,11 @@ void user_init (unsigned char init)
       user_data.u_demand = user_data.u_meas; // restore to status quo
       u_actual = user_data.u_meas;
   }
+
+#ifdef RTC_410
+// Init RTC on 410
+   SmaRTCInit();
+#endif
 }
 
 /*---- User write function -----------------------------------------*/
@@ -219,6 +243,12 @@ void user_write(unsigned char index) reentrant  // index corresponds to MSCB_INF
    if (index == 1) {
       /* indicate new demand voltage */
       chn_bits |= DEMAND_CHANGED;
+   }
+
+   /* Bypass limit */
+   if (index == 0) {
+        if (user_data.status == CUR_LIMIT_BYPASS)
+          Ibypass = (Ibypass == 1) ? 0 : 1;
    }
 
    /* check voltage limit */
@@ -261,7 +291,7 @@ unsigned char send_byte(unsigned char b)
 {
    unsigned int i;
 
-   yield();
+//   yield();
 
    /* wait for NRFD go high */
    for (i = 0; i < 1000; i++)
@@ -310,6 +340,7 @@ unsigned char send(unsigned char adr, char *str)
 
   /*---- address cycle ----*/
 
+//   GPIB_REN = 0;
    GPIB_ATN = 0;                // assert attention
    send_byte(0x3F);             // unlisten
    send_byte(0x5F);             // untalk
@@ -321,12 +352,14 @@ unsigned char send(unsigned char adr, char *str)
 //   len = strlen(str);
    for (i = 0; str[i] > 0; i++) {
       s = send_byte(str[i]);
+      GPIB_REN = 1;
       if (s == 0) return 0;
    }
 
    GPIB_EOI = 0;
    send_byte(0x0A);             // NL
    GPIB_EOI = 1;
+   GPIB_REN = 1;
 
    return i;
 }
@@ -339,7 +372,7 @@ unsigned char enter(unsigned char adr, char *str, unsigned char maxlen)
    unsigned int j;
 
   /*---- address cycle ----*/
-
+//   GPIB_REN = 0;
    GPIB_ATN = 0;                // assert attention
    send_byte(0x3F);             // unlisten
    send_byte(0x5F);             // untalk
@@ -371,10 +404,9 @@ unsigned char enter(unsigned char adr, char *str, unsigned char maxlen)
       if (GPIB_DAV == 1) {
          GPIB_NDAC = 1;
          GPIB_NRFD = 1;
+         GPIB_REN = 1;
          return 0;           // timeout
       }
-
-//      led_blink(1, 1, 100);     // signal data received
 
       GPIB_NRFD = 0;            // signal busy
 
@@ -404,7 +436,7 @@ unsigned char enter(unsigned char adr, char *str, unsigned char maxlen)
    send_byte(0x3F);             // unlisten
    send_byte(0x5F);             // untalk
    GPIB_ATN = 1;                // remove attention
-
+   GPIB_REN = 1;
    return i;
 }
 
@@ -416,7 +448,7 @@ void set_voltage_limit (float value)
 
   sprintf (str, "L%06.3fKG", value/1000);
   send (user_data.gpib_adr, str);
-  delay_ms(200);
+  delay_ms(2);
 
   return;
 }
@@ -429,7 +461,7 @@ void set_current_limit (float value)
 
   sprintf (str, "L%06.3fUG", value);
   send (user_data.gpib_adr, str);
-  delay_ms(200);
+  delay_ms(2);
 
   return;
 }
@@ -473,22 +505,30 @@ void read_hvi(void)
 //-PAA For test
 //  sprintf(str, "N V12.345K 987.54U");
 
+  if (Ibypass) {
+    DISABLE_INTERRUPTS;
+    sprintf (user_data.warning, "Warning! Current Limit bypassed");
+    ENABLE_INTERRUPTS;
+    return;
+  }
   hv  =  str[8] - 48;
   hv += (str[7] - 48)*10;
   hv += (str[6] - 48)*100;
   hv += (str[4] - 48)*1000;
   hv += (str[3] - 48)*10000;
+  if (hv < 0) hv = 0;
  
   current  = (str[17] - 48)/100;
   current += (str[16] - 48)/10;
   current += (str[14] - 48);
   current += (str[13] - 48)*10;
   current += (str[12] - 48)*100;
+  if (current < 0) current = 0;
 
   DISABLE_INTERRUPTS;
-
   user_data.u_meas = hv;
   user_data.i_meas = current;
+  ENABLE_INTERRUPTS;
 
   if ( current >= user_data.i_limit )  {
     user_data.status |= STATUS_ILIMIT;
@@ -500,24 +540,27 @@ void read_hvi(void)
   if ( current > IOFF + 1.1 * hv/TPC_R )
   {
     sprintf (user_data.warning, "Warning! High current - %6.3f", current);
+  DISABLE_INTERRUPTS;
     user_data.status |=  STATUS_HICUR;
     user_data.status &= ~STATUS_LOWCUR;
+  ENABLE_INTERRUPTS;
   }
   else if ( current < IOFF + 0.9 * 1000 * hv/TPC_R )
   {
     sprintf (user_data.warning, "Warning! Low current - %6.3f", current);
+  DISABLE_INTERRUPTS;
     user_data.status |=  STATUS_LOWCUR;
     user_data.status &= ~STATUS_HICUR;
+  ENABLE_INTERRUPTS;
   }
   else
   {
     sprintf (user_data.warning, "current OK");
+  DISABLE_INTERRUPTS;
     user_data.status &= ~STATUS_HICUR;
     user_data.status &= ~STATUS_LOWCUR;
-  }
-
   ENABLE_INTERRUPTS;
-
+  }
 }
 
 /*------------------------------------------------------------------*/
@@ -600,6 +643,7 @@ void ramp_hv(void)
 
 void user_loop(void)
 {
+
   /* set voltage limit if changed */
   if (chn_bits & HV_LIMIT_CHANGED) {
     set_voltage_limit(user_data.u_limit);
@@ -616,10 +660,18 @@ void user_loop(void)
   read_hvi();
 
   // Yield to other activities (MSCB)
-  yield();
+//  yield();
 
   // Do ramping if necessary
   ramp_hv();
+
+#ifdef RTC_410
+  // RTC stuff
+  ltime = SmaRTCRead();
+  user_data.mytime = ltime;
+  ascTime(mydate, ltime);
+  sprintf(user_data.date, "%s", mydate);
+#endif
 
   // Slow it down
   delay_ms (MINDEL);
