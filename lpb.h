@@ -13,9 +13,6 @@
 #ifndef _LPB_H_
 #define _LPB_H_
 
-//AD5300 DAC
-bit AD5300_FLAG;
-
 // Internal Vref
 #define VREF       2.50f
 
@@ -32,32 +29,27 @@ bit AD5300_FLAG;
 #define ON       1
 #define OFF      0
 
-// ESR Error Register
-unsigned char bdata rESR;
-sbit IntssTT   = rESR ^ 0;
-sbit Ext1ssTT  = rESR ^ 1;
-sbit Ext2ssTT  = rESR ^ 2;
-sbit EEPerror  = rESR ^ 3;
-
-#define IGAIN1  0
-#define IGAIN2  1
-#define IGAIN4  2
-#define IGAIN8  3
-#define IGAIN16 4
+#define IntGAIN1  0
+#define IntGAIN2  1
+#define IntGAIN4  2
+#define IntGAIN8  3
+#define IntGAIN16 4
 
 // Coeff
-//  V      R1   R2    (R1+R2)/R1
-// D2A     2.2K 6.8K   2.2/9.0
-// Vss     2.2K 6.8K   2.2/9.0
-// Iss
-// Vdd     2.2K 6.8K   2.2/9.0
-// Idd
-// I5
-// I3.3
-// I1.8
-// D2A Vss Iss Vdd Idd I5 I3.3 I1.8
-float code coeff[8]  = {4.091, 4.091, 0.4, 4.091, 0.4, 0.4, 0.4, 0.4};
-float code offset[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+// Input    V         R1      R2      (R1+R2)/R1  
+// AIN0.0  D2A       1.3K    4.7K     6.0/1.3 (4.615)
+// AIN0.1  V+6ss     2.2K    4.7K     6.9/2.2 (3.136)
+// AIN0.2  Iss       400mA/V          0.4
+// AIN0.3  V+6dd     2.2K    4.7K     6.9/2.2 (3.136)
+// AIN0.4  Idd       400mA/V          0.4      
+// AIN0.5  I5        400mA/V          0.4 
+// AIN0.6  I3.3      400mA/V          0.4
+// AIN0.7  I1.8      400mA/V          0.4
+
+//                       D2A    Vss    Iss Vdd    Idd   I5  I3.3 I1.8
+float code coeff[8]  = {4.615, 3.136, 0.4, 3.136, 0.4, 0.4, 0.4, 0.4};
+float code offset[8] = {    0,     0,   0,     0,   0,   0,   0,   0};
+unsigned char xdata ltc2620mirror[16];
 
 /*****EEPROM VARIABLES*****/
 //The EEPROM is separated into a total of 4 pages, 0x600 is the WP page
@@ -68,22 +60,36 @@ struct EEPAGE {
   unsigned long SerialN;
   unsigned int structsze; 
   unsigned int spare; 
-  float sstOffset[2];
+  unsigned int rdac[16];
+  float lVIlimit[8];
+  float uVIlimit[8];
+  float luCTlimit, uuCTlimit;
+  float lSSTlimit, uSSTlimit;
 };
 
 //+/- 16 increments corresponds to a +/- 0.25 degrees offset in the ADT7486A chip
 //Initial values for eepage
 struct EEPAGE xdata eepage={
 // 0x00 - S/N
-   0,   
-// 0x01 - 
-   0,
-   0xaabb,
-// 0x02 - SST offset
-   0.0, 0.0  
+     0   
+   , 0, 0
+// 0x02 - rdacs
+   , 0, 0, 0, 0, 0, 0, 0, 0
+   , 0, 0, 0, 0, 0, 0, 0, 0
+// 0x0a - lVIlimit 
+// D2A    Vss    Iss Vdd    Idd   I5  I3.3 I1.8
+   , 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+// 0x12 - uVIlimit 
+// D2A    Vss    Iss Vdd    Idd   I5  I3.3 I1.8
+   , 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0  
+// 0x1a - LuC Temperature,  HuC Temperature
+   , 10., 50.
+// 0x1c - LSST Temperature,  HSST Temperature
+   , 10. ,50.
 };
 
 #define PAGE_SIZE sizeof(eepage)
+
 //Keys for changing the EEPROM
 #define EEP_CTRL_KEY        0x3C000000
 #define EEP_CTRL_READ       0x00110000
@@ -92,24 +98,24 @@ struct EEPAGE xdata eepage={
 #define EEP_CTRL_INVAL_KEY  0x00ff0000
 #define EEP_CTRL_OFF_RANGE  0x0000ff00
 #define EEP_RW_IDX          0x02   // (I*4) 
-#define SERIALN_ADD         0x600
 
 /*---- Define variable parameters returned to CMD_GET_INFO command ----*/
 struct user_data_type {
 unsigned long SerialN;
-unsigned char error;
+unsigned int  error;
 unsigned char control;     //Writing/Reading the EEPROM
 unsigned char status;      //Displaying the status of the EEPROM command
 unsigned char eepage;      //EEPROM page number
+unsigned char spare;
 float iadc[8];
 float uCTemp;
 float IntTemp;
-float _58Temp;
-float _33Temp;
-float  SHTtemp;
+float Temp58;
+float Temp33;
+float SHTtemp;
 float SHThumi;
-float riadc[8];
-unsigned char rdac;
+unsigned int rdac[16];
+unsigned int riadc[8];
 char spare1;
 int  spare2;
 float          eepValue;    //EEPROM Value to be stored/read
@@ -117,9 +123,9 @@ unsigned long  eeCtrSet;     //Initiate changing the offset values
 };
 struct user_data_type xdata user_data;
 
-#define IDXDAC      27
+#define IDXDAC      19
 #define IDXCTL       2
-#define IDXEEP_CTL  31
+#define IDXEEP_CTL  46
 
 unsigned char bdata rCTL;
 sbit CPup   = rCTL ^ 0;
@@ -130,18 +136,57 @@ sbit CmSd   = rCTL ^ 7;
 
 unsigned char bdata rCSR;
 sbit SPup   = rCSR ^ 0;
+sbit S6dd   = rCSR ^ 1;
 sbit SeeS   = rCSR ^ 4;
 sbit SeeR   = rCSR ^ 5;
+sbit SsS    = rCSR ^ 6;
 sbit SmSd   = rCSR ^ 7;
+
+// ESR Error Register
+//The low and high bytes are switched in the bdata section of the memory
+//This is the reason that the sbit declarations do not appear to match
+//the documentation but they actually do.
+//D2A    Vss    Iss Vdd    Idd   I5  I3.3 I1.8
+unsigned int bdata rESR;
+sbit Vss   = rESR ^ 8;  //0x1  
+sbit Iss   = rESR ^ 9;  //0x2
+sbit Vdd   = rESR ^ 10; //0x4
+sbit Idd   = rESR ^ 11; //0x8
+
+sbit I5    = rESR ^ 12; //0x10 
+sbit I33   = rESR ^ 13; //0x20 
+sbit I18   = rESR ^ 14; //0x40 
+sbit uCT   = rESR ^ 15; //0x80 
+
+sbit IntssTT  = rESR ^ 0;  //0x100
+sbit Ext1ssTT = rESR ^ 1;  //0x200
+sbit Ext2ssTT = rESR ^ 2;  //0x400
+sbit EEPROM   = rESR ^ 3;  //0x800
+
+sbit pcbssTT  = rESR ^ 4;    //0x1000
+sbit RdssT    = rESR ^ 5;    //0x2000
+//sbit xxx      = rESR ^ 6;  //0x4000
+//sbit xxx      = rESR ^ 7;  //0x8000
+
+
+// Shutdown mask
+// Shut down the card only if any of the following bits in the rESR register is set
+// correspond to the rESR bit assignment
+// All the Vreg U/I, uC/Board/FGD Temperature
+#define UCTEMPERATURE_MASK   0x0180
+#define BTEMPERATURE_MASK    0x0600
+#define VOLTAGE_MASK         0x0005
+#define CURRENT_MASK         0x007A
 
 //---------------------------------------------------------------
 // P2.7:+1.8En   .6:+3.3En    .5:+5En     .4:SPIMOSI | .3:SPISCK  .2:RAMHLDn  .1:SPIMISO .0:RAMWP
-// P1.7:NC       .6:+6ddFlag  .5:R/HClock .4:R/HData | .3:+6ddEN  .2:RAMCS    .1:D2ASync .0:SST_DRV 
+// P1.7:NC       .6:+6ddFlag  .5:R/HClock .4:R/HData | .3:+6ddEN  .2:RAMCS    .1:NC      .0:SST_DRV 
 //
-sbit VCC_EN =  P1 ^ 3;
-sbit VREG_5 =  P2 ^ 5;
-sbit VREG_3 =  P2 ^ 6;
-sbit VREG_1 =  P2 ^ 7;
+sbit VCC_EN    = P1 ^ 3;
+sbit VREG_5    = P2 ^ 5;
+sbit VREG_3    = P2 ^ 6;
+sbit VREG_1    = P2 ^ 7;
+sbit V6ddFlag  = P1 ^ 6;
 
 /*****HUMIDITY SENSOR VARIABLES*****/
 #define humsense 1
