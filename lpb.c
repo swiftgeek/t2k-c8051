@@ -222,7 +222,7 @@ void switchonoff(unsigned char command)
     SFRPAGE  = CONFIG_PAGE;
     VCC_EN = ON;
     VREG_5 = VREG_3 = VREG_1 = ON;
-    P0MDOUT |= 0xCC;   // PP
+    P0MDOUT |= 0xCC;   // DACs_CS + DELAY_x PP
 
     // Activate 16 dac settings
     // user_data contains correct values, force update 
@@ -243,7 +243,7 @@ void switchonoff(unsigned char command)
 // P2.7:+1.8En   .6:+3.3En    .5:+5En     .4:SPIMOSI | .3:SPISCK  .2:RAMHLDn  .1:SPIMISO .0:RAMWP
 // P1.7:NC       .6:+6ddFlag  .5:R/HClock .4:R/HData | .3:+6ddEN  .2:RAMCS    .1:NC      .0:SST_DRV 
 // P0.7:DEL_CLK  .6:DEL_DATA  .5:485TXEN  .4:NC      | .3:DELCS1  .2:DELCS2   .1:Rx      .0:Tx 
-  P0MDOUT &= ~0xCC;   // OD
+    P0MDOUT &= ~0xCC;   // // DACs_CS + DELAY_x OD
 
   }
 }
@@ -323,27 +323,21 @@ void user_init(unsigned char init)
 //
 // SPI bus
   SFRPAGE  = CONFIG_PAGE;
+  P2 = 2;                 // Enable READ on MISO
   P2MDOUT |= 0x18;        // SPI_MOSI, SPI_SCK  PP
   SPI_SCK  = 0;
   SPI_MOSI = 0;
-
-#ifdef _LTC2620_
-//---------------------------------------------------------------
-//
-// LED DAC (2 Dacs chip=1 & chip=2)
-  SFRPAGE  = CONFIG_PAGE;
-  P0MDOUT |= 0xC;        // DACCS PP
-  LTC2620_Init(1);
-  LTC2620_Init(2);
-#endif
 
 //---------------------------------------------------------------
 //
 // EEPROM access
 #ifdef _ExtEEPROM_
   SFRPAGE  = CONFIG_PAGE;
-  P2MDOUT &= 0xFE;        // RAM_WPn OD
+  P2MDOUT |= 0x01;        // RAM_WPn PP
+  P2MDOUT |= 0x04;        // RAM_HOLD PP
+  RAM_HLDn = 1;           // 
   P1MDOUT |= 0x04;        // RAM_CSn PP
+
   ExtEEPROM_Init();
 
   // Read only the serial number from the protected page
@@ -413,14 +407,22 @@ void user_init(unsigned char init)
 //
 // Main switch PP
   SFRPAGE  = CONFIG_PAGE;
-  P1MDOUT |= 0x08;       // VCC_EN PP
+  VREG_5 = VREG_3 = VREG_1 = OFF;
   VCC_EN = OFF;
+  P1MDOUT |= 0x08;       // VCC_EN PP
   P1MDOUT &= ~0x40;      // VCC_Flag OD
   P2MDOUT |= 0xE0;       // +1.8, +3.3, +5 Enable PP
-// Should be OFF
-  VREG_5 = VREG_3 = VREG_1 = OFF;
+  switchonoff(OFF);
 
-  // Watchdog
+#ifdef _LTC2620_
+//---------------------------------------------------------------
+//
+// LED DAC (2 Dacs chip=1 & chip=2)
+  LTC2620_Init(1);
+  LTC2620_Init(2);
+#endif
+
+  // Watchdog debug
   user_data.spare1 = 0;
 
 //---------------------------------------------------------------
