@@ -38,8 +38,8 @@ signed char ExtEEPROM_Init (unsigned int page_size)
 
 //--------------------------------------------------------------------
 signed char ExtEEPROM_Read (unsigned int ReadPage
-, unsigned char *destination
-, unsigned int page_size)
+                          , unsigned char *destination
+                          , unsigned int page_size)
 {
   unsigned int i=0;
 
@@ -109,9 +109,9 @@ signed char ExtEEPROM_WriteProtect(unsigned char *source, unsigned int page_size
 
 //--------------------------------------------------------------------
 signed char ExtEEPROM_Write_Clear(unsigned int write_addr
-, unsigned char *source
-, unsigned int page_size
-, unsigned char clear)
+                                , unsigned char *source
+                                , unsigned int page_size
+                                , unsigned char clear)
 {
   unsigned int i,j;
   unsigned int blockSize;
