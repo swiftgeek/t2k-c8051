@@ -551,7 +551,7 @@ sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
 #include <c8051F120.h>
 #define CPU_C8051F120
 
-#define LED_0 P0 ^ 7 
+#define LED_0 P0 ^ 4  // NC 
 #if defined(LED_1) 
 #undef LED_1
 #endif
@@ -563,14 +563,14 @@ sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
 #define SST_ClientResponse1 (char) ((CPT1CN & 0x40) >> 6) //Comparator1 overflow bit
 
 // SPI
-#define MSCB_SPI_SCK  P2 ^ 3
+#define MSCB_SPI_SCK  P2 ^ 3  
 #define MSCB_SPI_MOSI P2 ^ 4
-#define MSCB_SYNC     P1 ^ 1
-#define MSCB_SPI_MISO P2 ^ 1
+#define MSCB_SYNC     P1 ^ 1   // NC
+#define MSCB_SPI_MISO P2 ^ 1 
 
 //SHT
-#define SHT_DATA1 P1^4
-#define SHT_SCK1  P1^5
+#define SHT_DATA1 P1 ^ 4
+#define SHT_SCK1  P1 ^ 5
 
 // EEPROM
 #define RAM_CHIP_SELECT    P1 ^ 2
@@ -590,8 +590,8 @@ sbit RS485_ENABLE = P0 ^ 2; //MSCB communication enable port
 
 // SST
 #define MORE_THAN_ONE_LINE	//2 SST Lines
-#define MSCB_SST1 P0^3 //SST1 line  SST_IO (Write/Push-Pull)
-#define MSCB_SST2 P0^4
+#define MSCB_SST1 P0 ^ 3 //SST1 line  SST_IO (Write/Push-Pull)
+#define MSCB_SST2 P0 ^ 4
 #define SST_ClientResponse1 (char) ((CPT0CN & 0x40) >> 6) //Comparator1 overflow bit
 #define SST_ClientResponse2 (char) ((CPT1CN & 0x40) >> 6)
 
