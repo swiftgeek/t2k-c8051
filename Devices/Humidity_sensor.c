@@ -114,7 +114,7 @@ signed char SHT7x_Measure(unsigned int *DataToSend
 	
 
 	if(temp_check == 0){ 
-		SHT7x_ConnectionReset();
+		SHT7x_ConnectionReset(humsen);
 		return ERROR; 			  // timeout is reached
 	}
 
@@ -136,7 +136,7 @@ signed char SHT7x_Measure(unsigned int *DataToSend
 
 	// Checking the checksum
 	if (FCSdevice != FCSorig) {
-		SHT7x_ConnectionReset();
+		SHT7x_ConnectionReset(humsen);
 		return ERROR;
   }
 
@@ -186,7 +186,7 @@ unsigned char SHT7x_StatusRead(unsigned char *StatusRead, int humsen)
 	return status;
 
 }
-*/
+
 
 //-------------------------------------------------------------
 //
@@ -200,7 +200,7 @@ unsigned char SHT7x_StatusWrite(unsigned char StatusWrite, int humsen){
 	
 	return status;
 }
-	
+*/	
 //-------------------------------------------------------------
 //
 //
