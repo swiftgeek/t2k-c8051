@@ -36,10 +36,8 @@ float *humidity, float *temperature,unsigned char *OrigFCS, unsigned char *Devic
 	unsigned int  xdata rtemp,rhumi;
 	unsigned char xdata temp_FCSOrig,temp_FCSDevice;
 	
-	SHT7x_ConnectionReset(humsen);
-	HumiStatus = SHT7x_Measure(&rtemp, TEMP, &temp_FCSOrig, &temp_FCSDevice, humsen); //measure temperature
-	SHT7x_ConnectionReset(humsen);
-	TempStatus = SHT7x_Measure(&rhumi, HUMI, &temp_FCSOrig, &temp_FCSDevice, humsen); //measure humidity
+	TempStatus = SHT7x_Measure(&rtemp, TEMP, &temp_FCSOrig, &temp_FCSDevice, humsen); //measure temperature
+	HumiStatus = SHT7x_Measure(&rhumi, HUMI, &temp_FCSOrig, &temp_FCSDevice, humsen); //measure humidity
 	
 	*DeviceFCS = temp_FCSDevice;
 	*OrigFCS = temp_FCSOrig;
@@ -52,11 +50,12 @@ float *humidity, float *temperature,unsigned char *OrigFCS, unsigned char *Devic
   *humidity = temp_humi;
   *temperature = temp_tempe;								
 
-	if((TempStatus == ERROR)||(HumiStatus == ERROR)){ 
+	if((TempStatus == ERROR) || (HumiStatus == ERROR)){ 
 		SHT7x_ConnectionReset(humsen); //in case of an error: connection reset
 		// delay_ms(800);
 		return ERROR;
 	} 
+
 	//wait approx. 0.8s to avoid heating up SHTxx
   //delay_ms(800);
 	return DONE;
@@ -71,13 +70,13 @@ signed char SHT7x_Measure(unsigned int *DataToSend
                         , unsigned char *FCSclient
                         , int humsen)
 {
-	unsigned char xdata check_flag,status = DONE;
-	unsigned char xdata FCSdevice,FCSorig,MSBdata,LSBdata;
-	unsigned int xdata measurements=0;
-	unsigned long xdata SHT_time =0,temp_check=0;
+	unsigned char xdata check_flag, status = DONE;
+	unsigned char xdata FCSdevice, FCSorig, MSBdata, LSBdata;
+	unsigned int  xdata measurements=0;
+	unsigned long xdata SHT_time =0, temp_check=0;
 
 	
-//	SHT7x_TransStart();						 //transmission start
+	SHT7x_TransStart(humsen);						 //transmission start
 	
 	switch(flag) { 								 //send command to sensor
 		case TEMP: 
@@ -113,17 +112,17 @@ signed char SHT7x_Measure(unsigned int *DataToSend
 #endif
 	}while ((uptime() - SHT_time) < SHT_TIME);
 	
-/* BS	
+
 	if(temp_check == 0){ 
 		SHT7x_ConnectionReset();
 		return ERROR; 			  // timeout is reached
 	}
-*/
+
 	//14bit temperature measurements
 	//12bit humidity measurements
 	MSBdata  	= SHT7x_ReadByte(ACK, humsen);		  //read the first byte (MSB)
-	LSBdata  	= SHT7x_ReadByte(ACK, humsen);       //read the second byte (LSB)
-	FCSdevice = SHT7x_ReadByte(NACK, humsen);      //read the last byte (checksum)
+	LSBdata  	= SHT7x_ReadByte(ACK, humsen);      //read the second byte (LSB)
+	FCSdevice = SHT7x_ReadByte(ACK, humsen);      //read the last byte (checksum)
 	FCSdevice = ReverseByte (FCSdevice);
 	
 	//Calculate originator's side write FCS
@@ -135,11 +134,12 @@ signed char SHT7x_Measure(unsigned int *DataToSend
 	*FCSclient = FCSdevice;
 	*FCSoriginator = FCSorig;
 
-/* BS
-	//Checking the checksum
-	if (FCSdevice != FCSorig)
+	// Checking the checksum
+	if (FCSdevice != FCSorig) {
+		SHT7x_ConnectionReset();
 		return ERROR;
-*/				
+  }
+
 	measurements = (MSBdata	<<8) | (LSBdata);
 
 	if(flag == TEMP)
@@ -151,35 +151,47 @@ signed char SHT7x_Measure(unsigned int *DataToSend
 	return status;     
 }
 
-void SHT7x_Correction(float *p_humidity ,float *p_temperature){ 
-	
-	//Assuming VDD to be 3.5V but the actual voltage is 3.3V
+//-------------------------------------------------------------
+//
+//
+void SHT7x_Correction(float *p_humidity ,float *p_temperature)
+{ 
+	// Assuming VDD to be 3.5V but the actual voltage is 3.3V
 	*p_temperature = (*p_temperature * D2) + D1 ; 	
 	*p_humidity = (*p_humidity) * (*p_humidity * C3) + *p_humidity * C2 + C1; 	
 	
 	*p_humidity=(*p_temperature - 25)*(T1+ *p_humidity * T2)+ *p_humidity; //calc. Temperature compensated humidity [%RH]
 
 	if(*p_humidity > 100)
-		*p_humidity = 100; 		  //Cut if the value is outside of
+		*p_humidity = 100; 		    // Cut if the value is outside of
 	
 	if(*p_humidity <0.1)
-		*p_humidity = 0.1;        //the physical possible range
+		*p_humidity = 0.1;        // the physical possible range
 
 }
 
+
 /*
-unsigned char StatusRead(unsigned char *StatusRead){
+//-------------------------------------------------------------
+//
+//
+unsigned char SHT7x_StatusRead(unsigned char *StatusRead, int humsen)
+{
 	unsigned char status=1;
 
-	SHT7x_TransStart();
-	status = SHT7x_WriteByte(STATUS_REG_R);
-	*StatusRead = SHT7x_ReadByte(NACK);
+	SHT7x_TransStart(humsen);
+	status = SHT7x_WriteByte(STATUS_REG_R, humsen);
+  delay_ms(20);
+	*StatusRead = SHT7x_ReadByte(NACK, humsen);
 	return status;
 
 }
 */
 
-unsigned char StatusWrite(unsigned char StatusWrite, int humsen){
+//-------------------------------------------------------------
+//
+//
+unsigned char SHT7x_StatusWrite(unsigned char StatusWrite, int humsen){
 	unsigned char status;
 	
 	SHT7x_TransStart(humsen);
@@ -189,6 +201,9 @@ unsigned char StatusWrite(unsigned char StatusWrite, int humsen){
 	return status;
 }
 	
+//-------------------------------------------------------------
+//
+//
 unsigned char ReverseByte (unsigned char dataBeReversed){
 
 	unsigned char i,j,temp = 0;
