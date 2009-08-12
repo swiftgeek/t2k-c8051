@@ -15,8 +15,8 @@
 
 sbit DAC_SCK = MSCB_SPI_SCK;    
 sbit DAC_DAT = MSCB_SPI_MOSI;   
-sbit DAC_CS1 = P0 ^ 1;
-sbit DAC_CS2 = P0 ^ 2;
+sbit DAC_CS1 = P0 ^ 2;
+sbit DAC_CS2 = P0 ^ 3;
 
 #define WriteTo_Update		 0x3 //Write to and Update command is used for loading DACs 
 #define PowerDown				   0x4
