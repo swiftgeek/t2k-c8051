@@ -42,7 +42,7 @@ void ExtEEPROM_Init (void){
 /**
 Reads data from ext_eeprom.
 
-@param ReadPage    address of memory which originator wasnts to read from
+@param ReadPage    address of memory which originator wants to read from
 @param *destination  address of memory which the read data would be stored
 @param page_size    number of bytes of data that the originator wants to read from memory
 */
@@ -90,14 +90,17 @@ Writes data to the ext_eeprom.
 
 
 unsigned char ExtEEPROM_Write_Clear(unsigned int write_addr
-                                  , unsigned char **source
+                                  , unsigned char xdata **source
                                   , unsigned int page_size
                                   , unsigned char WC_flag
                                   , unsigned char *flag)
 {
   unsigned int i,j, Nblock, counter = EEP_MAX_BYTE;
+  unsigned char xdata *psource;
 
-   //Checking if we are trying to write in the write protected block
+  psource = *source;
+
+  //Checking if we are trying to write in the write protected block
   if (write_addr+page_size >= WP_START_ADDR)
     return EEP_PROTECTED;
 
@@ -133,8 +136,8 @@ unsigned char ExtEEPROM_Write_Clear(unsigned int write_addr
                                               //data is going to be stored in;
     for (j=0; j<counter; j++) {
       if (WC_flag == WRITE_EEPROM){
-        SPI_WriteByte(**source);
-        (*source)++;
+        SPI_WriteByte(*psource);
+        psource += 1;
       }
       else
          SPI_WriteByte(CLEAR_EEPROM);     //Clearing the memory

@@ -80,7 +80,7 @@ unsigned char ExtEEPROM_Read (unsigned int ReadPage
                             , unsigned int page_size);
 
 unsigned char ExtEEPROM_Write_Clear(unsigned int WritePage
-                                  , unsigned char **source
+                                  , unsigned char xdata **source
                                   , unsigned int  page_size
                                   , unsigned char WC_flag
                                   , unsigned char *flag);
