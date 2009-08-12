@@ -92,7 +92,7 @@ struct EEPAGE xdata eepage={
    , 10., 50.
 };
 
-#define PAGE_SIZE sizeof(eepage)
+#define PAGE_SIZE (unsigned int) sizeof(eepage)
 
 //Keys for changing the EEPROM
 #define EEP_CTRL_KEY        0x3C000000
@@ -101,7 +101,7 @@ struct EEPAGE xdata eepage={
 #define EEP_CTRL_INVAL_REQ  0xff000000
 #define EEP_CTRL_INVAL_KEY  0x00ff0000
 #define EEP_CTRL_OFF_RANGE  0x0000ff00
-#define EEP_RW_IDX          0x02   // (I*4) 
+#define EEP_RW_IDX          0x0a   // (I*4) 
 
 /*---- Define variable parameters returned to CMD_GET_INFO command ----*/
 struct user_data_type {
@@ -129,9 +129,9 @@ unsigned long  eeCtrSet;     //Initiate changing the offset values
 };
 struct user_data_type xdata user_data;
 
-#define IDXDAC      19
+#define IDXDAC      20
 #define IDXCTL       2
-#define IDXEEP_CTL  46
+#define IDXEEP_CTL  49
 #define IDXDELAY     5
 
 unsigned char bdata rCTL;
@@ -182,7 +182,7 @@ sbit V6Fault  = rESR ^ 7;  //0x8000
 // All the Vreg U/I, uC/Board/FGD Temperature
 #define UCTEMPERATURE_MASK   0x0180
 #define BTEMPERATURE_MASK    0x0600
-#define VOLTAGE_MASK         0x0001
+#define VOLTAGE_MASK         0x0004
 #define CURRENT_MASK         0x0000
 #define MAIN_CURRENT_MASK    0x8000
 

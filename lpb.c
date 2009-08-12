@@ -79,7 +79,7 @@ static unsigned char tcounter;
 static unsigned char xdata eeprom_flag=CLEAR;
 unsigned char xdata eeprom_wstatus, eeprom_rstatus;
 static unsigned int  xdata eeptemp_addr;
-static unsigned char* xdata eeptemp_source;
+unsigned char xdata * eeptemp_source;
 unsigned char xdata eep_request;
 
 // User Data structure declaration
@@ -91,56 +91,56 @@ MSCB_INFO_VAR code vars[] = {
   1, UNIT_BYTE,      0, 0,           0, "Status",                &user_data.status,    // 3 
   1, UNIT_BYTE,      0, 0,           0, "eepage",                &user_data.eepage,    // 4
   1, UNIT_BYTE,      0, 0,           0, "Delay",                 &user_data.spare,     // 5
-  4, UNIT_VOLT,      0, 0, MSCBF_FLOAT, "DtoAshft",              &user_data.iadc[0],   // 5
-  4, UNIT_VOLT,      0, 0, MSCBF_FLOAT, "pDVsc",                 &user_data.iadc[1],   // 6
-  4, UNIT_AMPERE,    0, 0, MSCBF_FLOAT, "pDIsc",                 &user_data.iadc[2],   // 7
-  4, UNIT_VOLT,      0, 0, MSCBF_FLOAT, "pDV6",                  &user_data.iadc[3],   // 8
-  4, UNIT_AMPERE,    0, 0, MSCBF_FLOAT, "pDI6",                  &user_data.iadc[4],   // 9
-  4, UNIT_AMPERE,    0, 0, MSCBF_FLOAT, "pDI5",                  &user_data.iadc[5],   // 10
-  4, UNIT_AMPERE,    0, 0, MSCBF_FLOAT, "pDI33",                 &user_data.iadc[6],   // 11
-  4, UNIT_AMPERE,    0, 0, MSCBF_FLOAT, "pDI18",                 &user_data.iadc[7],   // 12
-  4, UNIT_CELSIUS,   0, 0, MSCBF_FLOAT, "uCTemp",                &user_data.uCTemp,    // 13
+  4, UNIT_VOLT,      0, 0, MSCBF_FLOAT, "D2Ashft" ,              &user_data.iadc[0],   // 6
+  4, UNIT_VOLT,      0, 0, MSCBF_FLOAT, "pDVsc",                 &user_data.iadc[1],   // 7
+  4, UNIT_AMPERE,    0, 0, MSCBF_FLOAT, "pDIsc",                 &user_data.iadc[2],   // 8
+  4, UNIT_VOLT,      0, 0, MSCBF_FLOAT, "pDV6",                  &user_data.iadc[3],   // 9
+  4, UNIT_AMPERE,    0, 0, MSCBF_FLOAT, "pDI6",                  &user_data.iadc[4],   // 10
+  4, UNIT_AMPERE,    0, 0, MSCBF_FLOAT, "pDI5",                  &user_data.iadc[5],   // 11
+  4, UNIT_AMPERE,    0, 0, MSCBF_FLOAT, "pDI33",                 &user_data.iadc[6],   // 12
+  4, UNIT_AMPERE,    0, 0, MSCBF_FLOAT, "pDI18",                 &user_data.iadc[7],   // 13
+  4, UNIT_CELSIUS,   0, 0, MSCBF_FLOAT, "uCTemp",                &user_data.uCTemp,    // 14
 
-  4, UNIT_CELSIUS,   0, 0, MSCBF_FLOAT, "IntTemp",               &user_data.IntTemp,   // 14
-  4, UNIT_CELSIUS,   0, 0, MSCBF_FLOAT, "Temp58",                &user_data.Temp58,    // 15
-  4, UNIT_CELSIUS,   0, 0, MSCBF_FLOAT, "Temp33",                &user_data.Temp33,    // 16
+  4, UNIT_CELSIUS,   0, 0, MSCBF_FLOAT, "IntTemp",               &user_data.IntTemp,   // 15
+  4, UNIT_CELSIUS,   0, 0, MSCBF_FLOAT, "Temp58",                &user_data.Temp58,    // 16
+  4, UNIT_CELSIUS,   0, 0, MSCBF_FLOAT, "Temp33",                &user_data.Temp33,    // 17
 
-  4, UNIT_CELSIUS,   0, 0, MSCBF_FLOAT, "SHTtemp",               &user_data.SHTtemp,   // 17
-  4, UNIT_PERCENT,   0, 0, MSCBF_FLOAT, "RHumid",                &user_data.SHThumid,   // 18
+  4, UNIT_CELSIUS,   0, 0, MSCBF_FLOAT, "SHTtemp",               &user_data.SHTtemp,   // 18
+  4, UNIT_PERCENT,   0, 0, MSCBF_FLOAT, "RHumid",                &user_data.SHThumid,  // 19
 
-  2, UNIT_BYTE,      0, 0,           0, "rdac0",                 &user_data.rdac[0],   // 19
-  2, UNIT_BYTE,      0, 0,           0, "rdac4",                 &user_data.rdac[1],   // 20
-  2, UNIT_BYTE,      0, 0,           0, "rdac8",                 &user_data.rdac[2],   // 21
-  2, UNIT_BYTE,      0, 0,           0, "rdac12",                &user_data.rdac[3],   // 22
-  2, UNIT_BYTE,      0, 0,           0, "rdac16",                &user_data.rdac[4],   // 23
-  2, UNIT_BYTE,      0, 0,           0, "rdac20",                &user_data.rdac[5],   // 24
-  2, UNIT_BYTE,      0, 0,           0, "rdac24",                &user_data.rdac[6],   // 25
-  2, UNIT_BYTE,      0, 0,           0, "rdac28",                &user_data.rdac[7],   // 26
-  2, UNIT_BYTE,      0, 0,           0, "rdac32",                &user_data.rdac[8],   // 27
-  2, UNIT_BYTE,      0, 0,           0, "rdac36",                &user_data.rdac[9],   // 28
-  2, UNIT_BYTE,      0, 0,           0, "rdac40",                &user_data.rdac[10],  // 29
-  2, UNIT_BYTE,      0, 0,           0, "rdac44",                &user_data.rdac[11],  // 30
-  2, UNIT_BYTE,      0, 0,           0, "rdac48",                &user_data.rdac[12],  // 31
-  2, UNIT_BYTE,      0, 0,           0, "rdac52",                &user_data.rdac[13],  // 32
-  2, UNIT_BYTE,      0, 0,           0, "rdac56",                &user_data.rdac[14],  // 33
-  2, UNIT_BYTE,      0, 0,           0, "rdacsp",                &user_data.rdac[15],  // 34
+  2, UNIT_BYTE,      0, 0,           0, "rdac0",                 &user_data.rdac[0],   // 20
+  2, UNIT_BYTE,      0, 0,           0, "rdac4",                 &user_data.rdac[1],   // 21
+  2, UNIT_BYTE,      0, 0,           0, "rdac8",                 &user_data.rdac[2],   // 22
+  2, UNIT_BYTE,      0, 0,           0, "rdac12",                &user_data.rdac[3],   // 23
+  2, UNIT_BYTE,      0, 0,           0, "rdac16",                &user_data.rdac[4],   // 24
+  2, UNIT_BYTE,      0, 0,           0, "rdac20",                &user_data.rdac[5],   // 25
+  2, UNIT_BYTE,      0, 0,           0, "rdac24",                &user_data.rdac[6],   // 26
+  2, UNIT_BYTE,      0, 0,           0, "rdac28",                &user_data.rdac[7],   // 27
+  2, UNIT_BYTE,      0, 0,           0, "rdac32",                &user_data.rdac[8],   // 28
+  2, UNIT_BYTE,      0, 0,           0, "rdac36",                &user_data.rdac[9],   // 29
+  2, UNIT_BYTE,      0, 0,           0, "rdac40",                &user_data.rdac[10],  // 30
+  2, UNIT_BYTE,      0, 0,           0, "rdac44",                &user_data.rdac[11],  // 31
+  2, UNIT_BYTE,      0, 0,           0, "rdac48",                &user_data.rdac[12],  // 32
+  2, UNIT_BYTE,      0, 0,           0, "rdac52",                &user_data.rdac[13],  // 33
+  2, UNIT_BYTE,      0, 0,           0, "rdac56",                &user_data.rdac[14],  // 34
+  2, UNIT_BYTE,      0, 0,           0, "rdacsp",                &user_data.rdac[15],  // 35
 
-  2, UNIT_BYTE,      0, 0,           0, "DtoAshft",              &user_data.riadc[0],  // 35
-  2, UNIT_BYTE,      0, 0,           0, "rpDVsc",                &user_data.riadc[1],  // 36
-  2, UNIT_BYTE,      0, 0,           0, "rpDIsc",                &user_data.riadc[2],  // 37
-  2, UNIT_BYTE,      0, 0,           0, "rpDV6",                 &user_data.riadc[3],  // 38  
-  2, UNIT_BYTE,      0, 0,           0, "rpDI6",                 &user_data.riadc[4],  // 39
-  2, UNIT_BYTE,      0, 0,           0, "rpDI5",                 &user_data.riadc[5],  // 40
-  2, UNIT_BYTE,      0, 0,           0, "rpDI33",                &user_data.riadc[6],  // 41
-  2, UNIT_BYTE,      0, 0,           0, "rpDI18",                &user_data.riadc[7],  // 42
-  2, UNIT_BYTE,      0, 0,           0, "rSHTemp",               &user_data.rSHTemp,   // 43
-  2, UNIT_BYTE,      0, 0,           0, "rRHumid",               &user_data.rSHhumid,  // 44
+  2, UNIT_BYTE,      0, 0,           0, "rD2Ashft",              &user_data.riadc[0],  // 36
+  2, UNIT_BYTE,      0, 0,           0, "rpDVsc",                &user_data.riadc[1],  // 37
+  2, UNIT_BYTE,      0, 0,           0, "rpDIsc",                &user_data.riadc[2],  // 38
+  2, UNIT_BYTE,      0, 0,           0, "rpDV6",                 &user_data.riadc[3],  // 39  
+  2, UNIT_BYTE,      0, 0,           0, "rpDI6",                 &user_data.riadc[4],  // 40
+  2, UNIT_BYTE,      0, 0,           0, "rpDI5",                 &user_data.riadc[5],  // 41
+  2, UNIT_BYTE,      0, 0,           0, "rpDI33",                &user_data.riadc[6],  // 42
+  2, UNIT_BYTE,      0, 0,           0, "rpDI18",                &user_data.riadc[7],  // 43
+  2, UNIT_BYTE,      0, 0,           0, "rSHTemp",               &user_data.rSHTemp,   // 44
+  2, UNIT_BYTE,      0, 0,           0, "rRHumid",               &user_data.rSHhumid,  // 45
 
-  1, UNIT_BYTE,      0, 0,           0, "watchdog",              &user_data.spare1,    // 45
-  2, UNIT_BYTE,      0, 0,           0, "spare2",                &user_data.spare2,    // 46
+  1, UNIT_BYTE,      0, 0,           0, "watchdog",              &user_data.spare1,    // 46
+  2, UNIT_BYTE,      0, 0,           0, "spare2",                &user_data.spare2,    // 47
 
-  4, UNIT_BYTE,      0, 0, MSCBF_FLOAT, "eepValue",              &user_data.eepValue,  // 47
-  4, UNIT_BYTE,      0, 0,           0, "eeCtrSet",              &user_data.eeCtrSet,  // 48
+  4, UNIT_BYTE,      0, 0, MSCBF_FLOAT, "eepValue",              &user_data.eepValue,  // 48
+  4, UNIT_BYTE,      0, 0,           0, "eeCtrSet",              &user_data.eeCtrSet,  // 49
   0
 };
 
@@ -506,7 +506,7 @@ void user_loop(void) {
     ENABLE_INTERRUPTS;
     // Power up Card
     switchonoff(ON);
-    delay_ms(500);
+    delay_ms(1000);
     // Force Check on Voltage during loop
     bCPupdoitNOW = ON;
     // Wait for Check before setting SPup
@@ -700,15 +700,18 @@ void user_loop(void) {
       //Temporary store the first address of page
       eeptemp_addr = PageAddr[(unsigned char)(user_data.eepage & 0x07)];
       //Temporary store the first address of data which has to be written
-      eeptemp_source = (unsigned char *) &eepage;
+      eeptemp_source = (unsigned char xdata *) &eepage;
     }
 
     // EEPROM clear request
     if (CeeClr)  eep_request = WRITE_EEPROM;   //---PAA--- WAS CLEAR BUT WILL ERASE EEPROM!
     else         eep_request = WRITE_EEPROM;
 
-    eeprom_channel = ExtEEPROM_Write_Clear (eeptemp_addr, &(eeptemp_source)
-                     , PAGE_SIZE, eep_request, &eeprom_flag);
+    eeprom_channel = ExtEEPROM_Write_Clear (eeptemp_addr
+                                         , &eeptemp_source
+                                         , PAGE_SIZE
+                                         , eep_request
+                                         , &eeprom_flag);
 
     if (eeprom_channel == DONE) {
       SeeS = DONE;
