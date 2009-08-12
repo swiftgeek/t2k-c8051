@@ -52,8 +52,11 @@ float code offset[8] = {    0,     0,   0,     0,   0,   0,   0,   0};
 unsigned char xdata ltc2620mirror[16];
 
 /*****EEPROM VARIABLES*****/
-//The EEPROM is separated into a total of 4 pages, 0x600 is the WP page
-unsigned int xdata PageAddr[]={0x0, 0x200, 0x400, 0x600};
+#define SERIALN_LENGTH 4
+#define SERIALN_ADD    (0x600)  // Fixed as sitting at the first byte of the EEPROM
+
+// EEPROM page assignment (memory offset)  page Nr3 is the protected page
+unsigned int xdata PageAddr[]={0x000, 0x200, 0x400, 0x600};
 
 // The structure of each EEPAGE
 struct EEPAGE {
@@ -71,21 +74,22 @@ struct EEPAGE {
 //Initial values for eepage
 struct EEPAGE xdata eepage={
 // 0x00 - S/N
-     0   
-   , 0, 0
+     0x00000000   
+// 0x01 - Struct size, spare
+   , 0x0000, 0x0000
 // 0x02 - rdacs
-   , 0, 0, 0, 0, 0, 0, 0, 0
-   , 0, 0, 0, 0, 0, 0, 0, 0
+   , 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
+   , 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
 // 0x0a - lVIlimit 
-// D2A    Vss    Iss Vdd    Idd   I5  I3.3 I1.8
-   , 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+//   D2A  Vss  Iss  Vdd  Idd  I5   I3.3  I1.8
+   , 0.0, 5.5, 0.1, 5.5, 0.0, 0.0, 0.0,  0.0
 // 0x12 - uVIlimit 
-// D2A    Vss    Iss Vdd    Idd   I5  I3.3 I1.8
-   , 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0  
+//   D2A  Vss  Iss  Vdd  Idd  I5   I3.3  I1.8
+   , 6.0, 6.5, 0.4, 6.5, 0.6, 0.2, 0.5,  0.2  
 // 0x1a - LuC Temperature,  HuC Temperature
    , 10., 50.
 // 0x1c - LSST Temperature,  HSST Temperature
-   , 10. ,50.
+   , 10., 50.
 };
 
 #define PAGE_SIZE sizeof(eepage)
@@ -113,9 +117,11 @@ float IntTemp;
 float Temp58;
 float Temp33;
 float SHTtemp;
-float SHThumi;
+float SHThumid;
 unsigned int rdac[16];
 unsigned int riadc[8];
+unsigned int rSHTemp;
+unsigned int rSHhumid;
 char spare1;
 int  spare2;
 float          eepValue;    //EEPROM Value to be stored/read
@@ -126,6 +132,7 @@ struct user_data_type xdata user_data;
 #define IDXDAC      19
 #define IDXCTL       2
 #define IDXEEP_CTL  46
+#define IDXDELAY     5
 
 unsigned char bdata rCTL;
 sbit CPup   = rCTL ^ 0;
@@ -166,7 +173,7 @@ sbit EEPROM   = rESR ^ 3;  //0x800
 sbit pcbssTT  = rESR ^ 4;    //0x1000
 sbit RdssT    = rESR ^ 5;    //0x2000
 //sbit xxx      = rESR ^ 6;  //0x4000
-//sbit xxx      = rESR ^ 7;  //0x8000
+sbit V6Fault  = rESR ^ 7;  //0x8000
 
 
 // Shutdown mask
@@ -175,8 +182,9 @@ sbit RdssT    = rESR ^ 5;    //0x2000
 // All the Vreg U/I, uC/Board/FGD Temperature
 #define UCTEMPERATURE_MASK   0x0180
 #define BTEMPERATURE_MASK    0x0600
-#define VOLTAGE_MASK         0x0005
-#define CURRENT_MASK         0x007A
+#define VOLTAGE_MASK         0x0001
+#define CURRENT_MASK         0x0000
+#define MAIN_CURRENT_MASK    0x8000
 
 //---------------------------------------------------------------
 // P2.7:+1.8En   .6:+3.3En    .5:+5En     .4:SPIMOSI | .3:SPISCK  .2:RAMHLDn  .1:SPIMISO .0:RAMWP
@@ -187,6 +195,9 @@ sbit VREG_5    = P2 ^ 5;
 sbit VREG_3    = P2 ^ 6;
 sbit VREG_1    = P2 ^ 7;
 sbit V6ddFlag  = P1 ^ 6;
+
+sbit DELAY_0   = P0 ^ 6;
+sbit DELAY_1   = P0 ^ 7;
 
 /*****HUMIDITY SENSOR VARIABLES*****/
 #define humsense 1

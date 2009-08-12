@@ -98,7 +98,7 @@ void user_init(unsigned char init)
   sprintf(sys_info.node_name,"TEMP36");
   SFRPAGE  = CONFIG_PAGE;
   P2MDOUT |= 0x31; // Setting the RAM_CSn. SPI_MOSI, SPI_SCK to push pull
-  P2MDOUT &= 0xFB; // Setting the RAM_WPn to open drain
+  P2MDOUT &= ~0x04; // Setting the RAM_WPn to open drain
   P0MDOUT |= 0x04; // RS485 in PP
 
 //-----------------------------------------------------------------------------
@@ -165,16 +165,18 @@ void user_init(unsigned char init)
 //-----------------------------------------------------------------------------
 //
 #elif defined(L_LPB)
-  // P3.7:A7       .6:A6        .5:A5       .4:A4      | .3:A3      .2:A2       .1:A1      .0:A0
-  // P2.7:+1.8En   .6:+3.3En    .5:+5En     .4:SPIMOSI | .3:SPISCK  .2:RAMHLDn  .1:SPIMISO .0:RAMWP
-  // P1.7:NC       .6:+6ddFlag  .5:R/HClock .4:R/HData | .3:+6ddEN  .2:RAMCS    .1:D2ASync .0:SST_DRV
-  // P0.7:NC       .6:NC        .5:485TXEN  .4:NC      | .3:NC      .2:NC       .1:Rx      .0:Tx
+// P3.7:A7       .6:A6        .5:A5       .4:A4      | .3:A3      .2:A2       .1:A1      .0:A0 
+// P2.7:+1.8En   .6:+3.3En    .5:+5En     .4:SPIMOSI | .3:SPISCK  .2:RAMHLDn  .1:SPIMISO .0:RAMWP
+// P1.7:NC       .6:+6ddFlag  .5:R/HClock .4:R/HData | .3:+6ddEN  .2:RAMCS    .1:NC      .0:SST_DRV 
+// P0.7:DEL_CLK  .6:DEL_DATA  .5:485TXEN  .4:NC      | .3:DELCS1  .2:DELCS2   .1:Rx      .0:Tx 
   sprintf(sys_info.node_name,"LPB");
-  P3MDOUT  = 0x00; // Crate address in OD
-  P2MDOUT |= 0x18; // SPI_MOSI, SPI_SCK in PP
+  SFRPAGE  = CONFIG_PAGE;
+  P2MDOUT |= 0x18;        // SPI_MOSI, SPI_SCK  PP
+  P3MDOUT |= 0xFF; // PushPull for the address
   P2MDOUT &= 0xFE; // RAM_WPn in OD
   P1MDOUT |= 0x04; // RAM_CSn in PP
   P0MDOUT |= 0x20; // RS485_ENABLE in PP
+  XBR2 &= ~0x04;   // Disable UART1
 
   // Read Board address from P3 port directly
   // Configure and read the address
@@ -243,7 +245,7 @@ void user_init(unsigned char init)
   // memory contains valid information or if it is empty
   ExtEEPROM_Read(WP_START_ADDR, (unsigned char*)&eepageWp, PAGE_SIZE);
   DISABLE_INTERRUPTS;
-  user_data.serialNWp   = eepageWp.SerialN;
+  user_data.serialN = user_data.serialNWp   = eepageWp.SerialN;
   user_data.structszeWp = eepageWp.structsze;
   ENABLE_INTERRUPTS;
  
@@ -323,6 +325,7 @@ void user_loop(void)
 	    // Use local struct for WP and P0
 	    // Update S/N from mscb to eepage
 	    eepage.SerialN = user_data.serialN;
+      eepage.structsze = PAGE_SIZE;
 	    }
       if (user_data.control & 0x2) {
 	      // Use P0 but update S/N from WP

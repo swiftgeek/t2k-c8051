@@ -195,19 +195,38 @@ struct EEPAGE xdata eepage = {
 //-----------------------------------------------------------------------------
 #elif defined(L_LPB)
 
-//The structure of each EEPAGE
+// The structure of each EEPAGE
 struct EEPAGE {
   unsigned long SerialN;
-  unsigned int structsze;   //  0x1
-  float sstOffset[2];
+  unsigned int structsze; 
+  unsigned int spare; 
+  unsigned int rdac[16];
+  float lVIlimit[8];
+  float uVIlimit[8];
+  float luCTlimit, uuCTlimit;
+  float lSSTlimit, uSSTlimit;
 };
 
 //+/- 16 increments corresponds to a +/- 0.25 degrees offset in the ADT7486A chip
 //Initial values for eepage
 struct EEPAGE xdata eepage={
-   0,    // S/N
-   0,
-   0.0, 0.0  // SST Offset
+// 0x00 - S/N
+     0x00000000   
+// 0x01 - Struct size, spare
+   , 0x0000, 0x0000
+// 0x02 - rdacs
+   , 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
+   , 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
+// 0x0a - lVIlimit 
+//   D2A  Vss  Iss  Vdd  Idd  I5   I3.3  I1.8
+   , 0.0, 5.5, 0.1, 5.5, 0.0, 0.0, 0.0,  0.0
+// 0x12 - uVIlimit 
+//   D2A  Vss  Iss  Vdd  Idd  I5   I3.3  I1.8
+   , 6.0, 6.5, 0.4, 6.5, 0.6, 0.2, 0.5,  0.2  
+// 0x1a - LuC Temperature,  HuC Temperature
+   , 10., 50.
+// 0x1c - LSST Temperature,  HSST Temperature
+   , 10., 50.
 };
 #endif  // L_xxx
 

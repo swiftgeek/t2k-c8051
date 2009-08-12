@@ -90,7 +90,7 @@ MSCB_INFO_VAR code vars[] = {
   1, UNIT_BYTE,      0, 0,           0, "Control",               &user_data.control,   // 2
   1, UNIT_BYTE,      0, 0,           0, "Status",                &user_data.status,    // 3 
   1, UNIT_BYTE,      0, 0,           0, "eepage",                &user_data.eepage,    // 4
-  1, UNIT_BYTE,      0, 0,           0, "Spare",                 &user_data.spare,     // 5
+  1, UNIT_BYTE,      0, 0,           0, "Delay",                 &user_data.spare,     // 5
   4, UNIT_VOLT,      0, 0, MSCBF_FLOAT, "DtoAshft",              &user_data.iadc[0],   // 5
   4, UNIT_VOLT,      0, 0, MSCBF_FLOAT, "pDVsc",                 &user_data.iadc[1],   // 6
   4, UNIT_AMPERE,    0, 0, MSCBF_FLOAT, "pDIsc",                 &user_data.iadc[2],   // 7
@@ -106,7 +106,7 @@ MSCB_INFO_VAR code vars[] = {
   4, UNIT_CELSIUS,   0, 0, MSCBF_FLOAT, "Temp33",                &user_data.Temp33,    // 16
 
   4, UNIT_CELSIUS,   0, 0, MSCBF_FLOAT, "SHTtemp",               &user_data.SHTtemp,   // 17
-  4, UNIT_PERCENT,   0, 0, MSCBF_FLOAT, "RHumid",                &user_data.SHThumi,   // 18
+  4, UNIT_PERCENT,   0, 0, MSCBF_FLOAT, "RHumid",                &user_data.SHThumid,   // 18
 
   2, UNIT_BYTE,      0, 0,           0, "rdac0",                 &user_data.rdac[0],   // 19
   2, UNIT_BYTE,      0, 0,           0, "rdac4",                 &user_data.rdac[1],   // 20
@@ -125,20 +125,22 @@ MSCB_INFO_VAR code vars[] = {
   2, UNIT_BYTE,      0, 0,           0, "rdac56",                &user_data.rdac[14],  // 33
   2, UNIT_BYTE,      0, 0,           0, "rdacsp",                &user_data.rdac[15],  // 34
 
-  4, UNIT_BYTE,      0, 0, MSCBF_FLOAT, "DtoAshft",              &user_data.riadc[0],  // 35
-  4, UNIT_BYTE,      0, 0, MSCBF_FLOAT, "rpDVsc",                &user_data.riadc[1],  // 36
-  4, UNIT_BYTE,      0, 0, MSCBF_FLOAT, "rpDIsc",                &user_data.riadc[2],  // 37
-  4, UNIT_BYTE,      0, 0, MSCBF_FLOAT, "rpDV6",                 &user_data.riadc[3],  // 38  
-  4, UNIT_BYTE,      0, 0, MSCBF_FLOAT, "rpDI6",                 &user_data.riadc[4],  // 39
-  4, UNIT_BYTE,      0, 0, MSCBF_FLOAT, "rpDI5",                 &user_data.riadc[5],  // 40
-  4, UNIT_BYTE,      0, 0, MSCBF_FLOAT, "rpDI33",                &user_data.riadc[6],  // 41
-  4, UNIT_BYTE,      0, 0, MSCBF_FLOAT, "rpDI18",                &user_data.riadc[7],  // 42
+  2, UNIT_BYTE,      0, 0,           0, "DtoAshft",              &user_data.riadc[0],  // 35
+  2, UNIT_BYTE,      0, 0,           0, "rpDVsc",                &user_data.riadc[1],  // 36
+  2, UNIT_BYTE,      0, 0,           0, "rpDIsc",                &user_data.riadc[2],  // 37
+  2, UNIT_BYTE,      0, 0,           0, "rpDV6",                 &user_data.riadc[3],  // 38  
+  2, UNIT_BYTE,      0, 0,           0, "rpDI6",                 &user_data.riadc[4],  // 39
+  2, UNIT_BYTE,      0, 0,           0, "rpDI5",                 &user_data.riadc[5],  // 40
+  2, UNIT_BYTE,      0, 0,           0, "rpDI33",                &user_data.riadc[6],  // 41
+  2, UNIT_BYTE,      0, 0,           0, "rpDI18",                &user_data.riadc[7],  // 42
+  2, UNIT_BYTE,      0, 0,           0, "rSHTemp",               &user_data.rSHTemp,   // 43
+  2, UNIT_BYTE,      0, 0,           0, "rRHumid",               &user_data.rSHhumid,  // 44
 
-  1, UNIT_BYTE,      0, 0,           0, "watchdog",              &user_data.spare1,    // 43
-  2, UNIT_BYTE,      0, 0,           0, "spare2",                &user_data.spare2,    // 44
+  1, UNIT_BYTE,      0, 0,           0, "watchdog",              &user_data.spare1,    // 45
+  2, UNIT_BYTE,      0, 0,           0, "spare2",                &user_data.spare2,    // 46
 
-  4, UNIT_BYTE,      0, 0, MSCBF_FLOAT, "eepValue",              &user_data.eepValue,  // 45
-  4, UNIT_BYTE,      0, 0,           0, "eeCtrSet",              &user_data.eeCtrSet,  // 46
+  4, UNIT_BYTE,      0, 0, MSCBF_FLOAT, "eepValue",              &user_data.eepValue,  // 47
+  4, UNIT_BYTE,      0, 0,           0, "eeCtrSet",              &user_data.eeCtrSet,  // 48
   0
 };
 
@@ -213,16 +215,36 @@ float read_voltage(unsigned char channel,unsigned int *rvalue, unsigned char gai
 //
 void switchonoff(unsigned char command)
 {
+  char xdata i;
+
   if(command==ON)
   {
     SFRPAGE  = CONFIG_PAGE;
     VCC_EN = ON;
     VREG_5 = VREG_3 = VREG_1 = ON;
+    P0MDOUT |= 0xCC;   // PP
+
+    // Activate 16 dac settings
+    // user_data contains correct values, force update 
+    // by setting mirror to 0xff 
+    for(i=0;i<16;i++) ltc2620mirror[i] = 0x001;
+
+    // Needs power for DAC update, by now it should be ON
+    // Force DAC updates
+    LTC2620_Flag = ON;
+
   } else if(command==OFF) {
     // Switch all the ports to open drain except for...
     SFRPAGE  = CONFIG_PAGE;
     VCC_EN = OFF;
     VREG_5 = VREG_3 = VREG_1 = OFF;
+
+// P3.7:A7       .6:A6        .5:A5       .4:A4      | .3:A3      .2:A2       .1:A1      .0:A0 
+// P2.7:+1.8En   .6:+3.3En    .5:+5En     .4:SPIMOSI | .3:SPISCK  .2:RAMHLDn  .1:SPIMISO .0:RAMWP
+// P1.7:NC       .6:+6ddFlag  .5:R/HClock .4:R/HData | .3:+6ddEN  .2:RAMCS    .1:NC      .0:SST_DRV 
+// P0.7:DEL_CLK  .6:DEL_DATA  .5:485TXEN  .4:NC      | .3:DELCS1  .2:DELCS2   .1:Rx      .0:Tx 
+  P0MDOUT &= ~0xCC;   // OD
+
   }
 }
 
@@ -272,7 +294,8 @@ void user_init(unsigned char init)
   SFRPAGE  = CONFIG_PAGE;
   // P0MDOUT already contains Tx in push-pull
   P0MDOUT |= 0x20;   // add RS485_ENABLE in push-pull
-
+  // Disable UART1
+  XBR2 &= ~0x04;
   //
   // uC Miscellaneous ADCs (V/I Monitoring)
   //-----------------------------------------------------------------------------
@@ -308,6 +331,7 @@ void user_init(unsigned char init)
 //---------------------------------------------------------------
 //
 // LED DAC (2 Dacs chip=1 & chip=2)
+  SFRPAGE  = CONFIG_PAGE;
   P0MDOUT |= 0xC;        // DACCS PP
   LTC2620_Init(1);
   LTC2620_Init(2);
@@ -322,14 +346,14 @@ void user_init(unsigned char init)
   P1MDOUT |= 0x04;        // RAM_CSn PP
   ExtEEPROM_Init();
 
-  //Get serial number from write protected area
-  ExtEEPROM_Read  (WP_START_ADDR, (unsigned char*)&eepage, PAGE_SIZE);
-  DISABLE_INTERRUPTS;
+  // Read only the serial number from the protected page
+  ExtEEPROM_Read(SERIALN_ADD,(unsigned char*)&eepage.SerialN, SERIALN_LENGTH);
   user_data.SerialN = eepage.SerialN;
-  ENABLE_INTERRUPTS;
 
-  //Refer to the first Page of the non_protected area
-  ExtEEPROM_Read  (PageAddr[0], (unsigned char*)&eepage ,PAGE_SIZE);
+  // Read all other settings from page 0(non-protected)
+  ExtEEPROM_Read(PageAddr[0],(unsigned char*)&eepage, PAGE_SIZE);
+  DISABLE_INTERRUPTS;
+
 #endif
 
 //---------------------------------------------------------------
@@ -342,7 +366,9 @@ void user_init(unsigned char init)
   HumiSensor_Init(humsense);
   //temporary humidity sensor
   user_data.SHTtemp = 0;
-  user_data.SHThumi = 0;
+  user_data.SHThumid = 0;
+  user_data.rSHTemp = 0;
+  user_data.rSHhumid = 0;
 #endif
 
 //---------------------------------------------------------------
@@ -350,6 +376,8 @@ void user_init(unsigned char init)
 // Configure and read the address
 // C C C C C C 1 0 1 is the MSCB Addr[8..0], 9 bits
 // Modifying what the board reads from the Pins
+  SFRPAGE  = CONFIG_PAGE;
+  P3MDOUT |= 0xFF; // PushPull for the address
   pca_add= P3;
   board_address= (((~pca_add)<<1) & 0x01F8)| 0x0005;
   sys_info.node_addr   = board_address;
@@ -384,6 +412,7 @@ void user_init(unsigned char init)
 //---------------------------------------------------------------
 //
 // Main switch PP
+  SFRPAGE  = CONFIG_PAGE;
   P1MDOUT |= 0x08;       // VCC_EN PP
   VCC_EN = OFF;
   P1MDOUT &= ~0x40;      // VCC_Flag OD
@@ -393,6 +422,13 @@ void user_init(unsigned char init)
 
   // Watchdog
   user_data.spare1 = 0;
+
+//---------------------------------------------------------------
+//
+// Delay setting
+  SFRPAGE  = CONFIG_PAGE;
+  P0MDOUT |= 0xC0;       // Delay PP
+  DELAY_0 = DELAY_1 = 0;
 } // End of Init()
 
 
@@ -408,7 +444,13 @@ void user_write(unsigned char index) reentrant
   // Control
   if(index==IDXCTL)
     rCTL = user_data.control;
-  
+
+  // Delay
+  if (index==IDXDELAY) {
+    DELAY_0 =  user_data.spare & 0x1;
+    DELAY_1 = (user_data.spare & 0x2 >> 1);
+  }  
+
   // EEPROM command
   if (index == IDXEEP_CTL)
     EEP_CTR_Flag = SET;
@@ -436,12 +478,12 @@ unsigned char user_func(unsigned char *data_in, unsigned char *data_out)
 void user_loop(void) {
 
   float xdata volt, temperature;
-  unsigned int xdata rvolt;
-  unsigned char xdata ltc2620_idx, ltc2620_chip, ltc2620_chan;
+  unsigned int xdata rvolt, i;
+  unsigned char xdata eeprom_channel, ltc2620_idx, ltc2620_chip, ltc2620_chan;
   float* xdata pfData;
   unsigned long xdata mask;
   unsigned int xdata *rpfData;
-
+ 
   //-----------------------------------------------------------------------------
   //
   // Watchdog
@@ -462,7 +504,7 @@ void user_loop(void) {
     ENABLE_INTERRUPTS;
     // Power up Card
     switchonoff(ON);
-    delay_ms(100);
+    delay_ms(500);
     // Force Check on Voltage during loop
     bCPupdoitNOW = ON;
     // Wait for Check before setting SPup
@@ -504,7 +546,7 @@ void user_loop(void) {
   //-----------------------------------------------------------------------------
   //
   // Measuring the humidity and temperature every 5 sec
-  if ((uptime() - humidTime) > 5) {
+  if ((uptime() - humidTime) > 2) {
     status = HumidSensor_Cmd (&rSHThumi1
                              ,&rSHTtemp1
                              ,&humidity
@@ -514,8 +556,10 @@ void user_loop(void) {
                              ,humsense);
     if (status == DONE){	 
       DISABLE_INTERRUPTS;
-      user_data.SHThumi = humidity;
-      user_data.SHTtemp = htemperature;
+      user_data.rSHTemp  = rSHTtemp1;
+      user_data.rSHhumid = rSHThumi1;
+      user_data.SHThumid = humidity;
+      user_data.SHTtemp  = htemperature;
       ENABLE_INTERRUPTS;
     }
     humidTime = uptime();
@@ -546,8 +590,8 @@ void user_loop(void) {
 
   //-----------------------------------------------------------------------------
   //
-  // read Voltage status bits
-  S6dd = V6ddFlag;   // +6VddSwitched flag
+  // read Vdd switch Current Fault
+  V6Fault = (V6ddFlag == 1) ? 0 : 1;   // +6Vdd Fault flag
 
   //-----------------------------------------------------------------------------
   //
@@ -577,7 +621,8 @@ void user_loop(void) {
       rpfData[channel] = rvolt;
       ENABLE_INTERRUPTS;
       mask = (1<<channel); /// Error mask
-      if ((volt < eepage.lVIlimit[channel]) || (volt > eepage.uVIlimit[channel])) rESR |= mask; // out of range
+      if ((volt < eepage.lVIlimit[channel]) || (volt > eepage.uVIlimit[channel]))  rESR |= mask;
+      else rESR &= ~mask;   // in range
     }  // U/I loop
 
     // U/I error not yet published ...
@@ -587,7 +632,7 @@ void user_loop(void) {
 
   //-----------------------------------------------------------------------------
   // Finally take action based on ERROR register
-  if (rESR & (VOLTAGE_MASK | UCTEMPERATURE_MASK | BTEMPERATURE_MASK | CURRENT_MASK)) {
+  if (rESR & (VOLTAGE_MASK | UCTEMPERATURE_MASK | BTEMPERATURE_MASK | MAIN_CURRENT_MASK)) {
     SPup = OFF;
     switchonoff(OFF);
     SsS = ON;
@@ -613,11 +658,11 @@ void user_loop(void) {
         eep_address = (float*)&eepage + (user_data.eeCtrSet & 0x000000ff);
         //Checking for the write request
         if (user_data.eeCtrSet & EEP_CTRL_WRITE){
-          *eep_address = user_data.eepValue;
-        //Checking for the read request
+          *eep_address = user_data.eepValue;  // Copy user_data into eepage structure
+          //Checking for the read request
         } else if (user_data.eeCtrSet & EEP_CTRL_READ) {
           DISABLE_INTERRUPTS;
-          user_data.eepValue = *eep_address;
+          user_data.eepValue = *eep_address;  // Publish eep value in user_data
           ENABLE_INTERRUPTS;
         } else {
           // Tell the user that inappropriate task has been requested
@@ -630,73 +675,70 @@ void user_loop(void) {
         user_data.eeCtrSet = EEP_CTRL_OFF_RANGE;
         ENABLE_INTERRUPTS;
       }
-   } else {
-    // Tell the user that invalid key has been provided
-    DISABLE_INTERRUPTS;
-    user_data.eeCtrSet = EEP_CTRL_INVAL_KEY;
-    ENABLE_INTERRUPTS;
-   }
+    } else {
+      // Tell the user that invalid key has been provided
+      DISABLE_INTERRUPTS;
+      user_data.eeCtrSet = EEP_CTRL_INVAL_KEY;
+      ENABLE_INTERRUPTS;
+    }
     EEP_CTR_Flag = CLEAR;
   }  // if eep
 
   //-----------------------------------------------------------------------------
   //
   //Writing to the EEPROM
-  if (CeeS){
-    //Check if we are here for the first time
-    if (!eeprom_flag){
+  if (CeeS) {
+    // Check if we are here for the first time
+    if (!eeprom_flag) {  // first in
       rCSR = user_data.status;
+
+      // Update eepage with the current user_data variables
+      for(i=0;i<16;i++)  eepage.rdac[i] = user_data.rdac[i];
+
       //Temporary store the first address of page
       eeptemp_addr = PageAddr[(unsigned char)(user_data.eepage & 0x07)];
       //Temporary store the first address of data which has to be written
-      eeptemp_source = (unsigned char *)&eepage;
+      eeptemp_source = (unsigned char *) &eepage;
     }
-    //EPROM clear request
-    if (CeeClr)
-      eep_request = CLEAR_EEPROM;
-    else
-      eep_request = WRITE_EEPROM;
 
-    eeprom_wstatus = ExtEEPROM_Write_Clear (eeptemp_addr
-      , &(eeptemp_source)
-      , PAGE_SIZE
-      , eep_request       // W / Clear
-      , &eeprom_flag);    // Check to see if
-    //everything has been written
-    if (eeprom_wstatus == DONE) {
+    // EEPROM clear request
+    if (CeeClr)  eep_request = WRITE_EEPROM;   //---PAA--- WAS CLEAR BUT WILL ERASE EEPROM!
+    else         eep_request = WRITE_EEPROM;
+
+    eeprom_channel = ExtEEPROM_Write_Clear (eeptemp_addr, &(eeptemp_source)
+                     , PAGE_SIZE, eep_request, &eeprom_flag);
+
+    if (eeprom_channel == DONE) {
       SeeS = DONE;
       eeprom_flag = CLEAR;
       CeeS = CLEAR;
-    }
-    else
-      SeeS = FAILED;
+      //Set the active page
+      user_data.eepage |= ((user_data.eepage & 0x07) << 5);
+    } else  SeeS = FAILED;
 
-    // Publish Registers state
-    DISABLE_INTERRUPTS;
-    user_data.control = rCTL;
-    user_data.status  = rCSR;
-    ENABLE_INTERRUPTS;
-  }
+    publishCtlCsr();      // Publish Registers state
+  } // eep Save
 
   //-----------------------------------------------------------------------------
   //
   //Reading from the EEPROM
   if (CeeR) {
     rCSR = user_data.status;
-    eeprom_rstatus = ExtEEPROM_Read  (eeptemp_addr,
-      (unsigned char*)&eepage, PAGE_SIZE);
-    if (eeprom_rstatus == DONE){
-      CeeR = CLEAR;
+    // Read the active page
+    channel = ExtEEPROM_Read (PageAddr[(unsigned char)(user_data.eepage & 0x07)], (unsigned char*)&eepage, PAGE_SIZE);
+    if (channel == DONE) {
       SeeR = DONE;
-    }
-    else
-      SeeR = FAILED;
+ 
+      // Publish user_data new settings
+      DISABLE_INTERRUPTS;
+      for(i=0;i<16;i++)  user_data.rdac[i] = eepage.rdac[i];
+      ENABLE_INTERRUPTS;
 
-    // Publish Registers state
-    DISABLE_INTERRUPTS;
-    user_data.control = rCTL;
-    user_data.status  = rCSR;
-    ENABLE_INTERRUPTS;
-  }
+      bDacdoitNOW = ON;        // Force a DAC Setting on next loop
+    } else  SeeR = FAILED;
+
+    CeeR = CLEAR;       // Reset action
+    publishCtlCsr();    // Publish Registers state
+  }  // eep Restore
 #endif   // EEPROM
 }
