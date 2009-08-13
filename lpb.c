@@ -63,6 +63,7 @@ sbit EEP_CTR_Flag   = bChange ^ 4;
 
 sbit SPI_SCK   = MSCB_SPI_SCK;     // SPI Protocol Serial Clock 
 sbit SPI_MOSI  = MSCB_SPI_MOSI;    // SPI Protocol Master Out Slave In
+sbit SPI_MISO  = MSCB_SPI_MISO;    // SPI Protocol Master Out Slave In
 
 unsigned char channel;
 unsigned long xdata humidTime=0, currentTime=0;
@@ -77,10 +78,10 @@ unsigned char xdata FCSorig1, FCSdevi1;
 float* xdata eep_address;
 static unsigned char tcounter;
 static unsigned char xdata eeprom_flag=CLEAR;
-unsigned char xdata eeprom_wstatus, eeprom_rstatus;
+static unsigned char xdata eeprom_wstatus, eeprom_rstatus;
 static unsigned int  xdata eeptemp_addr;
-unsigned char xdata * eeptemp_source;
-unsigned char xdata eep_request;
+static unsigned char xdata * eeptemp_source;
+static unsigned char xdata eep_request;
 
 // User Data structure declaration
 //-----------------------------------------------------------------------------
@@ -323,7 +324,7 @@ void user_init(unsigned char init)
 //
 // SPI bus
   SFRPAGE  = CONFIG_PAGE;
-  P2 = 2;                 // Enable READ on MISO
+  SPI_MISO = 1;            // Enable READ on MISO
   P2MDOUT |= 0x18;        // SPI_MOSI, SPI_SCK  PP
   SPI_SCK  = 0;
   SPI_MOSI = 0;
@@ -341,11 +342,11 @@ void user_init(unsigned char init)
   ExtEEPROM_Init();
 
   // Read only the serial number from the protected page
-  ExtEEPROM_Read(SERIALN_ADD,(unsigned char*)&eepage.SerialN, SERIALN_LENGTH);
+  ExtEEPROM_Read(SERIALN_ADD,(unsigned char xdata *)&eepage.SerialN, SERIALN_LENGTH);
   user_data.SerialN = eepage.SerialN;
 
   // Read all other settings from page 0(non-protected)
-  ExtEEPROM_Read(PageAddr[0],(unsigned char*)&eepage, PAGE_SIZE);
+  ExtEEPROM_Read(PageAddr[0],(unsigned char xdata *)&eepage, PAGE_SIZE);
   DISABLE_INTERRUPTS;
 
 #endif
@@ -355,7 +356,7 @@ void user_init(unsigned char init)
 //Humidity sensor initialization
 #ifdef _HUMSEN_
   SFRPAGE  = CONFIG_PAGE;
-  P1MDOUT |= 0x20;        // R/HClock, R/HData (OD)
+  P1MDOUT |= 0x20;        // R/HClock PP, R/HData (OD)
   // Initializing the SHTxx communication
   HumiSensor_Init(humsense);
   //temporary humidity sensor

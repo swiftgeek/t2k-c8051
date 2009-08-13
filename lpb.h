@@ -52,11 +52,12 @@ float code offset[8] = {    0,     0,   0,     0,   0,   0,   0,   0};
 unsigned char xdata ltc2620mirror[16];
 
 /*****EEPROM VARIABLES*****/
-#define SERIALN_LENGTH 4
-#define SERIALN_ADD    (0x600)  // Fixed as sitting at the first byte of the EEPROM
 
 // EEPROM page assignment (memory offset)  page Nr3 is the protected page
 unsigned int xdata PageAddr[]={0x000, 0x200, 0x400, 0x600};
+#define SERIALN_LENGTH 4
+#define SERIALN_ADD    (PageAddr[3])  // Fixed as sitting at the first byte of the EEPROM
+
 
 // The structure of each EEPAGE
 struct EEPAGE {
@@ -82,10 +83,10 @@ struct EEPAGE xdata eepage={
    , 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
 // 0x0a - lVIlimit 
 //   D2A  Vss  Iss  Vdd  Idd  I5   I3.3  I1.8
-   , 0.0, 5.5, 0.1, 5.5, 0.0, 0.0, 0.0,  0.0
+   , 0.0, 3.5, 0.1, 5.5, 0.0, 0.0, 0.0,  0.0
 // 0x12 - uVIlimit 
 //   D2A  Vss  Iss  Vdd  Idd  I5   I3.3  I1.8
-   , 6.0, 6.5, 0.4, 6.5, 0.6, 0.2, 0.5,  0.2  
+   , 6.0, 5.5, 0.2, 6.5, 1.8, 0.1, 0.5,  0.2  
 // 0x1a - LuC Temperature,  HuC Temperature
    , 10., 50.
 // 0x1c - LSST Temperature,  HSST Temperature
