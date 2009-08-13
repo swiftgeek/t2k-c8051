@@ -76,7 +76,7 @@ sbit RAM_WPn  = RAM_WRITE_PROTECT;   // The Write Protection signal would enable
 
 void ExtEEPROM_Init (void);
 unsigned char ExtEEPROM_Read (unsigned int ReadPage
-                            , unsigned char *destination
+                            , unsigned char xdata *destination
                             , unsigned int page_size);
 
 unsigned char ExtEEPROM_Write_Clear(unsigned int WritePage

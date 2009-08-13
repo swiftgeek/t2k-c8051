@@ -46,7 +46,7 @@ Reads data from ext_eeprom.
 @param *destination  address of memory which the read data would be stored
 @param page_size    number of bytes of data that the originator wants to read from memory
 */
-unsigned char ExtEEPROM_Read (unsigned int ReadPage, unsigned char *destination,
+unsigned char ExtEEPROM_Read (unsigned int ReadPage, unsigned char xdata *destination,
 unsigned int page_size) {
 
   unsigned int i=0;
@@ -87,9 +87,8 @@ Writes data to the ext_eeprom.
 @return EEP_BUSY           Indiacting that the device is busy performing the internal write cycle
 @return EEP_SUCCESS
 */
-
-
-unsigned char ExtEEPROM_Write_Clear(unsigned int write_addr
+/*
+unsigned char ExtEEPROM_Write_Clear_Orig(unsigned int xdata write_addr
                                   , unsigned char xdata **source
                                   , unsigned int page_size
                                   , unsigned char WC_flag
@@ -137,7 +136,7 @@ unsigned char ExtEEPROM_Write_Clear(unsigned int write_addr
     for (j=0; j<counter; j++) {
       if (WC_flag == WRITE_EEPROM){
         SPI_WriteByte(*psource);
-        psource += 1;
+        psource++;
       }
       else
          SPI_WriteByte(CLEAR_EEPROM);     //Clearing the memory
@@ -146,6 +145,60 @@ unsigned char ExtEEPROM_Write_Clear(unsigned int write_addr
     delay_us(EEP_delay);
     RAM_CSn = 1;   //Programming will start after the chip select is brought high
     delay_us(EEP_delay);
+  }
+  
+  // Disable Memory Write 
+  RAM_WPn = 0;
+  return EEP_SUCCESS;
+}
+*/
+unsigned char ExtEEPROM_Write_Clear(unsigned int write_addr
+                                  , unsigned char xdata **source
+                                  , unsigned int page_size
+                                  , unsigned char WC_flag
+                                  , unsigned char *flag)
+{
+  unsigned int i,j, Nblock, counter = EEP_MAX_BYTE;
+  unsigned char xdata *psource;
+
+  psource = *source;
+
+  //Checking if we are trying to write in the write protected block
+  if (write_addr+page_size >= WP_START_ADDR)
+    return EEP_PROTECTED;
+
+  // Enable Memory write access 
+  RAM_WPn = 1;
+  // Nblock would determine number of 32 bytes blocks
+  Nblock = page_size / EEP_MAX_BYTE;
+
+  for (i = 0; i <= Nblock; i++) {
+
+    write_addr = i * EEP_MAX_BYTE;          //Updating the address of mempry
+
+    // Checking for the last cycle of write operation
+    if (i == Nblock) {
+      counter = (page_size % EEP_MAX_BYTE);
+    }
+    ExtEEPROM_WriteEnable();
+    RAM_CSn = 0;
+
+    SPI_WriteByte(EEP_WRITEcmd);        //Sending the WRITE opcode
+    SPI_WriteUInt(write_addr);          //Sending the memory address which
+                                              //data is going to be stored in;
+    for (j=0; j<counter; j++) {
+      if (WC_flag == WRITE_EEPROM){
+        SPI_WriteByte(*psource);
+        psource++;
+      }
+      else
+         SPI_WriteByte(CLEAR_EEPROM);     //Clearing the memory
+    }
+
+    delay_us(EEP_delay);
+    RAM_CSn = 1;   //Programming will start after the chip select is brought high
+    delay_us(EEP_delay);
+    ExtEEPROM_Wait();
   }
   
   // Disable Memory Write 
