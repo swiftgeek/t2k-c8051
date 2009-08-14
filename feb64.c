@@ -24,7 +24,7 @@ Program Size: data=166.5 xdata=1309 code=22083 - Aug 20/2008
 Program Size: data=167.4 xdata=1483 code=23701 - Sep 06/2008
 Program Size: data=58.4 xdata=1630 code=27180 - Jan 29/2009 Large model
 Program Size: data=167.5 xdata=1540 code=24344  - Feb 02/09
-Program Size: data=165.5 xdata=1662 code=26095 - Aug 14/09
+Program Size: data=165.5 xdata=1662 code=26085 - Aug 14/09
 
 CODE(?PR?UPGRADE?MSCBMAIN (0xD000)) 
 
@@ -92,7 +92,7 @@ int xdata k, calState=0, calCount=0;
 float xdata calNumber = 10.0;
 char  xdata calQpumpSave=0, calSwSave=0;
 unsigned long xdata currentTime=0, sstTime=0,sstExtTime=0, calTime=0;
-unsigned char xdata eeprom_channel,channel, chipAdd, chipChan;
+unsigned char xdata status, channel, chipAdd, chipChan;
 unsigned char xdata BiasIndex, AsumIndex, NodeOK=0;
 // unsigned long xdata loopcnt = 0;
 
@@ -577,7 +577,6 @@ void user_init(unsigned char init)
 {
   char xdata i;
   float xdata temperature;
-  unsigned char xdata swConversion=0;
   // Inititialize local variables
 
   /* Format the SVN and store this code SVN revision into the system */
@@ -669,10 +668,10 @@ void user_init(unsigned char init)
   //Read only the serial number from the protected page
   // (without the iBiasOffset)Protected page starts from 0x600, serial number is located in 0x690
   // (with the iBiasOffset) Protected page starts from 0x600, serial number is located in 0x6B0
-  ExtEEPROM_Read(SERIALN_ADD,(unsigned char*)&eepage.SerialN, SERIALN_LENGTH);
+  ExtEEPROM_Read(SERIALN_ADD,(unsigned char xdata *)&eepage.SerialN, SERIALN_LENGTH);
   user_data.SerialN = eepage.SerialN;
   //Read all other settings from page 0(non-protected)
-  ExtEEPROM_Read(PageAddr[0],(unsigned char*)&eepage, PAGE_SIZE);
+  ExtEEPROM_Read(PageAddr[0], (unsigned char xdata *)&eepage, PAGE_SIZE);
   DISABLE_INTERRUPTS;
   for(i=0;i<8;i++)
     user_data.rAsum[i] = eepage.rasum[i];
@@ -871,21 +870,18 @@ Main loop should include:
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void user_loop(void) {
+  static unsigned char xdata eeprom_flag = CLEAR;
+  static char xdata adcChannel = 0;
   float xdata volt, temperature, adc_value, ftemp;
-  //NW make sure pointers are stored in xdata
   float* xdata pfData;
   float* xdata eep_address;
   unsigned long xdata mask;
   signed long xdata result;
   unsigned int xdata eeptemp_addr, *rpfData, rvolt, i;
   unsigned char xdata * eeptemp_source;
-  unsigned char xdata swConversion;
-  unsigned char xdata eep_request;
-  unsigned char xdata eeprom_flag = CLEAR;
-  char xdata adcChannel = 0; // -PAA was 16 ... special start value
-  char xdata str[64];
-  //ltc1665
+  unsigned char xdata swConversion, eep_request;
   char xdata ltc1665_index, ltc1665_chipChan, ltc1665_chipAdd;
+  char xdata str[32];
 
   timing=1;
 
@@ -1250,13 +1246,13 @@ void user_loop(void) {
     if (CeeClr)  eep_request = WRITE_EEPROM;   //---PAA--- WAS CLEAR BUT WILL ERASE EEPROM!
     else         eep_request = WRITE_EEPROM;
 
-    eeprom_channel = ExtEEPROM_Write_Clear (eeptemp_addr
+    status = ExtEEPROM_Write_Clear (eeptemp_addr
                                          , &eeptemp_source
                                          , PAGE_SIZE
                                          , eep_request
                                          , &eeprom_flag);
 
-    if (eeprom_channel == DONE) {
+    if (status == DONE) {
       SeeS = DONE;
       eeprom_flag = CLEAR;
       CeeS = CLEAR;
@@ -1272,8 +1268,8 @@ void user_loop(void) {
   if (CeeR) {
     rCSR = user_data.status;
     // Read the active page
-    channel = ExtEEPROM_Read (PageAddr[(unsigned char)(user_data.eepage & 0x07)], (unsigned char*) &eepage, PAGE_SIZE);
-    if (channel == DONE) {
+    status = ExtEEPROM_Read (PageAddr[(unsigned char)(user_data.eepage & 0x07)], (unsigned char*) &eepage, PAGE_SIZE);
+    if (status == DONE) {
       SeeR = DONE;
  
       // Publish user_data new settings
