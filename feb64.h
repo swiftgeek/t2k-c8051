@@ -24,7 +24,7 @@ $Id$
 
 //BS Temperature testing
 #define TEMP_ThRESHOLD  27
-#define SST_TIME         5 //In us
+#define SST_TIME         2 //In us
 
 /**********************************************************************************/
 // PCA9539
@@ -304,10 +304,10 @@ sbit RdssT    = rESR ^ 5;  //0x2000
 // correspond to the rESR bit assignment
 // All the Vreg U/I, uC/Board/FGD Temperature
 #define UCTEMPERATURE_MASK   0x0100
-#define BTEMPERATURE_MASK    0x1200
+#define BTEMPERATURE_MASK    0x1000  // ADC Temp internal SST_LINE2
 #define FGDTEMPERATURE_MASK  0x0400
 #define VOLTAGE_MASK         0x001C
-#define CURRENT_MASK         0x00E0
+#define CURRENT_MASK         0x0040
 
 // SMBus Port Aliases
 //sbit SDA    = MSCB_I2C_SDA;
@@ -360,6 +360,7 @@ unsigned long eeCtrSet;
 unsigned long asumCtl;
 unsigned long watchdog;
 unsigned long debugsmb;
+char warning[64];
 };
 struct user_data_type xdata user_data;
 
