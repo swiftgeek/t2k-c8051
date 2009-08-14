@@ -76,12 +76,12 @@ unsigned char xdata FCSorig1, FCSdevi1;
 
 //EEPROM variables
 float* xdata eep_address;
-static unsigned char tcounter;
-static unsigned char xdata eeprom_flag=CLEAR;
-static unsigned char xdata eeprom_wstatus, eeprom_rstatus;
-static unsigned int  xdata eeptemp_addr;
-static unsigned char xdata * eeptemp_source;
-static unsigned char xdata eep_request;
+unsigned char tcounter;
+unsigned char xdata eeprom_flag=CLEAR;
+unsigned char xdata eeprom_wstatus, eeprom_rstatus;
+unsigned int  xdata eeptemp_addr;
+unsigned char xdata * eeptemp_source;
+unsigned char xdata eep_request;
 
 // User Data structure declaration
 //-----------------------------------------------------------------------------
