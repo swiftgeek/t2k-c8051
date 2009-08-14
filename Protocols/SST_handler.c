@@ -199,8 +199,8 @@ unsigned char SST_DrvClientResponse(int SST_LINE) {
 #if defined(CPU_C8051F120)
 #ifdef FEB64
      SFRPAGE  = CPT0_PAGE;
-#elif TEMP36
-     SFRPAGE  = CPT1_PAGE
+#elif defined(TEMP36)
+     SFRPAGE  = CPT1_PAGE;
 #endif	
 #endif
      if(SST_ClientResponse2 == 1) {
