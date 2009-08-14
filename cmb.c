@@ -338,14 +338,12 @@ void user_init(unsigned char init)
   ExtEEPROM_Init();
 
   // Read only the serial number from the protected page
-  ExtEEPROM_Read(SERIALN_ADD,(unsigned char*)&eepage.SerialN, SERIALN_LENGTH);
+  ExtEEPROM_Read(SERIALN_ADD,(unsigned char xdata *)&eepage.SerialN, SERIALN_LENGTH);
   user_data.SerialN = eepage.SerialN;
   //
   // Read all other settings from page 0(non-protected)
-  ExtEEPROM_Read(PageAddr[0],(unsigned char*)&eepage, PAGE_SIZE);
-  DISABLE_INTERRUPTS;
-  ENABLE_INTERRUPTS;
-#endif
+  ExtEEPROM_Read(PageAddr[0], (unsigned char xdata *)&eepage, PAGE_SIZE);
+ #endif
 
   // Get Node Address from P3 port
   sys_info.node_addr   = NodeAdd_get();
@@ -420,7 +418,7 @@ void user_loop(void) {
   float* xdata eep_address;
   unsigned int xdata eeptemp_addr;
   //NW make sure eeptemp_source is stored in xdata
-  unsigned char* xdata eeptemp_source;
+  unsigned char xdata *eeptemp_source;
   unsigned char xdata eep_request, fpgaStatus, AsumLock;
   static  unsigned char xdata eeprom_flag = CLEAR;
   unsigned int *xdata rpfData;
@@ -545,31 +543,29 @@ void user_loop(void) {
       //Temporary store the first address of page
       eeptemp_addr = PageAddr[(unsigned char)(user_data.eepage & 0x07)];
       //Temporary store the first address of data which has to be written
-      eeptemp_source = (unsigned char*)&eepage;
-    }
-    //EPROM clear request
-    if (CeeClr) {
-      eep_request = CLEAR_EEPROM;
-    } else {
-      eep_request = WRITE_EEPROM;
+      eeptemp_source = (unsigned char xdata *)&eepage;
     }
 
+    // EEPROM Write/Clear request
+    if (CeeClr) eep_request = CLEAR_EEPROM;
+    else        eep_request = WRITE_EEPROM;
+
     eeprom_channel = ExtEEPROM_Write_Clear (eeptemp_addr
-      , &(eeptemp_source)
-      , PAGE_SIZE
-      , eep_request
-      , &eeprom_flag);
+                                        , &eeptemp_source
+                                        , PAGE_SIZE
+                                        , eep_request
+                                        , &eeprom_flag);
 
     if (eeprom_channel == DONE) {
       SeeS = DONE;
       eeprom_flag = CLEAR;
-      CeeS = CLEAR;
       //Set the active page
       user_data.eepage |= ((user_data.eepage & 0x07) << 5);
     } else {
       SeeS = FAILED;
     }
 
+    CeeS = CLEAR;
     // Publish Registers state
     publishCtlCsr();
   }
@@ -581,16 +577,13 @@ void user_loop(void) {
 
     //NW read to eepage(active page) instead of eepage2
     channel = ExtEEPROM_Read (PageAddr[(unsigned char)(user_data.eepage & 0x07)]
-    , (unsigned char*)&eepage, PAGE_SIZE);
+                                     , (unsigned char xdata *)&eepage, PAGE_SIZE);
 
-    if (channel == DONE){
-      CeeR = CLEAR;
-      SeeR = DONE;
-    } else
-      SeeR = FAILED;
+    if (channel == DONE) SeeR = DONE;
+    else  SeeR = FAILED;
 
-    // Publish Registers state
-    publishCtlCsr();
+    CeeR = CLEAR;
+    publishCtlCsr();   // Publish Registers state
   }
 #endif
 

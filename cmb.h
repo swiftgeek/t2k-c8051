@@ -38,11 +38,11 @@ $Id$
 #define IGAIN16 4
 
 // EEPROM
-#define SERIALN_LENGTH 4
-#define SERIALN_ADD    (0x600)  // Fixed as sitting at the first byte of the EEPROM
 
 // EEPROM page assignment (memory offset)  page Nr3 is the protected page
-unsigned int xdata PageAddr[]={0x000, 0x200, 0x400, SERIALN_ADD};
+unsigned int xdata PageAddr[]={0x000, 0x200, 0x400, 0x600};
+#define SERIALN_LENGTH 4
+#define SERIALN_ADD    (PageAddr[3])  // Fixed as sitting at the first byte of the EEPROM
 
 //Keys for changing the EEPROM
 #define EEP_CTRL_KEY        0x3C000000
