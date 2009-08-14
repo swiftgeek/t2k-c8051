@@ -24,6 +24,7 @@ Program Size: data=166.5 xdata=1309 code=22083 - Aug 20/2008
 Program Size: data=167.4 xdata=1483 code=23701 - Sep 06/2008
 Program Size: data=58.4 xdata=1630 code=27180 - Jan 29/2009 Large model
 Program Size: data=167.5 xdata=1540 code=24344  - Feb 02/09
+Program Size: data=165.5 xdata=1662 code=26095 - Aug 14/09
 
 CODE(?PR?UPGRADE?MSCBMAIN (0xD000)) 
 
@@ -37,6 +38,7 @@ $Id$
 \********************************************************************/
 
 #include <stdio.h>
+// #include <string.h>
 #include <math.h>
 #include "mscbemb.h"
 #include "feb64.h"
@@ -283,6 +285,7 @@ MSCB_INFO_VAR code vars[] = {
   4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,              "asumctl", &user_data.asumCtl,    // 145
   4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,              "watchdog", &user_data.watchdog,  // 146
   4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,              "smbdebug", &user_data.debugsmb,  // 147
+ 64, UNIT_STRING,          0, 0,           0,              "warning", &user_data.warning,    // 148 
 
   0
 };
@@ -339,6 +342,7 @@ void PublishVariable(float xdata * pvarDest, float varSrce, bit errbit) {
   DISABLE_INTERRUPTS;
   *pvarDest = varSrce;
   if (errbit) user_data.error = rESR;
+  errbit = 0;
   ENABLE_INTERRUPTS;
 }
 
@@ -443,6 +447,8 @@ void switchonoff(unsigned char command)
     pca_operation(Q_PUMP_INIT);  // Charge Pump initialization (crossbar settings)
     //Sept 09 default Qpump ON at Power up
     pca_operation(Q_PUMP_ON);
+
+    sprintf(user_data.warning, "No Trip");
 
 #ifdef _LTC1665_
     //-----------------------------------------------------------------------------
@@ -602,6 +608,7 @@ void user_init(unsigned char init)
     }
   }
   sys_info.group_addr  = 100;
+  sprintf(user_data.warning, "No Trip");
 
   //-----------------------------------------------------------------------------
   // Local Flags
@@ -871,12 +878,12 @@ void user_loop(void) {
   unsigned long xdata mask;
   signed long xdata result;
   unsigned int xdata eeptemp_addr, *rpfData, rvolt, i;
-  //NW make sure eeptemp_source is stored in xdata
-  unsigned char* xdata eeptemp_source;
+  unsigned char xdata * eeptemp_source;
   unsigned char xdata swConversion;
   unsigned char xdata eep_request;
-  static  unsigned char xdata eeprom_flag = CLEAR;
-  static xdata char adcChannel = 0; // -PAA was 16 ... special start value
+  unsigned char xdata eeprom_flag = CLEAR;
+  char xdata adcChannel = 0; // -PAA was 16 ... special start value
+  char xdata str[64];
   //ltc1665
   char xdata ltc1665_index, ltc1665_chipChan, ltc1665_chipAdd;
 
@@ -1003,7 +1010,7 @@ void user_loop(void) {
     for (channel=0;channel < NCHANNEL_ADT7486A; channel++) {
       if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetIntTemp, SST_LINE1, &temperature)) {
          RdssT = CLEAR;
-        if ((temperature < eepage.luCTlimit) || (temperature > eepage.uuCTlimit)) IntssTT = ON;
+        if (temperature > eepage.uuCTlimit) IntssTT = ON;
         PublishVariable(&(user_data.ssTemp[channel]), temperature, IntssTT);
       } else publishErr(RdssT);
     }  // For loop
@@ -1017,10 +1024,10 @@ void user_loop(void) {
   // FGD Temperature
   if (bCPupdoitNOW || ((uptime() - sstExtTime) > SST_TIME)) {
 
-    for (channel=0;channel < NCHANNEL_ADT7486A; channel++){
-      if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt1Temp, SST_LINE1, &temperature)){
+    for (channel=0;channel < NCHANNEL_ADT7486A; channel++) {
+      if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt1Temp, SST_LINE1, &temperature)) {
         RdssT = CLEAR;
-        if ((temperature < eepage.lSSTlimit) || (temperature > eepage.uSSTlimit)) ExtssTT = ON;
+        if (temperature > eepage.uSSTlimit) ExtssTT = ON;
         PublishVariable(&(user_data.Temp[(channel*2)]), temperature, ExtssTT);
       } else publishErr(RdssT);
     } // For loop 1
@@ -1028,7 +1035,7 @@ void user_loop(void) {
     for (channel=0;channel < NCHANNEL_ADT7486A; channel++) {
       if(!ADT7486A_Cmd(ADT7486A_addrArray[channel], GetExt2Temp, SST_LINE1, &temperature)) {
         RdssT = CLEAR;
-        if ((temperature < eepage.lSSTlimit) || (temperature > eepage.uSSTlimit)) ExtssTT = ON;
+        if (temperature > eepage.uSSTlimit) ExtssTT = ON;
         PublishVariable(&(user_data.Temp[(channel*2)+1]), temperature, ExtssTT);
       } else publishErr(RdssT);
     }  // For loop 2
@@ -1037,36 +1044,39 @@ void user_loop(void) {
  
   //-----------------------------------------------------------------------------
   // Local board temperature reading (top board, ADC
-      rCSR = user_data.status;
-      if (SPup) {
-        if(!ADT7486A_Cmd(ADT7486A_ADDR4, GetExt1Temp, SST_LINE2, &temperature)) {
-        RdssT = CLEAR;
-        if ((temperature < eepage.luCTlimit) || (temperature > eepage.uuCTlimit)) pcbssTT = ON;
-        PublishVariable(&(user_data.afterTemp), temperature, pcbssTT);
-      } else publishErr(RdssT);
+  rCSR = user_data.status;
+  if (SPup) {
+    pcbssTT = OFF;
+    if(!ADT7486A_Cmd(ADT7486A_ADDR4, GetExt1Temp, SST_LINE2, &temperature)) {
+      RdssT = CLEAR;
+      if (temperature > eepage.uuCTlimit) pcbssTT = ON;
+      if (pcbssTT) sprintf (user_data.warning, "Last Trip ASIC Temp: %6.3f [%6.3f]", temperature, eepage.uuCTlimit);
+      PublishVariable(&(user_data.afterTemp), temperature, pcbssTT);
+    } else publishErr(RdssT);
 
-      if(!ADT7486A_Cmd(ADT7486A_ADDR4, GetExt2Temp, SST_LINE2, &temperature)) {
-        RdssT = CLEAR;
-        if ((temperature < eepage.luCTlimit) || (temperature > eepage.uuCTlimit)) pcbssTT = ON;
-        PublishVariable(&(user_data.adcTemp), temperature, pcbssTT);
-      } else publishErr(RdssT);
+    if(!ADT7486A_Cmd(ADT7486A_ADDR4, GetExt2Temp, SST_LINE2, &temperature)) {
+      RdssT = CLEAR;
+      if (temperature > eepage.uuCTlimit) pcbssTT = ON;
+      if (pcbssTT) sprintf (user_data.warning, "Last Trip ADC Temp: %6.3f [%6.3f]", temperature, eepage.uuCTlimit);
+      PublishVariable(&(user_data.adcTemp), temperature, pcbssTT);
+    } else publishErr(RdssT);
 
-      if(!ADT7486A_Cmd(ADT7486A_ADDR4, GetIntTemp, SST_LINE2, &temperature)) {
-        RdssT = CLEAR;
-        if ((temperature < eepage.luCTlimit) || (temperature > eepage.uuCTlimit)) pcbssTT = ON;
-        PublishVariable(&(user_data.regTemp), temperature, pcbssTT);
-      } else publishErr(RdssT);
-    } else {
-        PublishVariable(&(user_data.adcTemp), -128.0, pcbssTT);
-        PublishVariable(&(user_data.afterTemp), -128.0, pcbssTT);
-        PublishVariable(&(user_data.regTemp), -128.0, pcbssTT);
-	}
+    if(!ADT7486A_Cmd(ADT7486A_ADDR4, GetIntTemp, SST_LINE2, &temperature)) {
+      RdssT = CLEAR;
+      if (temperature > eepage.uuCTlimit) pcbssTT = ON;
+      if (pcbssTT) sprintf (user_data.warning, "Last Trip Vreg Temp: %6.3f [%6.3f]", temperature, eepage.uuCTlimit);
+      PublishVariable(&(user_data.regTemp), temperature, pcbssTT);
+    } else publishErr(RdssT);
+  }  // SPup
+  else {
+    PublishVariable(&(user_data.adcTemp), -128.0, pcbssTT);
+    PublishVariable(&(user_data.afterTemp), -128.0, pcbssTT);
+    PublishVariable(&(user_data.regTemp), -128.0, pcbssTT);
+  }  // Not SPup
 
-    // ext Temp error not yet published...
-    sstExtTime = uptime();
-  } // External Temperature
-
-
+  // ext Temp error not yet published...
+  sstExtTime = uptime();
+} // External Temperature
 #endif
 
   //-----------------------------------------------------------------------------
@@ -1107,7 +1117,11 @@ void user_loop(void) {
 
       // Skip the first two channels(charge pump)
       if ((channel > 1)) {  // Skip vQ, I
-        if ((volt < eepage.lVIlimit[channel]) || (volt > eepage.uVIlimit[channel])) rESR |= mask; // out of range
+        if ((volt < eepage.lVIlimit[channel]) || (volt > eepage.uVIlimit[channel])) {
+           rESR |= mask; // out of range
+           sprintf (str, "Last Trip: %6.3f [%6.3f /", volt, eepage.lVIlimit[channel]);
+           sprintf(user_data.warning, "%s%6.3f] (min/max)", str, eepage.uVIlimit[channel]);
+        }
       } // skip v/iQ channel
     }  // for loop
 
@@ -1119,7 +1133,7 @@ void user_loop(void) {
 
   //-----------------------------------------------------------------------------
   // Finally take action based on ERROR register
-  if (rESR & (VOLTAGE_MASK | UCTEMPERATURE_MASK | BTEMPERATURE_MASK)) {
+  if (rESR & (VOLTAGE_MASK | BTEMPERATURE_MASK | CURRENT_MASK)) {   // 
     SPup = SqPump = OFF;
     switchonoff(OFF);
     SsS = ON;
@@ -1229,15 +1243,18 @@ void user_loop(void) {
       //Temporary store the first address of page
       eeptemp_addr = PageAddr[(unsigned char)(user_data.eepage & 0x07)];
       //Temporary store the first address of data which has to be written
-      eeptemp_source = (unsigned char*)&eepage;
+      eeptemp_source = (unsigned char xdata *)&eepage;
     }
 
     // EEPROM clear request
     if (CeeClr)  eep_request = WRITE_EEPROM;   //---PAA--- WAS CLEAR BUT WILL ERASE EEPROM!
     else         eep_request = WRITE_EEPROM;
 
-    eeprom_channel = ExtEEPROM_Write_Clear (eeptemp_addr, &(eeptemp_source)
-                     , PAGE_SIZE, eep_request, &eeprom_flag);
+    eeprom_channel = ExtEEPROM_Write_Clear (eeptemp_addr
+                                         , &eeptemp_source
+                                         , PAGE_SIZE
+                                         , eep_request
+                                         , &eeprom_flag);
 
     if (eeprom_channel == DONE) {
       SeeS = DONE;
@@ -1255,7 +1272,7 @@ void user_loop(void) {
   if (CeeR) {
     rCSR = user_data.status;
     // Read the active page
-    channel = ExtEEPROM_Read (PageAddr[(unsigned char)(user_data.eepage & 0x07)], (unsigned char*)&eepage, PAGE_SIZE);
+    channel = ExtEEPROM_Read (PageAddr[(unsigned char)(user_data.eepage & 0x07)], (unsigned char*) &eepage, PAGE_SIZE);
     if (channel == DONE) {
       SeeR = DONE;
  
