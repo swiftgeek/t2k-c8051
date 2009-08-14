@@ -703,6 +703,8 @@ void user_loop(void)
   }
 #endif
 
+//-----------------------------------------------------------------------------
+// Humidity sensors
 #ifdef _HUMSEN_
   //Measuring the humidity and temperature
    if(CHum){
