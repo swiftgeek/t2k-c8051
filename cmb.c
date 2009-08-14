@@ -51,7 +51,7 @@ unsigned char idata _n_sub_addr = 1;
 //
 unsigned char xdata channel;
 unsigned long xdata tempTime=0, sstTime=0;
-unsigned char xdata eeprom_channel, channel, NodeOK=0;
+unsigned char xdata status, channel, NodeOK=0;
 unsigned int xdata crate_add=0, pca_add=0;
 
 //-----------------------------------------------------------------------------
@@ -417,7 +417,6 @@ void user_loop(void) {
   float xdata volt, temperature, *pfData;
   float* xdata eep_address;
   unsigned int xdata eeptemp_addr;
-  //NW make sure eeptemp_source is stored in xdata
   unsigned char xdata *eeptemp_source;
   unsigned char xdata eep_request, fpgaStatus, AsumLock;
   static  unsigned char xdata eeprom_flag = CLEAR;
@@ -550,13 +549,13 @@ void user_loop(void) {
     if (CeeClr) eep_request = CLEAR_EEPROM;
     else        eep_request = WRITE_EEPROM;
 
-    eeprom_channel = ExtEEPROM_Write_Clear (eeptemp_addr
+    status = ExtEEPROM_Write_Clear (eeptemp_addr
                                         , &eeptemp_source
                                         , PAGE_SIZE
                                         , eep_request
                                         , &eeprom_flag);
 
-    if (eeprom_channel == DONE) {
+    if (status == DONE) {
       SeeS = DONE;
       eeprom_flag = CLEAR;
       //Set the active page
@@ -576,10 +575,10 @@ void user_loop(void) {
     rCSR = user_data.status;
 
     //NW read to eepage(active page) instead of eepage2
-    channel = ExtEEPROM_Read (PageAddr[(unsigned char)(user_data.eepage & 0x07)]
+    status = ExtEEPROM_Read (PageAddr[(unsigned char)(user_data.eepage & 0x07)]
                                      , (unsigned char xdata *)&eepage, PAGE_SIZE);
 
-    if (channel == DONE) SeeR = DONE;
+    if (status == DONE) SeeR = DONE;
     else  SeeR = FAILED;
 
     CeeR = CLEAR;
