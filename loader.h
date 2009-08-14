@@ -110,7 +110,7 @@ struct EEPAGE xdata eepage = {
 // 0x00 - Card Serial Number
  0x00000000
 // 0x1 - Structure size
- , 110
+ , 300
 // - Asum[0..7] threshold
  , 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff
 // - Qpump DAC
