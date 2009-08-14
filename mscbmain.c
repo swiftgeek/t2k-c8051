@@ -142,9 +142,9 @@ void setup(void)
    XBR2 = 0x44;                 // Enable Xbar & UART1
 #endif
 #ifdef LOADER
-#ifdef L_TEMP36
+#if defined(L_TEMP36) || defined (L_LPB)
    XBR0 = 0x04;                 // Enable SMBus, UART0
-#elif
+#else
    XBR0 = 0x05;                 // Enable only UART0
 #endif
    XBR1 = 0x00;
