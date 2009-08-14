@@ -48,12 +48,12 @@
  bit REF_FLAG;
 
  //EEPROM variables
- int* xdata eep_address;
+ int xdata * eep_address;
  static unsigned char tcounter;
  static unsigned char xdata eeprom_flag=CLEAR; 
  unsigned char xdata eeprom_wstatus, eeprom_rstatus;
- static unsigned int  xdata eeptemp_addr;
- static unsigned char* xdata eeptemp_source;
+ unsigned int  xdata eeptemp_addr;
+ unsigned char xdata * eeptemp_source;
  unsigned char xdata eep_request;
 
  //Humidity variables
@@ -194,6 +194,33 @@
  MSCB_INFO_VAR *variables = vars;   // Structure mapping
 
  
+//-----------------------------------------------------------------------------
+//
+void publishCtlCsr(void) {
+    DISABLE_INTERRUPTS;
+    user_data.control = rCTL;
+    user_data.status  = rCSR;
+    ENABLE_INTERRUPTS;
+}
+
+//-----------------------------------------------------------------------------
+//
+void publishErr(bit errbit) {
+    DISABLE_INTERRUPTS;
+    errbit = SET;
+    user_data.error   = rESR;
+    ENABLE_INTERRUPTS;
+}
+
+//-----------------------------------------------------------------------------
+//
+void publishAll() {
+  user_data.control = rCTL;
+  user_data.status  = rCSR;
+  user_data.error   = rESR;
+  ENABLE_INTERRUPTS;
+}
+
 // Offset calibration
 //-----------------------------------------------------------------------------
 void autocalibration(float reference)
@@ -260,13 +287,13 @@ void user_init(unsigned char init)
    ExtEEPROM_Init();
 
    //Get serial number from write protected area 
-   ExtEEPROM_Read  (WP_START_ADDR, (unsigned char*)&eepage ,PAGE_SIZE);
+   ExtEEPROM_Read  (WP_START_ADDR, (unsigned char xdata *)&eepage ,PAGE_SIZE);
    DISABLE_INTERRUPTS;
    user_data.SerialN = eepage.SerialN;
    ENABLE_INTERRUPTS;
 
   //Refer to the first Page of the non_protected area
-   ExtEEPROM_Read  (PageAddr[0] ,(unsigned char*)&eepage ,PAGE_SIZE);
+   ExtEEPROM_Read  (PageAddr[0] ,(unsigned char xdata *)&eepage ,PAGE_SIZE);
    DISABLE_INTERRUPTS;
    user_data.navge = eepage.navge;
    ENABLE_INTERRUPTS;
@@ -353,7 +380,7 @@ void user_init(unsigned char init)
    for (i=0; i<36;i ++)
       user_data.Temp[i] = 0.0;
   user_data.eepage=0;
-  user_data.navge=0;
+  user_data.navge=20;
   for(i=0; i<36; i++)
   {
     user_data.AT[i]=0;
@@ -602,7 +629,7 @@ void user_loop(void)
       if (user_data.eeCtrSet & EEP_CTRL_WRITE){
           if ((user_data.eeCtrSet & 0x000000ff) <= ((SERIALN_ADD - WP_START_ADDR)/2))
           *eep_address = user_data.eepValue;
-            //Checking for the read request
+            //Checking for the read request 
           } else if (user_data.eeCtrSet & EEP_CTRL_READ){
           DISABLE_INTERRUPTS;
               user_data.eepValue = *eep_address;
@@ -622,91 +649,90 @@ void user_loop(void)
       EEP_CTR_FLAG = CLEAR;
    }
 
-   //Writing to the EEPROM
-   if (CeeS){
-       //Check if we are here for the first time
-      if (!eeprom_flag){
-         rCSR = user_data.status;
-         //Temporary store the first address of page
-         eeptemp_addr = PageAddr[(unsigned char)(user_data.eepage & 0x07)];
-         //Temporary store the first address of data which has to be written    
-         eeptemp_source = (unsigned char *)&eepage;
-      }
-      //EPROM clear request
-      if (CeeClr)
-         eep_request = CLEAR_EEPROM;
-      else 
-         eep_request = WRITE_EEPROM;
-      
-      eeprom_wstatus = ExtEEPROM_Write_Clear (eeptemp_addr, &(eeptemp_source), PAGE_SIZE
-                                                         , eep_request       // W / Clear
-                                                         , &eeprom_flag);    // Check to see if 
-                                          //everything has been written
-      if (eeprom_wstatus == DONE) {
-         SeeS = DONE;
-         eeprom_flag = CLEAR;
-         CeeS = CLEAR;
-      } 
-    else 
-         SeeS = FAILED;
- 
-      // Publish Registers state
-      DISABLE_INTERRUPTS;
-      user_data.control = rCTL;
-      user_data.status  = rCSR;
-      ENABLE_INTERRUPTS;
-   }
-
-   //Reading from the EEPROM
-   if (CeeR) {
+  //-----------------------------------------------------------------------------
+  // EEPROM Save procedure based on CTL bit
+  if (CeeS) {
+    //Check if we are here for the first time
+    if (!eeprom_flag) {  // first in
       rCSR = user_data.status;
+
       //Temporary store the first address of page
       eeptemp_addr = PageAddr[(unsigned char)(user_data.eepage & 0x07)];
-      eeprom_rstatus = ExtEEPROM_Read  (eeptemp_addr, (unsigned char*)&eepage, PAGE_SIZE);
-      if (eeprom_rstatus == DONE){
-         CeeR = CLEAR;
-         SeeR = DONE;
-      } else
-         SeeR = FAILED;
+      //Temporary store the first address of data which has to be written
+      eeptemp_source = (unsigned char xdata *)&eepage;
+    }
 
-      // Publish Registers state
-      DISABLE_INTERRUPTS;
-      user_data.control = rCTL;
-      user_data.status  = rCSR;
-      ENABLE_INTERRUPTS;
-   }
+    // EEPROM Write/Clear request
+    if (CeeClr) eep_request = CLEAR_EEPROM;
+    else        eep_request = WRITE_EEPROM;
+
+    status = ExtEEPROM_Write_Clear (eeptemp_addr
+                                        , &eeptemp_source
+                                        , PAGE_SIZE
+                                        , eep_request
+                                        , &eeprom_flag);
+
+    if (status == DONE) {
+      SeeS = DONE;
+      eeprom_flag = CLEAR;
+      //Set the active page
+      user_data.eepage |= ((user_data.eepage & 0x07) << 5);
+    } else {
+      SeeS = FAILED;
+    }
+
+    CeeS = CLEAR;
+    // Publish Registers state
+    publishCtlCsr();
+  }
+
+  //-----------------------------------------------------------------------------
+  // EEPROM Restore procedure based on CTL bit
+  if (CeeR) {
+    rCSR = user_data.status;
+
+    //NW read to eepage(active page) instead of eepage2
+    channel = ExtEEPROM_Read (PageAddr[(unsigned char)(user_data.eepage & 0x07)]
+                                     , (unsigned char xdata *)&eepage, PAGE_SIZE);
+
+    if (channel == DONE) SeeR = DONE;
+    else  SeeR = FAILED;
+
+    CeeR = CLEAR;
+    publishCtlCsr();   // Publish Registers state
+  }
 #endif
 
 #ifdef _HUMSEN_
   //Measuring the humidity and temperature
    if(CHum){
       status = HumidSensor_Cmd (&rSHThumi1
-                     ,&rSHTtemp1
-                     ,&humidity
-                     ,&htemperature
-                     ,&FCSorig1
-                     ,&FCSdevi1
-                     ,humsen1);
-      if (status == DONE){   
-      DISABLE_INTERRUPTS;
-       user_data.SHThumi1 = humidity;
-       user_data.SHTtemp1 = htemperature;
-      ENABLE_INTERRUPTS;
+                               ,&rSHTtemp1
+                               ,&humidity
+                               ,&htemperature
+                               ,&FCSorig1
+                               ,&FCSdevi1
+                               ,humsen1);
+      if (status == DONE) {   
+        DISABLE_INTERRUPTS;
+        user_data.SHThumi1 = humidity;
+        user_data.SHTtemp1 = htemperature;
+        ENABLE_INTERRUPTS;
       }
   
 #ifdef MORETHANONEHUM
       status = HumidSensor_Cmd (&rSHThumi2
-                             ,&rSHTtemp2
-                     ,&humidity
-                     ,&htemperature
-                     ,&FCSorig2
-                     ,&FCSdevi2
-                     ,humsen2);  
-      if (status == DONE){
-      DISABLE_INTERRUPTS;  
+                               ,&rSHTtemp2
+                               ,&humidity
+                               ,&htemperature
+                               ,&FCSorig2
+                               ,&FCSdevi2
+                               ,humsen2);  
+      if (status == DONE) {
+        DISABLE_INTERRUPTS;  
         user_data.SHThumi2 = humidity;
         user_data.SHTtemp2 = htemperature;
-      ENABLE_INTERRUPTS;
+        ENABLE_INTERRUPTS;
       }
 #endif // MORETHANONE
    }
@@ -715,13 +741,13 @@ void user_loop(void)
 
 #ifdef _LTC2600_
   //DAC
-   if(LTC2600_FLAG){
+   if(LTC2600_FLAG) {
       LTC2600_Cmd(WriteTo_Update,LTC2600_LOAD[DACIndex], user_data.DAC[DACIndex]);
       LTC2600_FLAG = CLEAR;
    }
 #endif
   
-  if(Cref){
+  if(Cref) {
     autocalibration(user_data.ref);
     Sref = 1;
     Cref = 0;

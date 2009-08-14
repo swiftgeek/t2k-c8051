@@ -113,6 +113,31 @@ sbit Sref     = rCSR ^ 1;
 sbit SeeS     = rCSR ^ 4;
 sbit SeeR     = rCSR ^ 5;
 
+// ESR Error Register
+//The low and high bytes are switched in the bdata section of the memory
+//This is the reason that the sbit declarations do not appear to match
+//the documentation but they actually do.
+unsigned int bdata rESR;
+sbit err1      = rESR ^ 8;  //0x1
+sbit err2      = rESR ^ 9;  //0x2
+sbit err3      = rESR ^ 10; //0x4
+sbit err4      = rESR ^ 11; //0x8
+
+sbit err5      = rESR ^ 12; //0x10
+sbit err6      = rESR ^ 13; //0x20
+sbit err7      = rESR ^ 14; //0x40
+sbit err8      = rESR ^ 15; //0x80
+
+sbit uCT       = rESR ^ 0;  //0x100
+sbit err10     = rESR ^ 1;  //0x200
+sbit err11     = rESR ^ 2;  //0x400
+sbit err12     = rESR ^ 3;  //0x800
+
+sbit RdssT     = rESR ^ 4;  //0x1000
+sbit EEPROM    = rESR ^ 5;  //0x2000
+sbit err15     = rESR ^ 6;  //0x4000 1= any of 4 not lock
+sbit err16     = rESR ^ 7;  //0x8000
+
 //Index value for the user data
 #define IDXCTL         2
 #define IDXEEP_CTL    85
