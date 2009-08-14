@@ -15,7 +15,7 @@
 /*****USER DEFINED DATA*****/
 struct {
   unsigned long SerialN;    // Serial Number
-  unsigned char error;      // General Error register
+  unsigned int  error;      // General Error register
   unsigned char control;    // Writing/Reading the EEPROM
   unsigned char status;     // Displaying the status of the EEPROM command
   unsigned char eepage;     // EEPROM page number
@@ -45,12 +45,13 @@ unsigned char xdata Terrorclear[]={0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7
 
 //Every element in Terrorclear indicates a particular binary bit is 1
 unsigned char xdata Terrorset[]={0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
-#define TAVGMAX 30
+#define TAVGMAX (int) 30
 float xdata Taverage[36][TAVGMAX];
 
-/*****EEPROM VARIABLES*****/
-// The EEPROM is separated into a total of 4pages (0x600==WP)
-unsigned int xdata PageAddr[]={0x0, 0x200, 0x400, 0x600};
+// EEPROM page assignment (memory offset)  page Nr3 is the protected page
+unsigned int xdata PageAddr[]={0x000, 0x200, 0x400, 0x600};
+#define SERIALN_LENGTH 4
+#define SERIALN_ADD    (PageAddr[3])  // Fixed as sitting at the first byte of the EEPROM
 
 // The structure of each EEPAGE
 struct EEPAGE {
@@ -83,7 +84,6 @@ struct EEPAGE xdata eepage={
 #define EEP_CTRL_WRITE      0x00220000
 #define EEP_CTRL_INVAL_REQ -100
 #define EEP_CTRL_INVAL_KEY -10
-#define SERIALN_ADD         0x64A
 #define TEMPOFF_LAST_INDX   36
 
 /*****HUMIDITY SENSOR VARIABLES*****/
