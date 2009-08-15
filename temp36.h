@@ -65,26 +65,34 @@ struct EEPAGE {
 //+/- 16 increments corresponds to a +/- 0.25 degrees offset in the ADT7486A chip
 //Initial values for eepage
 struct EEPAGE xdata eepage={
-  0,     // S/N
-  1000,  // Structure size
-  10,    // Average value
-  //Temperature sensor offsets corresponding to the external 1 channel
-    //Temp02,04....36
-  32, 48, 32, 32, 16, 16, 48, 16, 0, 16, 0, 0, 16, 32, 16, 32, -16, 32,
-  //Temperature sensor offsets corresponding to the external 2 channel
-  //Temp01,03....35
-  48, 32, 48, 64, 64, 32, 48, 64, 0, 16, 16, 32, 48, 48, 32, 32, 16, 32,
+// 0x00 - Card Serial Number
+   0x00000000
+// 0x02 - Structure size
+ , 110
+// 0x03 - Average value
+ , 10
+// 0x04 - Temperature sensor offsets corresponding to the external 1 channel
+// Temp02,04....36
+ , 32, 48, 32, 32, 16, 16, 48, 16, 0, 16, 0, 0, 16, 32, 16, 32, -16, 32
+
+// 0x16 - Temperature sensor offsets corresponding to the external 2 channel
+// Temp01,03....35
+ , 48, 32, 48, 64, 64, 32, 48, 64, 0, 16, 16, 32, 48, 48, 32, 32, 16, 32
 };
 
 #define PAGE_SIZE  sizeof(eepage)  // Macro
 
 //Keys for changing the EEPROM
+//Keys for changing the EEPROM
 #define EEP_CTRL_KEY        0x3C000000
 #define EEP_CTRL_READ       0x00110000
 #define EEP_CTRL_WRITE      0x00220000
-#define EEP_CTRL_INVAL_REQ -100
-#define EEP_CTRL_INVAL_KEY -10
+#define EEP_CTRL_INVAL_REQ  0xff000000
+#define EEP_CTRL_INVAL_KEY  0x00ff0000
+#define EEP_CTRL_OFF_RANGE  0x0000ff00
+#define PAGE_SIZE  sizeof(eepage)
 #define TEMPOFF_LAST_INDX   36
+#define EEP_RW_IDX          4
 
 /*****HUMIDITY SENSOR VARIABLES*****/
 #define humsen1 1
@@ -139,10 +147,12 @@ sbit err15     = rESR ^ 6;  //0x4000 1= any of 4 not lock
 sbit err16     = rESR ^ 7;  //0x8000
 
 //Index value for the user data
+// Indices for user_write functions
+#define IDXEER         1
 #define IDXCTL         2
-#define IDXEEP_CTL    85
 #define IDXNAVG        5
 #define IDXREF        47
+#define IDXEEP_CTL    85
 
 // Global ON / OFF definition
 #define DONE   1

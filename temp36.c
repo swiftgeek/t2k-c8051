@@ -43,9 +43,9 @@
  char idata svn_rev_code[] = "$Rev$";
  
  // Local flag
- bit EEP_CTR_FLAG;
- bit LTC2600_FLAG;
- bit REF_FLAG;
+ bit EEP_CTR_Flag;
+ bit LTC2600_Flag;
+ bit REF_Flag;
 
  //EEPROM variables
  int xdata * eep_address;
@@ -390,7 +390,7 @@ void user_init(unsigned char init)
 
   ENABLE_INTERRUPTS
   // General Variables initialization
-  EEP_CTR_FLAG=0;
+  EEP_CTR_Flag = 0;
   rCSR=0;
 
 // Humidity sensor initialization
@@ -420,22 +420,21 @@ void user_init(unsigned char init)
 /*---- User write function -----------------------------------------*/
 void user_write(unsigned char index) reentrant
 {
-  if(index==IDXCTL)
-    rCTL=user_data.control;
-   if (index == IDXEEP_CTL)
-      EEP_CTR_FLAG = SET;
+  if (index == IDXCTL) rCTL = user_data.control;
+
+  if (index == IDXEEP_CTL) EEP_CTR_Flag = SET;
 
 #ifdef _LTC2600_
    if ((index >= First_DACIndex) && (index <= Last_DACIndex)) {
       DACIndex = (index - First_DACIndex);
        // Update Bias Dac voltages as requested by bit5 of control register
-      LTC2600_FLAG = SET;
+      LTC2600_Flag = SET;
    }
 #endif
 
   if(index==IDXNAVG) {
-    cavg=0;
-    numavg=0;
+    cavg = 0;
+    numavg = 0;
   }   
 }
 
@@ -459,7 +458,6 @@ unsigned char user_func(unsigned char *data_in, unsigned char *data_out)
 /*---- User loop function ------------------------------------------*/
 void user_loop(void)
 {
-   int j;
 
 #ifdef _ADT7486A_
   // Read the external temperature from each chip that is connected to SST_LINE1
@@ -615,39 +613,43 @@ void user_loop(void)
 #endif
 
 #ifdef _ExtEEPROM_
-   if (EEP_CTR_FLAG){
-      led_blink(0, 1, 150);
-      //Checking for the special instruction
-      if (user_data.eeCtrSet & EEP_CTRL_KEY){
-      //convert the index value to fit the address of the eepage structure, temp offset only
-      if(((int)(user_data.eeCtrSet & 0x000000ff)) < TEMPOFF_LAST_INDX) {
-        j =  eepageAddrConvert((int)(user_data.eeCtrSet & 0x000000ff));
-        eep_address = (int*)(&eepage) + j;
-       } else 
-        eep_address = (int*)(&eepage) + (int)(user_data.eeCtrSet & 0x000000ff);
-      //Checking for the write request
-      if (user_data.eeCtrSet & EEP_CTRL_WRITE){
-          if ((user_data.eeCtrSet & 0x000000ff) <= ((SERIALN_ADD - WP_START_ADDR)/2))
+  //-----------------------------------------------------------------------------
+  // Checking the eeprom control flag
+  if (EEP_CTR_Flag) {
+    //Checking for the special instruction
+    if (user_data.eeCtrSet & EEP_CTRL_KEY) {
+      // Valid index range
+      if( (int)(user_data.eeCtrSet & 0x000000ff) >= EEP_RW_IDX) {
+        // Float area from EEP_RW_IDX, count in Float size, No upper limit specified!
+        eep_address = (int xdata *)&eepage + (user_data.eeCtrSet & 0x000000ff);
+        //Checking for the write request
+        if (user_data.eeCtrSet & EEP_CTRL_WRITE){
           *eep_address = user_data.eepValue;
-            //Checking for the read request 
-          } else if (user_data.eeCtrSet & EEP_CTRL_READ){
+        //Checking for the read request
+        } else if (user_data.eeCtrSet & EEP_CTRL_READ) {
           DISABLE_INTERRUPTS;
-              user_data.eepValue = *eep_address;
+          user_data.eepValue = *eep_address;
           ENABLE_INTERRUPTS;
-          } else {
-           // Tell the user that inappropriate task has been requested
-           DISABLE_INTERRUPTS;
-           user_data.eepValue = EEP_CTRL_INVAL_REQ;
-           ENABLE_INTERRUPTS;
-          }
+        } else {
+          // Tell the user that inappropriate task has been requested
+          DISABLE_INTERRUPTS;
+          user_data.eeCtrSet = EEP_CTRL_INVAL_REQ;
+          ENABLE_INTERRUPTS;
+        }
       } else {
-          // Tell the user that invalid key has been provided
-         DISABLE_INTERRUPTS;
-         user_data.eepValue = EEP_CTRL_INVAL_KEY;
-         ENABLE_INTERRUPTS;
+        DISABLE_INTERRUPTS;
+        user_data.eeCtrSet = EEP_CTRL_OFF_RANGE;
+        ENABLE_INTERRUPTS;
       }
-      EEP_CTR_FLAG = CLEAR;
+   } else {
+    // Tell the user that invalid key has been provided
+    DISABLE_INTERRUPTS;
+    user_data.eeCtrSet = EEP_CTRL_INVAL_KEY;
+    ENABLE_INTERRUPTS;
    }
+    EEP_CTR_Flag = CLEAR;
+  }  // if eep
+
 
   //-----------------------------------------------------------------------------
   // EEPROM Save procedure based on CTL bit
