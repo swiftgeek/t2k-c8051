@@ -285,7 +285,7 @@ MSCB_INFO_VAR code vars[] = {
   4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,              "asumctl", &user_data.asumCtl,    // 145
   4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,              "watchdog", &user_data.watchdog,  // 146
   4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,              "smbdebug", &user_data.debugsmb,  // 147
- 64, UNIT_STRING,          0, 0,           0,              "warning", &user_data.warning,    // 148 
+// 64, UNIT_STRING,          0, 0,           0,              "warning", &user_data.warning,    // 148 
 
   0
 };
@@ -448,7 +448,7 @@ void switchonoff(unsigned char command)
     //Sept 09 default Qpump ON at Power up
     pca_operation(Q_PUMP_ON);
 
-    sprintf(user_data.warning, "No Trip");
+//    sprintf(user_data.warning, "No Trip");
 
 #ifdef _LTC1665_
     //-----------------------------------------------------------------------------
@@ -607,7 +607,7 @@ void user_init(unsigned char init)
     }
   }
   sys_info.group_addr  = 100;
-  sprintf(user_data.warning, "No Trip");
+//  sprintf(user_data.warning, "No Trip");
 
   //-----------------------------------------------------------------------------
   // Local Flags
@@ -1046,21 +1046,21 @@ void user_loop(void) {
     if(!ADT7486A_Cmd(ADT7486A_ADDR4, GetExt1Temp, SST_LINE2, &temperature)) {
       RdssT = CLEAR;
       if (temperature > eepage.uuCTlimit) pcbssTT = ON;
-      if (pcbssTT) sprintf (user_data.warning, "Last Trip ASIC Temp: %6.3f [%6.3f]", temperature, eepage.uuCTlimit);
+//      if (pcbssTT) sprintf (user_data.warning, "Last Trip ASIC Temp: %6.3f [%6.3f]", temperature, eepage.uuCTlimit);
       PublishVariable(&(user_data.afterTemp), temperature, pcbssTT);
     } else publishErr(RdssT);
 
     if(!ADT7486A_Cmd(ADT7486A_ADDR4, GetExt2Temp, SST_LINE2, &temperature)) {
       RdssT = CLEAR;
       if (temperature > eepage.uuCTlimit) pcbssTT = ON;
-      if (pcbssTT) sprintf (user_data.warning, "Last Trip ADC Temp: %6.3f [%6.3f]", temperature, eepage.uuCTlimit);
+//      if (pcbssTT) sprintf (user_data.warning, "Last Trip ADC Temp: %6.3f [%6.3f]", temperature, eepage.uuCTlimit);
       PublishVariable(&(user_data.adcTemp), temperature, pcbssTT);
     } else publishErr(RdssT);
 
     if(!ADT7486A_Cmd(ADT7486A_ADDR4, GetIntTemp, SST_LINE2, &temperature)) {
       RdssT = CLEAR;
       if (temperature > eepage.uuCTlimit) pcbssTT = ON;
-      if (pcbssTT) sprintf (user_data.warning, "Last Trip Vreg Temp: %6.3f [%6.3f]", temperature, eepage.uuCTlimit);
+//      if (pcbssTT) sprintf (user_data.warning, "Last Trip Vreg Temp: %6.3f [%6.3f]", temperature, eepage.uuCTlimit);
       PublishVariable(&(user_data.regTemp), temperature, pcbssTT);
     } else publishErr(RdssT);
   }  // SPup
@@ -1116,7 +1116,7 @@ void user_loop(void) {
         if ((volt < eepage.lVIlimit[channel]) || (volt > eepage.uVIlimit[channel])) {
            rESR |= mask; // out of range
            sprintf (str, "Last Trip: %6.3f [%6.3f /", volt, eepage.lVIlimit[channel]);
-           sprintf(user_data.warning, "%s%6.3f] (min/max)", str, eepage.uVIlimit[channel]);
+//           sprintf(user_data.warning, "%s%6.3f] (min/max)", str, eepage.uVIlimit[channel]);
         }
       } // skip v/iQ channel
     }  // for loop
