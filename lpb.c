@@ -364,6 +364,7 @@ void user_init(unsigned char init)
   user_data.SHThumid = 0;
   user_data.rSHTemp = 0;
   user_data.rSHhumid = 0;
+  user_data.spare = 0;
 #endif
 
 //---------------------------------------------------------------
@@ -451,7 +452,7 @@ void user_write(unsigned char index) reentrant
   // Delay
   if (index==IDXDELAY) {
     DELAY_0 =  user_data.spare & 0x1;
-    DELAY_1 = (user_data.spare & 0x2 >> 1);
+    DELAY_1 = (user_data.spare & 0x2) >> 1;
   }  
 
   // EEPROM command
