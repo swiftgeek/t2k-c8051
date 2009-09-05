@@ -221,8 +221,8 @@ struct EEPAGE xdata eepage2; //NW testing
 #define IDXEEP_CTL      144
 #define IDXASUM_CTL     145
  
-#define SERIALN_LENGTH 4
-#define SERIALN_ADD    (0x600)  // Fixed as sitting at the first byte of the EEPROM
+#define SERIALN_LENGTH (unsigned int) 4
+#define SERIALN_ADD    (unsigned int) (0x600)  // Fixed as sitting at the first byte of the EEPROM
 
 // EEPROM page assignment (memory offset)  page Nr3 is the protected page
 unsigned int xdata PageAddr[]={0x000, 0x200, 0x400, 0x600};
@@ -238,8 +238,10 @@ unsigned int xdata PageAddr[]={0x000, 0x200, 0x400, 0x600};
 #define ADDR_PCA9539   0x74
 #define ADDR_LTC2497   0x14
 #define ADDR_LTC2495   0x14
+
 //NW mirror of the DAC values (for multiple DAC change)
 unsigned char xdata ltc1665mirror [64];
+unsigned int  xdata ltc2600mirror [8];
 
 // Global ON / OFF definition
 #define ON     1
@@ -360,7 +362,8 @@ unsigned long eeCtrSet;
 unsigned long asumCtl;
 unsigned long watchdog;
 unsigned long debugsmb;
-char warning[64];
+//char warning[64];
+unsigned int geoadd;
 };
 struct user_data_type xdata user_data;
 

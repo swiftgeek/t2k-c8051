@@ -25,6 +25,7 @@ Program Size: data=167.4 xdata=1483 code=23701 - Sep 06/2008
 Program Size: data=58.4 xdata=1630 code=27180 - Jan 29/2009 Large model
 Program Size: data=167.5 xdata=1540 code=24344  - Feb 02/09
 Program Size: data=165.5 xdata=1662 code=26085 - Aug 14/09
+Program Size: data=165.5 xdata=1585 code=25860 - Sep 04/09 
 
 CODE(?PR?UPGRADE?MSCBMAIN (0xD000)) 
 
@@ -286,7 +287,7 @@ MSCB_INFO_VAR code vars[] = {
   4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,              "watchdog", &user_data.watchdog,  // 146
   4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,              "smbdebug", &user_data.debugsmb,  // 147
 // 64, UNIT_STRING,          0, 0,           0,              "warning", &user_data.warning,    // 148 
-
+  2, UNIT_BYTE,            0, 0,           0, "GeoAdd",    &user_data.geoadd,        // 149
   0
 };
 
@@ -296,17 +297,17 @@ MSCB_INFO_VAR *variables = vars;   // Structure mapping
 extern SYS_INFO sys_info;          // For address setting
 
 #ifdef _ADT7486A_
-unsigned char ADT7486A_addrArray[] = {ADT7486A_ADDR1
-, ADT7486A_ADDR0
-, ADT7486A_ADDR3
-, ADT7486A_ADDR2};
+unsigned char ADT7486A_addrArray[] = { ADT7486A_ADDR1
+                                     , ADT7486A_ADDR0
+                                     , ADT7486A_ADDR3
+                                     , ADT7486A_ADDR2 };
 #endif
 
 #ifdef _LTC2600_
-unsigned char xdata LTC2600_LOAD[] = {LTC2600_LOAD_A,LTC2600_LOAD_B,
-LTC2600_LOAD_C,LTC2600_LOAD_D,
-LTC2600_LOAD_E,LTC2600_LOAD_F,
-LTC2600_LOAD_G,LTC2600_LOAD_H};
+unsigned char xdata LTC2600_LOAD[] = { LTC2600_LOAD_A,LTC2600_LOAD_B
+                                     , LTC2600_LOAD_C,LTC2600_LOAD_D
+                                     , LTC2600_LOAD_E,LTC2600_LOAD_F
+                                     , LTC2600_LOAD_G,LTC2600_LOAD_H };
 #endif
 
 //-----------------------------------------------------------------------------
@@ -533,6 +534,16 @@ void switchonoff(unsigned char command)
     // Needs power for DAC update, by now it should be ON
     // Force DAC updates
     LTC1665_Flag = ON;
+
+
+    // Activate the 8 Asum dac settings
+    // user_data contains correct values, force update 
+    // by setting mirror to 0x00 
+    for(i=0;i<8;i++) ltc2600mirror[i] = 0xFFFF;
+
+    // Needs power for DAC update, by now it should be ON
+    // Force DAC updates
+    LTC2600_Flag = ON;
   }
   else if(command==OFF) {
     pca_operation(Q_PUMP_OFF);   // Initially turn it off
@@ -659,7 +670,7 @@ void user_init(unsigned char init)
   delay_us(10);
   
   // Get Node Address from PCA
-  sys_info.node_addr   = NodeAdd_get();
+//  sys_info.node_addr   = NodeAdd_get();
 #endif
 
   //-----------------------------------------------------------------------------
@@ -670,6 +681,8 @@ void user_init(unsigned char init)
   // (with the iBiasOffset) Protected page starts from 0x600, serial number is located in 0x6B0
   ExtEEPROM_Read(SERIALN_ADD,(unsigned char xdata *)&eepage.SerialN, SERIALN_LENGTH);
   user_data.SerialN = eepage.SerialN;
+  sys_info.node_addr = 500 + (eepage.SerialN - 76300000);
+
   //Read all other settings from page 0(non-protected)
   ExtEEPROM_Read(PageAddr[0], (unsigned char xdata *)&eepage, PAGE_SIZE);
   DISABLE_INTERRUPTS;
@@ -791,7 +804,6 @@ void user_write(unsigned char index) reentrant
 
   // -- ASUM Threshold DACs
   if ((index >= FIRST_ASUM) && (index < LAST_ASUM)) {
-    AsumIndex = (index - FIRST_ASUM);
 #ifdef _LTC2600_
     // Update Bias Dac voltages as requested by bit5 of control register
     if (!SsS) LTC2600_Flag = 1;  // !Shutdown
@@ -826,7 +838,8 @@ void user_write(unsigned char index) reentrant
 /*---- User read function ------------------------------------------*/
 unsigned char user_read(unsigned char index)
 {
-  if (index);
+  if (index == 0) {
+  }
   return 0;
 }
 
@@ -881,15 +894,17 @@ void user_loop(void) {
   unsigned char xdata * eeptemp_source;
   unsigned char xdata swConversion, eep_request;
   char xdata ltc1665_index, ltc1665_chipChan, ltc1665_chipAdd;
+  char xdata ltc2600_index;
   char xdata str[32];
 
   timing=1;
 
-  if (!NodeOK && uptime()) {
+//  if (!NodeOK && uptime()) {
     // Get Node Address from PCA
-    sys_info.node_addr   = NodeAdd_get();
-    NodeOK = 1;
-  }
+//    sys_info.node_addr   = NodeAdd_get();
+    user_data.geoadd = NodeAdd_get();
+//    NodeOK = 1;
+//  }
 
   //External ADC for REV0 cards
   //-----------------------------------------------------------------------------
@@ -955,15 +970,6 @@ void user_loop(void) {
     PCA9539_Conversion(&swConversion);
     PCA9539_WriteByte(BIAS_WRITE, ~swConversion);
     PCA_Flag = CLEAR;
-  }
-#endif
-
-  //-----------------------------------------------------------------------------
-  // Checking ASUM flag for updating the asum values
-#ifdef _LTC2600_
-  if(LTC2600_Flag) {
-    LTC2600_Cmd(WriteTo_Update,LTC2600_LOAD[AsumIndex], user_data.rAsum[AsumIndex]);
-    LTC2600_Flag = CLEAR;
   }
 #endif
 
@@ -1143,25 +1149,42 @@ void user_loop(void) {
   publishAll();
 
   //-----------------------------------------------------------------------------
+  // Checking ASUM flag for updating the asum values
+#ifdef _LTC2600_
+  rCSR = user_data.status;    
+  if(SPup && LTC2600_Flag) {
+    for(ltc2600_index=0; ltc2600_index < 8; ltc2600_index++) {
+      if(bDacdoitNOW || (ltc2600mirror[ltc2600_index] != user_data.rAsum[ltc2600_index])) {
+        LTC2600_Cmd(WriteTo_Update, LTC2600_LOAD[ltc2600_index], user_data.rAsum[ltc2600_index]);
+        ltc2600mirror[ltc2600_index] = user_data.rBias[ltc2600_index];
+      }
+    }
+    LTC2600_Flag = CLEAR;
+  }
+#endif
+
+  //-----------------------------------------------------------------------------
   // Checking APD flag for updating the APD dacs
 #ifdef _LTC1665_
   // Get current status of the Card, don't update DAC in case of no Power, keep flag up
   rCSR = user_data.status;    
   if(SPup && LTC1665_Flag) {
     for(ltc1665_index=0; ltc1665_index<64; ltc1665_index++) {
-      if(bDacdoitNOW || (ltc1665mirror[ltc1665_index]!= user_data.rBias[ltc1665_index])) {
+      if(bDacdoitNOW || (ltc1665mirror[ltc1665_index] != user_data.rBias[ltc1665_index])) {
         ltc1665_chipChan = (ltc1665_index / 8) + 1;
         ltc1665_chipAdd  = (ltc1665_index % 8) + 1;
-        LTC1665_Cmd(ltc1665_chipAdd,user_data.rBias[ltc1665_index] , ltc1665_chipChan);
+        LTC1665_Cmd(ltc1665_chipAdd, user_data.rBias[ltc1665_index] , ltc1665_chipChan);
         ltc1665mirror[ltc1665_index] = user_data.rBias[ltc1665_index];
       }
     }
     //LTC1665_Cmd(chipAdd,user_data.rBias[BiasIndex] ,chipChan);
     LTC1665_Flag = CLEAR;
-    // Reset the force DAC setting when coming from CPup 
-    bDacdoitNOW = OFF;
   }
 #endif
+
+  //
+  // Reset the force DAC setting when coming from CPup or Restore 
+  bDacdoitNOW = OFF;
 
   //-----------------------------------------------------------------------------
   // Set Manual Shutdown based on Index
@@ -1268,13 +1291,13 @@ void user_loop(void) {
   if (CeeR) {
     rCSR = user_data.status;
     // Read the active page
-    status = ExtEEPROM_Read (PageAddr[(unsigned char)(user_data.eepage & 0x07)], (unsigned char*) &eepage, PAGE_SIZE);
+    status = ExtEEPROM_Read (PageAddr[(unsigned char)(user_data.eepage & 0x07)], (unsigned char xdata *) &eepage, PAGE_SIZE);
     if (status == DONE) {
       SeeR = DONE;
  
       // Publish user_data new settings
       DISABLE_INTERRUPTS;
-      for(i=0;i<8;i++)  user_data.rAsum[i] = eepage.rasum[i];
+      for(i=0;i<8;i++)  user_data.rAsum[i] = ltc2600mirror[i] = eepage.rasum[i];
       for(i=0;i<64;i++) user_data.rBias[i] = ltc1665mirror[i] = eepage.rbias[i];
       user_data.rQpump = (unsigned int) (eepage.rqpump & 0x3FF);
       user_data.swBias = eepage.SWbias;
@@ -1382,4 +1405,5 @@ void user_loop(void) {
   ENABLE_INTERRUPTS;
   timing=0;
   delay_ms(10);
+
 }  // End of User loop
