@@ -46,8 +46,9 @@ Reads data from ext_eeprom.
 @param *destination  address of memory which the read data would be stored
 @param page_size    number of bytes of data that the originator wants to read from memory
 */
-unsigned char ExtEEPROM_Read (unsigned int ReadPage, unsigned char xdata *destination,
-unsigned int page_size) {
+unsigned char ExtEEPROM_Read (unsigned int ReadPage
+                            , unsigned char xdata *destination
+                            , unsigned int page_size) {
 
   unsigned int i=0;
 
