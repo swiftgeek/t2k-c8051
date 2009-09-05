@@ -31,6 +31,7 @@
 #define ADDR_GROUP        2
 #define ADDR_ALL          3
 
+
 /*---- functions and data in user part -----------------------------*/
 
 void user_init(unsigned char init);
@@ -75,7 +76,6 @@ unsigned char idata crc_code, addr_mode, n_variables;
 /* use absolute value between main program and upgrader */
 unsigned char idata _flkey _at_ 0x80;
 unsigned char idata n_out _at_ 0x81;
-
 unsigned char idata _cur_sub_addr, _var_size;
 
 #ifdef UART1_MSCB
@@ -1569,6 +1569,11 @@ void yield(void)
 void main(void)
 {
    setup();
+
+// Code lock code
+//-PAA-
+//   SFRPAGE = CONFIG_PAGE;
+//   FLACL = 32;  // 32 * 1024 bytes
 
    do {
 	      yield();
