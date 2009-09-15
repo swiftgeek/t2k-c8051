@@ -16,8 +16,10 @@ Program Size: data=221.1 xdata=242 code=15704
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
-#include "Time.h"
-#include "SmaRTC.h"
+#ifdef RTC_410
+#include "../Devices/Time.h"
+#include "../Protocols/SmaRTC.h"
+#endif
 #include "mscbemb.h"
 
 /* declare number of sub-addresses to framework */
