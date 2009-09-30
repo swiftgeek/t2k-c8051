@@ -1080,10 +1080,10 @@ void watchdog_enable(unsigned char timeout)
 
 #if defined(CPU_C8051F120)
    SFRPAGE = LEGACY_PAGE;
-   RSTSRC  = 0x04;              // enable missing clock detector
+   RSTSRC  = 0x06;              // enable missing clock detector & VDDMON
 #else
    OSCICN |= 0x80;              // enable missing clock detector
-   RSTSRC  = 0x09;              // enable reset pin and watchdog reset
+   RSTSRC  = 0x0B;              // enable reset pin and watchdog reset & VDDMON
 #endif
 
 #endif /* not CPU_C8051F310 */
@@ -1276,6 +1276,9 @@ void eeprom_write(void * src, unsigned char len, unsigned short *offset)
    SFRPAGE = LEGACY_PAGE;
 #endif
 
+//-PAA
+   RSTSRC = 0x06; // Enable Missing Clock & VDDMON as reset
+
 #if defined(CPU_C8051F000)
    FLSCL = (FLSCL & 0xF0) | 0x08;  // set timer for 11.052 MHz clock
 #elif defined(CPU_C8051F020) || defined(CPU_C8051F120)
@@ -1333,6 +1336,9 @@ void eeprom_erase(void)
 #ifdef CPU_C8051F120
    SFRPAGE = LEGACY_PAGE;
 #endif
+
+//-PAA
+   RSTSRC = 0x06; // Enable Missing Clock & VDDMON as reset
 
 #if defined(CPU_C8051F000)
    FLSCL = (FLSCL & 0xF0) | 0x08;       // set timer for 11.052 MHz clock
