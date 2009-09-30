@@ -633,7 +633,7 @@ void interprete(void)
       SFRPAGE = LEGACY_PAGE;
 #endif
 
-      RSTSRC = 0x10;         // force software reset
+      RSTSRC = 0x12;         // force software and VDDmon as reset src
       break;
 
    case CMD_GET_INFO:
@@ -1472,7 +1472,7 @@ erase_ok:
 #ifdef CPU_C8051F120
          SFRPAGE = LEGACY_PAGE;
 #endif
-         RSTSRC = 0x10;
+         RSTSRC = 0x12;  // Force soft reset and VDDmon as reset src
       }
 
    } while (cmd != UCMD_RETURN);
