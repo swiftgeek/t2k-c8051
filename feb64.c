@@ -686,8 +686,10 @@ void user_init(unsigned char init)
   //Read all other settings from page 0(non-protected)
   ExtEEPROM_Read(PageAddr[0], (unsigned char xdata *)&eepage, PAGE_SIZE);
   DISABLE_INTERRUPTS;
-  for(i=0;i<8;i++)
+  for(i=0;i<8;i++) {
     user_data.rAsum[i] = eepage.rasum[i];
+    ltc2600mirror[i] = eepage.rasum[i];
+  }
   for(i=0;i<64;i++) {
     user_data.rBias[i] = eepage.rbias[i];
     ltc1665mirror[i] = eepage.rbias[i];
