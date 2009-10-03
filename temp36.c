@@ -251,10 +251,10 @@ int eepageAddrConvert(unsigned int index)
   int add;
   //if index is even
   if(!(index%2))
-    add = index/2 + 18 + 4; // offset from the eepage struct
+    add = index/2 + 18 + EEP_RW_IDX; // offset from the eepage struct
     //if index is odd
   else
-    add = index/2 + 4;  // offset from the eepage struct
+    add = index/2 + EEP_RW_IDX;  // offset from the eepage struct
   return add;
 }
 
@@ -619,9 +619,9 @@ void user_loop(void)
     //Checking for the special instruction
     if (user_data.eeCtrSet & EEP_CTRL_KEY) {
       // Valid index range
-      if( (int)(user_data.eeCtrSet & 0x000000ff) >= EEP_RW_IDX) {
+      if( (int)(user_data.eeCtrSet & 0x000000ff) < TEMPOFF_LAST_INDX) {
         // Float area from EEP_RW_IDX, count in Float size, No upper limit specified!
-        eep_address = (int xdata *)&eepage + (user_data.eeCtrSet & 0x000000ff);
+        eep_address = (int xdata *)&eepage + eepageAddrConvert((int)(user_data.eeCtrSet & 0x000000ff));
         //Checking for the write request
         if (user_data.eeCtrSet & EEP_CTRL_WRITE){
           *eep_address = user_data.eepValue;
