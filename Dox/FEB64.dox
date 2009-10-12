@@ -304,10 +304,10 @@ Monitor periodically (~1HZ) the temperature within the FGD detector at the bus b
 position using the @ref SSTProtocol.
 
 @section Description
-The ADT7486 provides one internal and 2 remote temperature sensor monitoring.
+The ADT7486 provides one internal and 2 remote temperature sensor monitoring. The FEB64 has 4 devices for 8 remote
+temperature sensors. The 4 internal temperature are read out as well.
 The remote sensors are NP junction. The same device is used for the TEMP36 card and two reports
-can be found here
-<a href=../support/TEMP36-report.pdf > Noel Wu's report </a>, 
+can be found here <a href=TEMP36-report.pdf > Noel Wu's report </a>, 
 <a href=http://www.nd280.org/tpc/wp/wp2/temperature/temp-board-status-20090310.pdf >
 Blair Jamieson's report</a>.
 
