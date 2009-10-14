@@ -468,7 +468,7 @@ void user_loop(void) {
   } // Switch Clock
 
   //-----------------------------------------------------------------------------
-  // Config Pulse, FPGA code requires 3 consecutive pulses
+  // Config Pulse, FPGA code requires 4 consecutive pulses
   if (Ccfg) {
     for (i=0;i<4;i++) {
      CFG_RECOVER = 1;
