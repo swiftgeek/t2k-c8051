@@ -5,7 +5,8 @@
   Contents:  Application specific (user) part of Midas Slow Control
              Bus protocol for the P0D Power supplies control/monitor
  CODE(?PR?UPGRADE?MSCBMAIN (0x6800))             
- Program Size: data=185.1 xdata=122 code=11262
+ Program Size: data=178.1 xdata=122 code=11262 Jul 17/2009
+
 
  $Id$
 
@@ -174,6 +175,7 @@ void user_write(unsigned char index) reentrant  // index corresponds to MSCB_INF
         if (user_data.control & 0x4) PulseReset(3);
         if (user_data.control & 0x8) PulseReset(4);
       }
+      user_data.control = 0;
    }
    if (index == 6)
       SmaRTCSetTime(user_data.mytime);
