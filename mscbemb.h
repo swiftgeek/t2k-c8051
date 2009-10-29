@@ -568,6 +568,11 @@ sbit RS485_ENABLE = P0 ^ 5; //MSCB communication enable port
 #define MSCB_SYNC     P1 ^ 1
 #define MSCB_SPI_MISO P2 ^ 1
 
+// LPB SPI
+#define LPB_SPI_SCK   P0 ^ 7  // PP
+#define LPB_SPI_MOSI  P0 ^ 6  // PP
+#define LPB_SPI_MISO  P2 ^ 7  // OD 
+
 //SHT
 #define SHT_DATA1 P1 ^ 4
 #define SHT_SCK1  P1 ^ 5
