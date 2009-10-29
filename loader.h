@@ -233,7 +233,7 @@ struct EEPAGE xdata eepage={
 //
 // Global to ALL boards
 // Macro EEPAGE size independently of the BOARD
-#define PAGE_SIZE  sizeof(eepage)
+#define PAGE_SIZE (unsigned int) sizeof(eepage)
 // EEPROM page for loader confirmation
 struct EEPAGE xdata eepage0;
 struct EEPAGE xdata eepageWp;
