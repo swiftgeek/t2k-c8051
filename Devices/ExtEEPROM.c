@@ -58,7 +58,7 @@ unsigned char ExtEEPROM_Read (unsigned int ReadPage
     return EEP_BUSY;
 
   RAM_CSn = 0;
-  SPI_WriteByte(EEP_READcmd);         //Sending the raed opcode
+  SPI_WriteByte(EEP_READcmd);         //Sending the read opcode
   SPI_WriteUInt(ReadPage);        //Sending the memory address
 
   for (i;i<page_size;i++) {
@@ -117,7 +117,7 @@ unsigned char ExtEEPROM_Write_Clear_Orig(unsigned int xdata write_addr
       return EEP_BUSY;
     }
     //Updating the address of memory
-    write_addr = write_addr + (i * EEP_MAX_BYTE);
+    write_addr += i * EEP_MAX_BYTE;
     //Checking for the last cycle of write operation
     if (i == Nblock) {
       //Determing number of bytes left for the last cycle of write operation
@@ -159,7 +159,7 @@ unsigned char ExtEEPROM_Write_Clear(unsigned int write_addr
                                   , unsigned char WC_flag
                                   , unsigned char *flag)
 {
-  unsigned int i,j, Nblock, counter = EEP_MAX_BYTE;
+  unsigned int i,j, running_add, Nblock, counter = EEP_MAX_BYTE;
   unsigned char xdata *psource;
 
   psource = *source;
@@ -175,7 +175,7 @@ unsigned char ExtEEPROM_Write_Clear(unsigned int write_addr
 
   for (i = 0; i <= Nblock; i++) {
 
-    write_addr = i * EEP_MAX_BYTE;          //Updating the address of mempry
+    running_add = write_addr + i * EEP_MAX_BYTE;          //Updating the address of memory
 
     // Checking for the last cycle of write operation
     if (i == Nblock) {
@@ -184,9 +184,9 @@ unsigned char ExtEEPROM_Write_Clear(unsigned int write_addr
     ExtEEPROM_WriteEnable();
     RAM_CSn = 0;
 
-    SPI_WriteByte(EEP_WRITEcmd);        //Sending the WRITE opcode
-    SPI_WriteUInt(write_addr);          //Sending the memory address which
-                                              //data is going to be stored in;
+    SPI_WriteByte(EEP_WRITEcmd);         // Sending the WRITE opcode
+    SPI_WriteUInt(running_add);          // Sending the memory address which
+                                         // data is going to be stored in;
     for (j=0; j<counter; j++) {
       if (WC_flag == WRITE_EEPROM){
         SPI_WriteByte(*psource);
