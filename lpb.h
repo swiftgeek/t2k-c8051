@@ -112,6 +112,7 @@ unsigned char control;     //Writing/Reading the EEPROM
 unsigned char status;      //Displaying the status of the EEPROM command
 unsigned char eepage;      //EEPROM page number
 unsigned char spare;
+unsigned int  delay;
 float iadc[8];
 float uCTemp;
 float IntTemp;
@@ -123,17 +124,15 @@ unsigned int rdac[16];
 unsigned int riadc[8];
 unsigned int rSHTemp;
 unsigned int rSHhumid;
-char spare1;
-int  spare2;
 float          eepValue;    //EEPROM Value to be stored/read
 unsigned long  eeCtrSet;     //Initiate changing the offset values
 };
 struct user_data_type xdata user_data;
 
-#define IDXDAC      20
+#define IDXDAC      21
 #define IDXCTL       2
-#define IDXEEP_CTL  49
-#define IDXDELAY     5
+#define IDXEEP_CTL  48
+#define IDXDELAY     6
 
 unsigned char bdata rCTL;
 sbit CPup   = rCTL ^ 0;
@@ -154,7 +153,8 @@ sbit SmSd   = rCSR ^ 7;
 //The low and high bytes are switched in the bdata section of the memory
 //This is the reason that the sbit declarations do not appear to match
 //the documentation but they actually do.
-//D2A    Vss    Iss Vdd    Idd   I5  I3.3 I1.8
+// Internal ADC channel assignment
+// D2A  Vss  Iss  Vdd  Idd  I5  I3.3  I1.8
 unsigned int bdata rESR;
 sbit Vss   = rESR ^ 8;  //0x1  
 sbit Iss   = rESR ^ 9;  //0x2
@@ -181,10 +181,10 @@ sbit V6Fault  = rESR ^ 7;  //0x8000
 // Shut down the card only if any of the following bits in the rESR register is set
 // correspond to the rESR bit assignment
 // All the Vreg U/I, uC/Board/FGD Temperature
-#define UCTEMPERATURE_MASK   0x0180
+#define UCTEMPERATURE_MASK   0x0080
 #define BTEMPERATURE_MASK    0x0600
-#define VOLTAGE_MASK         0x0004
-#define CURRENT_MASK         0x0000
+#define VOLTAGE_MASK         0x0005
+#define CURRENT_MASK         0x0008
 #define MAIN_CURRENT_MASK    0x8000
 
 //---------------------------------------------------------------
@@ -194,7 +194,7 @@ sbit V6Fault  = rESR ^ 7;  //0x8000
 sbit VCC_EN    = P1 ^ 3;
 sbit VREG_5    = P2 ^ 5;
 sbit VREG_3    = P2 ^ 6;
-sbit VREG_1    = P2 ^ 7;
+//sbit VREG_1    = P2 ^ 7;
 sbit V6ddFlag  = P1 ^ 6;
 
 sbit DELAY_0   = P0 ^ 6;
