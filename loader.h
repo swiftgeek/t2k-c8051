@@ -199,7 +199,7 @@ struct EEPAGE xdata eepage = {
 struct EEPAGE {
   unsigned long SerialN;
   unsigned int structsze; 
-  unsigned int spare; 
+  unsigned int delay; 
   unsigned int rdac[16];
   float lVIlimit[8];
   float uVIlimit[8];
@@ -213,7 +213,7 @@ struct EEPAGE xdata eepage={
 // 0x00 - S/N
      0x00000000   
 // 0x01 - Struct size, spare
-   , 0x0000, 0x0000
+   , 0x0000, 0x0010
 // 0x02 - rdacs
    , 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
    , 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
