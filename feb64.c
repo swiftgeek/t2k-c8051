@@ -26,6 +26,7 @@ Program Size: data=58.4 xdata=1630 code=27180 - Jan 29/2009 Large model
 Program Size: data=167.5 xdata=1540 code=24344  - Feb 02/09
 Program Size: data=165.5 xdata=1662 code=26085 - Aug 14/09
 Program Size: data=165.5 xdata=1585 code=25860 - Sep 04/09 
+Program Size: data=165.5 xdata=1585 code=25921 - Oct 30/09
 
 CODE(?PR?UPGRADE?MSCBMAIN (0xD000)) 
 
@@ -1144,7 +1145,8 @@ void user_loop(void) {
   } else if (bCPupdoitNOW) {
     bCPupdoitNOW = OFF;   // Reset flag coming from PowerUp sequence
     SsS = SmSd = OFF;
-    SPup = bDacdoitNOW = ON; // Set status and enable DACs writing 
+    LTC2600_Flag = LTC1665_Flag = bDacdoitNOW = ON; // Allow & force DACs reload
+    SPup = ON; // Set status ON
   }
 
   // Publish Control, Error and Status for all the bdoitNOW actions.
@@ -1293,7 +1295,8 @@ void user_loop(void) {
   if (CeeR) {
     rCSR = user_data.status;
     // Read the active page
-    status = ExtEEPROM_Read (PageAddr[(unsigned char)(user_data.eepage & 0x07)], (unsigned char xdata *) &eepage, PAGE_SIZE);
+    status = ExtEEPROM_Read (PageAddr[(unsigned char)(user_data.eepage & 0x07)]
+                          , (unsigned char xdata *) &eepage, PAGE_SIZE);
     if (status == DONE) {
       SeeR = DONE;
  
@@ -1305,7 +1308,7 @@ void user_loop(void) {
       user_data.swBias = eepage.SWbias;
       ENABLE_INTERRUPTS;
 
-      bDacdoitNOW = ON;        // Force a DAC Setting on next loop
+      LTC2600_Flag = LTC1665_Flag = bDacdoitNOW = ON; // Allow & force DACs reload
 
       // Update adc2mscb_table[adcChannel].Offst values for current and offset
       updateAdc2Table();
