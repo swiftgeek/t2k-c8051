@@ -63,7 +63,7 @@ unsigned int xdata PageAddr[]={0x000, 0x200, 0x400, 0x600};
 struct EEPAGE {
   unsigned long SerialN;
   unsigned int structsze; 
-  unsigned int spare; 
+  unsigned int delay; 
   unsigned int rdac[16];
   float lVIlimit[8];
   float uVIlimit[8];
@@ -76,7 +76,7 @@ struct EEPAGE {
 struct EEPAGE xdata eepage={
 // 0x00 - S/N
      0x00000000   
-// 0x01 - Struct size, spare
+// 0x01 - Struct size, delay
    , 0x0000, 0x0000
 // 0x02 - rdacs
    , 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
