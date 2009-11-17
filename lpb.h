@@ -136,6 +136,7 @@ struct user_data_type xdata user_data;
 
 unsigned char bdata rCTL;
 sbit CPup   = rCTL ^ 0;
+sbit Cmode  = rCTL ^ 3;
 sbit CeeS   = rCTL ^ 4;
 sbit CeeR   = rCTL ^ 5;
 sbit CeeClr = rCTL ^ 6;
@@ -144,6 +145,7 @@ sbit CmSd   = rCTL ^ 7;
 unsigned char bdata rCSR;
 sbit SPup   = rCSR ^ 0;
 sbit S6dd   = rCSR ^ 1;
+sbit Smode  = rCSR ^ 3;  // 1 = CPLD Test
 sbit SeeS   = rCSR ^ 4;
 sbit SeeR   = rCSR ^ 5;
 sbit SsS    = rCSR ^ 6;

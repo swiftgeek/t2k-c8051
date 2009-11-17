@@ -72,6 +72,7 @@ sbit SPI_MOSI  = MSCB_SPI_MOSI;    // SPI Protocol Master Out Slave In
 sbit SPI_MISO  = MSCB_SPI_MISO;    // SPI Protocol Master Out Slave In
 
 sbit LPB_CSn     = P0 ^ 4;
+sbit CPLDMode    = P2 ^ 6; 
 
 unsigned char channel;
 unsigned long xdata humidTime=0, currentTime=0, currentTime2=0;
@@ -468,8 +469,10 @@ void user_init(unsigned char init)
 
   P0MDOUT |= 0x80;  // LPB_SPI_SCK  (P0.7) PP
   P0MDOUT |= 0x40;  // LPB_SPI_MOSI (P0.6) PP
-  P2MDOUT &= ~0x80; // CMB_SPI_MISO (P2.7) OD
-  P0MDOUT |= 0x10; //  LPB_CS       (P0.4) PP
+  P2MDOUT &= ~0x80; // LPB_SPI_MISO (P2.7) OD
+  P0MDOUT |= 0x10;  // LPB_CS       (P0.4) PP
+
+  P2MDOUT |= 0x40;  // CPLDMode     (P2.6) PP
 } // End of Init()
 
 
@@ -531,6 +534,16 @@ void user_loop(void) {
     delay_Operation();
     DELAY_Flag = CLEAR;
   }
+
+  //-----------------------------------------------------------------------------
+  // Switch CPLD Mode
+  if (Cmode) {
+    rCSR = user_data.status;
+    if (Smode) CPLDMode = Smode = 0;
+    else       CPLDMode = Smode = 1;
+    Cmode = 0;  // Reset command
+    publishCtlCsr();  // Publish Ctl/Csr
+  } // Switch CPLD Mode
 
   //-----------------------------------------------------------------------------
   // Power Up based on CTL bit
