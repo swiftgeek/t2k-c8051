@@ -39,15 +39,15 @@
 // Input    V         R1      R2      (R1+R2)/R1  
 // AIN0.0  D2A       1.3K    4.7K     6.0/1.3 (4.615)
 // AIN0.1  V+6ss     2.2K    4.7K     6.9/2.2 (3.136)
-// AIN0.2  Iss       400mA/V          0.4
+// AIN0.2  Iss       G50 R0.2  -> 10    0.1
 // AIN0.3  V+6dd     2.2K    4.7K     6.9/2.2 (3.136)
-// AIN0.4  Idd       400mA/V          0.4      
-// AIN0.5  I5        400mA/V          0.4 
-// AIN0.6  I3.3      400mA/V          0.4
-// AIN0.7  I1.8      400mA/V          0.4
+// AIN0.4  Idd       G50 R0.05 -> 2.5   0.4      
+// AIN0.5  I5         
+// AIN0.6  I3.3      G50 R0.1  ->   5   0.2
+// AIN0.7  I1.8      G50 R2    -> 100   0.01
 
-//                       D2A    Vss    Iss Vdd    Idd   I5  I3.3 I1.8
-float code coeff[8]  = {4.615, 3.136, 0.4, 3.136, 0.4, 0.4, 0.4, 0.4};
+//                       D2A    Vss    Iss Vdd    Idd   I5  I3.3  I1.8
+float code coeff[8]  = {4.615, 3.136, 0.1, 3.136, 0.4, 0.4, 0.2*1000,   0.01*1000};
 float code offset[8] = {    0,     0,   0,     0,   0,   0,   0,   0};
 unsigned char xdata ltc2620mirror[16];
 

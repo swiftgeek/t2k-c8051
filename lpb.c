@@ -109,8 +109,8 @@ MSCB_INFO_VAR code vars[] = {
   4, UNIT_VOLT,      0, 0, MSCBF_FLOAT, "pDV6",                  &user_data.iadc[3],   // 10
   4, UNIT_AMPERE,    0, 0, MSCBF_FLOAT, "pDI6",                  &user_data.iadc[4],   // 11
   4, UNIT_AMPERE,    0, 0, MSCBF_FLOAT, "pDI5",                  &user_data.iadc[5],   // 12
-  4, UNIT_AMPERE,    0, 0, MSCBF_FLOAT, "pDI33",                 &user_data.iadc[6],   // 13
-  4, UNIT_AMPERE,    0, 0, MSCBF_FLOAT, "pDI18",                 &user_data.iadc[7],   // 14
+  4, UNIT_AMPERE,    PRFX_MILLI, 0, MSCBF_FLOAT, "pDI33",                 &user_data.iadc[6],   // 13
+  4, UNIT_AMPERE,    PRFX_MILLI, 0, MSCBF_FLOAT, "pDI18",                 &user_data.iadc[7],   // 14
   4, UNIT_CELSIUS,   0, 0, MSCBF_FLOAT, "uCTemp",                &user_data.uCTemp,    // 15 
 
   4, UNIT_CELSIUS,   0, 0, MSCBF_FLOAT, "IntTemp",               &user_data.IntTemp,   // 16
