@@ -104,10 +104,10 @@ void SMBus_Start(void) {
 /**
 Initializing the SMBus
 */
-void SMBus_Init(void) {
+void SMBus_Init(unsigned char force) {
   static char init = 0;
 
-  if(!init) {
+  if(!init || force) {
     init = 1;
 
     // Configuring the Timer3 Registers

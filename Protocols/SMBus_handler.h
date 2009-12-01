@@ -40,7 +40,7 @@
  *
  * Notes:  Configures Timer3, assumes Timer1 is set properly
  */
-void SMBus_Init(void);
+void SMBus_Init(unsigned char force);
 void SMBus_EnableACKPoll(void);
 void SMBus_SetSlaveAddr(unsigned char slaveAddr);
 void SMBus_SetTXBuffer(const unsigned char *pData, unsigned char dataLen);
