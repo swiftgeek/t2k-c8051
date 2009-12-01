@@ -22,7 +22,7 @@
 //
 //------------------------------------------------------------------------
 void LTC2605_Init(void) {
-	SMBus_Init(); // SMBus initialization (should be called after pca_operation)
+	SMBus_Init(0); // SMBus initialization (should be called after pca_operation)
 }
 
 //
