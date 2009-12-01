@@ -1,0 +1,124 @@
+/*! @page PWRSWITCH 6 ch. Power Switch for the DCC board 
+
+@section pwrpurpose Purpose
+This board allows the switching of the power for 6 individual DCCs. It is meant for
+handling 1 DCC crate. Remote temperature are read out and can shutdown the power. 
+
+@section pwrfunctions Functions
+- @ref pwrcommands functions
+- @ref pwrmonitoring variables
+- @ref pwrlimits settings
+
+@section pwroperation Card Operation
+
+- <b>To power On/OFF all the 6 channels</b>:
+ - CTL register : Set byte to 0xff  
+ - The CSR register will show bitwise the setting  (1=on, 0=off)
+
+- <b>To power On/OFF one channel</b>:
+ - CTL register : Read the CSR and Or the corresponding bit and apply the 
+   result to the CTL register byte.  
+ - The CSR register will show bitwise the setting  (1=on, 0=off)
+
+- <b>To Change the Temperature limits</b>:
+ - set MSCB[27..32] to the desired value.
+
+@section pwrlocation Location
+This card is located on the back of of the "DCC crates".
+*/
+
+<!----------------------------------------------------------------->
+/*!@page pwrcommands Commands
+
+@section Purpose
+Turn ON/OFF individual Power channel.
+
+@section pwr-internal MSCB Registers
+@code
+MSCB(0): Error      8bit U               0 (0x00/00000000) (RO)
+All channel shutdown                                 0x01
+Power channel 1 Temperature fault                    0x04
+Power channel 2 Temperature fault                    0x08
+Power channel 3 Temperature fault                    0x10
+Power channel 4 Temperature fault                    0x20
+Power channel 5 Temperature fault                    0x40
+Power channel 6 Temperature fault                    0x80
+@endcode
+@code
+MSCB(1): Control    8bit U               0 (0x00/00000000) (WO)
+Turn On channel (bitwise)     ch1                    0x01 
+                              ch2                    0x02
+                              ch3                    0x03
+                              ch4                    0x04
+                              ch5                    0x05
+                              ch6                    0x06
+@endcode
+@code
+MSCB(2): Status     8bit U               3 (0x03/00000011) (RO)
+State of the channel(bitwise) ch1                    0x01 
+  (1=ON, 0=OFF)               ch2                    0x02
+                              ch3                    0x03
+                              ch4                    0x04
+                              ch5                    0x05
+                              ch6                    0x06
+@endcode
+*/
+
+<!----------------------------------------------------------------->
+/*!@page pwrmonitoring Monitoring
+
+@section Purpose
+Monitor the 3 Voltage source and the Voltage and Current of the 6 independent power channels.
+
+@section pwr-monitoring MSCB Registers
+@code
+MSCB(3): in Volt1       32bit F                   0.000 volt  (RO)
+MSCB(4): in Volt2       32bit F                   0.000 volt  (RO)
+MSCB(5): in Volt3       32bit F                   0.000 volt  (RO)
+@endcode
+@code
+MSCB(6): outVolt1       32bit F                   0.000 volt  (RO)
+MSCB(7): outVolt2       32bit F                   0.000 volt  (RO)
+MSCB(8): outVolt3       32bit F                   0.000 volt  (RO)
+MSCB(9): outVolt4       32bit F                   0.000 volt  (RO)
+MSCB(10): outVolt5      32bit F                   0.000 volt  (RO)
+MSCB(11): outVolt6      32bit F                   0.000 volt  (RO)
+@endcode
+@code
+MSCB(6): outCur1       32bit F                   0.000 Amp  (RO)
+MSCB(7): outCur2       32bit F                   0.000 Amp  (RO)
+MSCB(8): outCur3       32bit F                   0.000 Amp  (RO)
+MSCB(9): outCur4       32bit F                   0.000 Amp  (RO)
+MSCB(10): outCur5      32bit F                   0.000 Amp  (RO)
+MSCB(11): outCur6      32bit F                   0.000 Amp  (RO)
+@endcode
+*/
+
+<!----------------------------------------------------------------->
+/*!@page pwrlimits Limits
+
+@section Purpose
+Individual upper temperature limit are accessible from the user interface.
+
+@section pwr-limits MSCB Registers
+@code
+MSCB(27): LTemp1       32bit F                   50.000 volt  (RO)
+MSCB(28): LTemp2       32bit F                   50.000 volt  (RO)
+MSCB(29): LTemp3       32bit F                   50.000 volt  (RO)
+MSCB(30): LTemp4       32bit F                   50.000 volt  (RO)
+MSCB(31): LTemp5       32bit F                   50.000 volt  (RO)
+MSCB(32): LTemp6       32bit F                   50.000 volt  (RO)
+@endcode
+*/
+
+
+
+
+
+
+
+
+
+
+
+

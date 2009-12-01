@@ -1,0 +1,28 @@
+/*! \mainpage Central Cathode High Voltage control
+
+Online documentation for the Central Cathode High Voltage control through MSCB
+Content
+The Bertan 30KV unit is controlled through the GPIB port. The GPIB address is set to 4 by default.
+The main MSCB variables are:
+- Voltage setting (Udemand)
+- Ramp up voltage rate (RampUp V/s)
+- Ramp down voltage rate (RampDown V/s)
+- Upper voltage limit (Ulimit V)
+- Upper Current limit (Ilimit uA)
+
+@code
+        0: Status     8bit U              32 (0x20/00100000) byte
+        1: Udemand   32bit F               0 volt
+        2: Umeas     32bit F               0 volt
+        3: Imeas     32bit F               0 ampere
+        4: RampUp    16bit U              50 (0x0032) volt
+        5: RampDown  16bit U              50 (0x0032) volt
+        6: Ulimit    32bit F           28000 volt
+        7: Ilimit    32bit F              75 microampere
+        8: warning   STR32    "Warning! High current -  0.000"
+@endcode
+
+@section Document Content
+  <br>
+*/
+

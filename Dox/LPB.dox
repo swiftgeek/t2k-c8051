@@ -10,7 +10,7 @@ MPPC channels of one crate.
 - @ref lpbboardtemperatures : Board and micro controller temperature monitoring.
 
  * <center> Block Diagram layout.
- *  \image html LPB-block.jpg
+ *  \image html lpb-block.jpg
  * </center>
 
 @section LPBoperation Card Operation
