@@ -15,6 +15,11 @@ CMB   : 0 2 0 18(with 4V)  Program Size: data=143.1 xdata=364 code=12432
 LPB   : 0 0 0 0
 TEMP36: 0 0 0 0 data=135.1 xdata=310 code=10508
 
+// P0.0:TXD   , .1:RXD     , .2:485_EN , .3:SST_DRV1, .4:SST_DRV2, .5:RTC_CE  , .6:RTC_IO, .7:DAC_CS1 
+// P1.0:P10   , .1:P11     , .2:P12    , .3:P13     , .4:P14     , .5:P15     , .6:P16   , .7:P17 
+// P2.0:RAM_CS, .1:SPI_MISO, .2:RAM_WPn, .3:RAM_HLDn, .4:SPI_SCK , .5:SPI_MOSI, .6:LED2  , .7:LED1 
+// P3.0:P30   , .1:P31     , .2:P32    , .3:P33     , .4:P34     , .5:P35     , .6:P36   , .7:P37 
+
 $Id$
 \********************************************************************/
 
@@ -228,7 +233,7 @@ void user_init(unsigned char init)
   // snlocal is set by the Jtag Programmer
   // In this case bypass the user command as we're in auto-programming
   progFlag = 0;
-  if ((snlocal > 76000000) && (snlocal < 76800000)) progFlag = 1;
+  if ((snlocal > 76000000) && (snlocal < 76900000)) progFlag = 1;
  /*  DONE below
   //
   // Read S/N and struct size only from Protected page
@@ -392,7 +397,8 @@ void user_loop(void)
 
   } // EEPROM_FLAG
 
-  delay_ms(500);
+ led_blink(1, 1, 50);
+ delay_ms(500);
 
 }
 
