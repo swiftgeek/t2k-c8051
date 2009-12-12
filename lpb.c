@@ -79,7 +79,7 @@ unsigned long xdata humidTime=0, currentTime=0, currentTime2=0;
 unsigned char lbyte, hbyte;
 
 //Humidity variables
-unsigned char xdata status;
+unsigned char xdata status, humicount;
 float         xdata humidity, htemperature;
 unsigned int  xdata rSHTtemp1, rSHThumi1;
 unsigned char xdata FCSorig1, FCSdevi1;
@@ -628,20 +628,24 @@ void user_loop(void) {
 #ifdef _HUMSEN_
   //-----------------------------------------------------------------------------
   // Local board humidity
-    status = HumidSensor_Cmd (&rSHThumi1
+    if (humicount) {
+      status = HumidSensor_Cmd (&rSHThumi1
                              ,&rSHTtemp1
                              ,&humidity
                              ,&htemperature
                              ,&FCSorig1
                              ,&FCSdevi1
                              ,humsense);
-    if (status == DONE) {	 
-      DISABLE_INTERRUPTS;
-      user_data.rSHTemp  = rSHTtemp1;
-      user_data.rSHhumid = rSHThumi1;
-      user_data.SHThumid = humidity;
-      user_data.SHTtemp  = htemperature;
-      ENABLE_INTERRUPTS;
+      if (status == DONE) {	 
+        humicount = 5;
+        DISABLE_INTERRUPTS;
+        user_data.rSHTemp  = rSHTtemp1;
+        user_data.rSHhumid = rSHThumi1;
+        user_data.SHThumid = humidity;
+        user_data.SHTtemp  = htemperature;
+        ENABLE_INTERRUPTS;
+      }
+      humicount--;
     }
     humidTime = uptime();
 
