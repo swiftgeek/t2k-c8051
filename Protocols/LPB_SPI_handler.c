@@ -41,7 +41,7 @@ Slave Input (MOSI) pin to 1.
 void LPBSPI_Init(void)
 {
   SFRPAGE  = SPI0_PAGE ;
-  LPBSPI_MOSI = 1;          //pull the MOSI line high
+//  LPBSPI_MOSI = 1;          //pull the MOSI line high
 }
 
 //
@@ -77,5 +77,26 @@ void LPBSPI_WriteByte(unsigned char dataToSend)
      LPBSPI_ClockOnce();
   }
   LPBSPI_MOSI = 0;
+}
+
+//
+//------------------------------------------------------------------------
+unsigned char LPBSPI_ReadByteRising(void)
+{
+  signed char i = 0;
+  unsigned char din = 0;
+  unsigned char dataReceived = 0;
+
+  for(i = 7; i >= 0; i--)
+  {
+	  delay_us(LPBSPI_DELAY);
+    din = LPBSPI_MISO;
+    dataReceived |= (din << i);
+  	LPBSPI_SCK = 1;
+  	delay_us(LPBSPI_DELAY);
+  	LPBSPI_SCK = 0;
+ 
+  }
+  return dataReceived;
 }
 
