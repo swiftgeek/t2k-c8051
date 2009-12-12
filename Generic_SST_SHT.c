@@ -2,12 +2,12 @@
 
   Name:         Generic_SST_SHT.c
   Created by:   Pierre
-
+                    For FGD and CTM Temperature monitoring
 ?PR?UPGRADE?MSCBMAIN (0x3000)
   Contents:     General Application with the 310
                 Midas Slow Control Bus protocol
 
-  $Id: Generic_SST.c 36 2008-03-08 01:45:15Z midas $
+  $Id$
 
 \********************************************************************/
 
@@ -29,7 +29,7 @@
 extern unsigned long _systime;
 // Node Name
 char code node_name[] = "GENERIC310_SST";
-char idata svn_rev_code[] = "$Rev: 38 $";
+char idata svn_rev_code[] = "$Rev$";
 
 //NW SST
 #define SST_LINE 1
