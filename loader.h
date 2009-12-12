@@ -222,7 +222,7 @@ struct EEPAGE xdata eepage={
    , 0.0, 3.5, 0.1, 5.5, 0.0, 0.0, 0.0,  0.0
 // 0x12 - uVIlimit 
 //   D2A  Vss  Iss  Vdd  Idd  I5   I3.3  I1.8
-   , 6.0, 5.5, 0.2, 6.5, 1.8, 0.1, 0.5,  0.2  
+   , 6.0, 5.5, 0.3, 6.5, 1.8, 0.1, 0.5,  0.2  
 // 0x1a - LuC Temperature,  HuC Temperature
    , 10., 50.
 // 0x1c - LSST Temperature,  HSST Temperature
