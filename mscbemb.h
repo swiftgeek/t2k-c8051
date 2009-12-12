@@ -116,6 +116,9 @@
 #ifdef ccbertan_gpib_410      // GPIB
 #define CCBERTAN_GPIB_410
 #endif
+#ifdef generic_io_310_rev0
+#define GENERIC_IO_310_REV0
+#endif
 #ifdef treval_12x    // Evaluation card
 #define TREVAL_12X
 #endif
@@ -772,6 +775,23 @@ sbit RS485_ENABLE = P3 ^ 5;
 #define LED_1 P0 ^ 2
 #define LED_ON 0
 sbit RS485_ENABLE = P0 ^ 3;
+/*--------------------------------*/
+#elif defined(GENERIC_IO_310_REV0)  
+#include <c8051F310.h>
+#define CPU_C8051F310
+#define SUCCESS 0
+#define FAILED  -1
+#define LED_0 P0 ^ 6
+#define LED_1 P3 ^ 1
+#define LED_ON 1
+#define SHT_SCK1  P1 ^ 0
+#define SHT_DATA1 P1 ^ 6
+
+sbit RS485_ENABLE = P0 ^ 3;
+
+//SST //NW modified MSCB_SST1
+#define MSCB_SST1 P3 ^ 3 //SST1 line  SST_IO (Write/Push-Pull) 
+#define SST_ClientResponse1 (char) ((CPT1CN & 0x40) >> 6) // Comparator1 overflow bit
 /*--------------------------------*/
 #elif defined(TREVAL_12X)
 #include <c8051F120.h>
