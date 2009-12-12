@@ -27,5 +27,5 @@ Defining the functions which will be used within the SPI_handler.c file.
 void LPBSPI_Init(void);										//Initializing the SPI protocol
 void LPBSPI_ClockOnce(void);								//Defining the SPI protocol clock
 void LPBSPI_WriteByte(unsigned char dataToSend);	//Writing one byte of data
-														      // edge of clock													
+unsigned char LPBSPI_ReadByteRising(void);		   //Reading one byte of data on rising 
 #endif // _LPBSPI_HANDLER_H
