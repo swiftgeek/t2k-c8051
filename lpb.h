@@ -47,7 +47,7 @@
 // AIN0.7  I1.8      G50 R2    -> 100   0.01
 
 //                       D2A    Vss    Iss Vdd    Idd   I5  I3.3  I1.8
-float code coeff[8]  = {4.615, 3.136, 0.1, 3.136, 0.4, 0.4, 0.2*1000,   0.01*1000};
+float code coeff[8]  = {4.615, 3.136, 0.1, 3.136, 0.4, 0.4, 0.2, 0.01};
 float code offset[8] = {    0,     0,   0,     0,   0,   0,   0,   0};
 unsigned char xdata ltc2620mirror[16];
 
@@ -86,7 +86,7 @@ struct EEPAGE xdata eepage={
    , 0.0, 3.5, 0.1, 5.5, 0.0, 0.0, 0.0,  0.0
 // 0x12 - uVIlimit 
 //   D2A  Vss  Iss  Vdd  Idd  I5   I3.3  I1.8
-   , 6.0, 5.5, 0.2, 6.5, 1.8, 0.1, 0.5,  0.2  
+   , 6.0, 5.5, 0.3, 6.5, 1.8, 0.1, 0.5,  0.2  
 // 0x1a - LuC Temperature,  HuC Temperature
    , 10., 50.
 // 0x1c - LSST Temperature,  HSST Temperature
