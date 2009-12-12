@@ -23,7 +23,6 @@ $Id$
 #define SST_LINE2         2
 
 //BS Temperature testing
-#define TEMP_ThRESHOLD  27
 #define SST_TIME         2 //In us
 
 /**********************************************************************************/
@@ -98,7 +97,7 @@ float offset;
 };
 
 /**********************************************************************************/
-//   LvQ, LiQ,  Lp6Vd, Lp6Va, Ln6Va , Lp6Ia, Lp6Ia , Lp6Id
+//   LvQ, LiQ,  Lp6Vd, Lp6Va, Ln6Va , Ln6Ia, Lp6Ia , Lp6Id
 struct IADC_TABLE xdata iadc_table[8] = {
   {IntGAIN2, 50.5,       0.0}, {IntGAIN8, 10000.0/8.0, 0.0}
 , {IntGAIN1, 3.980132,     0}, {IntGAIN1, 3.980132, 0}
