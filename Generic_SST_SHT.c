@@ -314,7 +314,7 @@ void user_loop(void)
   float xdata humidity, temperature, avgetemp;	
   unsigned char status;
   	
-  user_data.status += ;
+  user_data.status += 1;
 
 #ifdef _ADT7486A_
 //-----------------------------------------------------------------------------
