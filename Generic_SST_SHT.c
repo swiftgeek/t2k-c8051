@@ -25,6 +25,8 @@
 #include "Devices/ADT7486A_tsensor.h"
 #endif
 
+float avge(float temperature, char chan, int idx);
+
 //Control definitions
 extern unsigned long _systime;
 // Node Name
@@ -42,9 +44,9 @@ unsigned char ADT7486A_addrArray[] = {0x48, 0x4a};
 #ifdef _HUMSEN_
 //Humidity variables
 unsigned long xdata currentTime=0;
-unsigned char xdata status;
-float         xdata humidity, htemperature;
-unsigned int  xdata rSHTtemp1, rSHThumi1;
+unsigned char xdata status, i1=0, i2=0, i3=0, i4=0;
+float         xdata humidity, htemperature, atemp[4][30];
+unsigned int  xdata rSHTtemp1, rSHThumi1, tcnt[4];
 unsigned char xdata FCSorig1, FCSdevi1;
 #endif
 
@@ -54,33 +56,38 @@ unsigned char xdata FCSorig1, FCSdevi1;
 /* data buffer (mirrored in EEPROM) */
 struct
 {
-  unsigned char control;
   unsigned char status;
   unsigned char error;
-  unsigned char StatReg;
   float  		 internal[2]; // ADT7486A internal temperature [degree celsius]
-  float	   	 temp[4]; // ADT7486A external2 temperature [degree celsius]
+  char       ncount;
+  float	   	 temp[8]; // ADT7486A external2 temperature [degree celsius]
   float			 SHTtemp;
   float  		 SHThumid;
   unsigned int	 rSHTtemp;
   unsigned int  rSHThumid;
   unsigned char FCSorig;
   unsigned char FCSdevi;
-  signed int	ext01off, ext02off, ext11off, ext12off;
+  float	ext01off, ext02off, ext11off, ext12off;
 } xdata user_data;
 
 MSCB_INFO_VAR code vars[] = {
-   1, UNIT_BYTE,          0, 0,           0, "Control",  &user_data.control,     	 // 0
    1, UNIT_BYTE,          0, 0,           0, "Status",   &user_data.status,      	 // 1
    1, UNIT_BYTE,          0, 0,           0, "ERROR",    &user_data.error,   	     // 2
-   1, UNIT_BYTE,          0, 0,           0, "StatReg",  &user_data.StatReg,     	 // 3
    4, UNIT_CELSIUS,       0, 0, MSCBF_FLOAT, "IntTemp1", &user_data.internal[0], 	 // 5
    4, UNIT_CELSIUS,       0, 0, MSCBF_FLOAT, "IntTemp2", &user_data.internal[1], 	 // 6
+
+   1, UNIT_BYTE,          0, 0,           0, "ncount",   &user_data.ncount,   	     // 2
+
    4, UNIT_CELSIUS,       0, 0, MSCBF_FLOAT, "Temp1", 	 &user_data.temp[0],       // 7
    4, UNIT_CELSIUS,       0, 0, MSCBF_FLOAT, "Temp2", 	 &user_data.temp[1],       // 8
    4, UNIT_CELSIUS,       0, 0, MSCBF_FLOAT, "Temp3",		 &user_data.temp[2],       // 9
    4, UNIT_CELSIUS,       0, 0, MSCBF_FLOAT, "Temp4",		 &user_data.temp[3],       // 10
 
+
+   4, UNIT_CELSIUS,       0, 0, MSCBF_FLOAT, "AvgTemp1", 	 &user_data.temp[4],       // 7
+   4, UNIT_CELSIUS,       0, 0, MSCBF_FLOAT, "AvgTemp2", 	 &user_data.temp[5],       // 8
+   4, UNIT_CELSIUS,       0, 0, MSCBF_FLOAT, "AvgTemp3",   &user_data.temp[6],       // 9
+   4, UNIT_CELSIUS,       0, 0, MSCBF_FLOAT, "AvgTemp4",	 &user_data.temp[7],       // 10
    4, UNIT_CELSIUS,       0, 0, MSCBF_FLOAT, "SHTtemp",   &user_data.SHTtemp,      // 11
    4, UNIT_PERCENT,       0, 0, MSCBF_FLOAT, "RHumid",    &user_data.SHThumid,     // 12
 
@@ -88,10 +95,10 @@ MSCB_INFO_VAR code vars[] = {
    2, UNIT_BYTE,          0, 0,           0, "rSHThumi",  &user_data.rSHThumid,    // 14
    1, UNIT_BYTE,          0, 0,           0, "FCSorig",   &user_data.FCSorig,   	 // 15
 	 1, UNIT_BYTE,          0, 0,           0, "FCSdevi",   &user_data.FCSdevi,      // 16
-   2, UNIT_BYTE,          0, 0,           0, "ext01off",  &user_data.ext01off,     // 17
-   2, UNIT_BYTE,          0, 0,           0, "ext02off",  &user_data.ext02off,     // 18
-   2, UNIT_BYTE,          0, 0,           0, "ext11off",  &user_data.ext11off,     // 19
-   2, UNIT_BYTE,          0, 0,           0, "ext12off",  &user_data.ext12off,     // 20
+   4, UNIT_BYTE,          0, 0, MSCBF_FLOAT, "ext01off",  &user_data.ext01off,     // 17
+   4, UNIT_BYTE,          0, 0, MSCBF_FLOAT, "ext02off",  &user_data.ext02off,     // 18
+   4, UNIT_BYTE,          0, 0, MSCBF_FLOAT, "ext11off",  &user_data.ext11off,     // 19
+   4, UNIT_BYTE,          0, 0, MSCBF_FLOAT, "ext12off",  &user_data.ext12off,     // 20
 	0
 };
 
@@ -141,9 +148,9 @@ void user_write(unsigned char index) reentrant;
 
 void user_init(unsigned char init)
 {
-  idata char i;
+  idata char i, j;
   char xdata add;
-  float temperature;
+//  float temperature;
 	
   if (init) {
     user_data.status = 0;
@@ -154,7 +161,12 @@ void user_init(unsigned char init)
 	  user_data.rSHThumid = 0;
 	  user_data.FCSorig = 0;
 	  user_data.FCSdevi = 0;
-	  user_data.StatReg = 0;
+    user_data.ext01off =0;
+    user_data.ext02off =0;
+    user_data.ext11off =0;
+    user_data.ext12off =0;
+    user_data.ncount = 10;
+
 //    sys_info.node_addr = 0x100;
  }
 
@@ -208,6 +220,7 @@ void user_init(unsigned char init)
   /* set-up / initialize circuit components (order is important) */
   //NW modified SST to support more than one line
   ADT7486A_Init(SST_LINE); //Temperature measurements related initialization
+/*
   delay_ms(400);
   ADT7486A_Cmd(ADT7486A_addrArray[0], SetExt1Offset
     , (user_data.ext01off>>8), user_data.ext01off
@@ -224,6 +237,11 @@ void user_init(unsigned char init)
   ADT7486A_Cmd(ADT7486A_addrArray[1], SetExt2Offset
     , (user_data.ext12off>>8), user_data.ext12off
     , SST_LINE, &temperature);
+*/
+
+  if (user_data.ncount > 30) user_data.ncount = 30;
+   for (j=0;j<4;j++)
+     for (i=0;i<30;i++) atemp[j][i] = -500;
 #endif
 
 //
@@ -273,15 +291,30 @@ unsigned char user_func(unsigned char *data_in, unsigned char *data_out)
    return 2;
 }
 
+//--------------------------------------------------------------------
+float avge(float temperature, char chan, int idx) {
+  int l, divider;
+  float sumtemp;
+
+  atemp[chan][idx++] = temperature;
+  sumtemp =0;
+  for (divider=0,l=0;l<user_data.ncount;l++) {
+    if (atemp[chan][l] != -500.f) {
+      sumtemp += atemp[chan][l];
+      divider++;
+    }
+  }
+  return (sumtemp / divider);
+}
+
 /*---- User loop function ------------------------------------------*/
 void user_loop(void)
 {
   char i;
-  float xdata humidity, temperature;	
+  float xdata humidity, temperature, avgetemp;	
   unsigned char status;
   	
-  user_data.status = user_data.control;
-  user_data.control += 1;
+  user_data.status += ;
 
 #ifdef _ADT7486A_
 //-----------------------------------------------------------------------------
@@ -295,24 +328,34 @@ void user_loop(void)
   }
 
    if(!ADT7486A_Cmd(ADT7486A_addrArray[0], GetExt1Temp, SST_LINE, &temperature)){
-         DISABLE_INTERRUPTS;
-         user_data.temp[0] = temperature;
-         ENABLE_INTERRUPTS;
+     i1 %= user_data.ncount;
+     avgetemp = avge(temperature, 0, i1);
+     i1++;
+     DISABLE_INTERRUPTS;
+     user_data.temp[0] = temperature + user_data.ext01off;
+     user_data.temp[0+4] = avgetemp;
+     ENABLE_INTERRUPTS;
    }
    if(!ADT7486A_Cmd(ADT7486A_addrArray[0], GetExt2Temp, SST_LINE, &temperature)){
-         DISABLE_INTERRUPTS;
-         user_data.temp[1] = temperature;
-         ENABLE_INTERRUPTS;
+     i2 %= user_data.ncount; avgetemp = avge(temperature, 1, i2);  i2++;
+     DISABLE_INTERRUPTS;
+     user_data.temp[1] = temperature + user_data.ext02off;
+     user_data.temp[1+4] = avgetemp;
+     ENABLE_INTERRUPTS;
    }
    if(!ADT7486A_Cmd(ADT7486A_addrArray[1], GetExt1Temp, SST_LINE, &temperature)){
-         DISABLE_INTERRUPTS;
-         user_data.temp[2] = temperature;
-         ENABLE_INTERRUPTS;
+     i3 %= user_data.ncount; avgetemp = avge(temperature, 2, i3);  i3++;
+     DISABLE_INTERRUPTS;
+     user_data.temp[2] = temperature + user_data.ext11off;
+     user_data.temp[2+4] = avgetemp;
+     ENABLE_INTERRUPTS;
    }
    if(!ADT7486A_Cmd(ADT7486A_addrArray[1], GetExt2Temp, SST_LINE, &temperature)){
-         DISABLE_INTERRUPTS;
-         user_data.temp[3] = temperature;
-         ENABLE_INTERRUPTS;
+     i4 %= user_data.ncount; avgetemp = avge(temperature, 3, i4);  i4++;
+     DISABLE_INTERRUPTS;
+     user_data.temp[3] = temperature + user_data.ext12off;
+     user_data.temp[3+4] = avgetemp;
+     ENABLE_INTERRUPTS;
    }
 #endif
 
@@ -320,7 +363,8 @@ void user_loop(void)
 //-----------------------------------------------------------------------------
 //
 // Measuring the humidity and temperature
-  if ((uptime() - currentTime) > 1) {
+  if ((uptime() - currentTime) > 1)
+   {
     status = HumidSensor_Cmd (&rSHThumi1
                              ,&rSHTtemp1
                              ,&humidity
