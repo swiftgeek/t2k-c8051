@@ -46,7 +46,7 @@ char xdata svn_rev_code[] = "$Rev$";
 
 #define MAX_VOLTAGE 28000  // maximum voltage in Volts - this is a hard limit
 #define MAX_CURRENT 75     // maximum current im micro Ampere - this is a hard limit
-#define MINDEL 1000        // minimum delay in ms between ramp steps
+#define MINDEL 100        // minimum delay in ms between ramp steps
 #define TPC_R 393.4        // total TPC resistance (MOhms)
 #define IOFF -0.1718       // hv supply current offset
 
