@@ -540,8 +540,8 @@ void user_loop(void) {
   // Switch CPLD Mode
   if (Cmode) {
     rCSR = user_data.status;
-    if (Smode) { CPLDMode = 0; Smode = 1; }
-    else       { CPLDMode = 1; Smode = 0; }
+    if (Smode) { CPLDMode = 1; Smode = 0; }  // standard
+    else       { CPLDMode = 0; Smode = 1; }  // test
     Cmode = 0;  // Reset command
     publishCtlCsr();  // Publish Ctl/Csr
   } // Switch CPLD Mode
