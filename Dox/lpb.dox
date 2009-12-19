@@ -1,4 +1,4 @@
-/*! @page LPB LPB board
+/*! @mainpage Light Pulser Board (LPB)
 
 @section lpbpurpose Purpose
 The Light Pulser Board (LPB) handles the operation of the LED light flasher for all the
@@ -15,6 +15,7 @@ on the backplane, only a restricted number of crate have the RH sensor installed
 - Current list of LPBs address containing a RH sensor:
  - FGD1 Bottom(C1, C3), TOP(C8), Right(14), Left(21)
  - FGD2 Bottom(C27), TOP(C32), Right(38), Left(45)
+<br><br>
 
  * <center> Block Diagram layout.
  *  \image html lpb-block.jpg
@@ -22,7 +23,6 @@ on the backplane, only a restricted number of crate have the RH sensor installed
 
 @section lpboperation Card Operation
 - By default at power up the main elements of the card are kept unpowered.
-- <b>Issues<b>
 - <b>To power up the card</b>:
  - CTL register(idx:2) Set bit ^ 0 [0x01]
  - CSR register(idx:3) will show bit ^ 0 = 1 (1=on, 0=off)
@@ -36,6 +36,12 @@ on the backplane, only a restricted number of crate have the RH sensor installed
 - Pulse hight DAC(idx:21-36) 12bit DAC, set for 4 consecutive LED channels
   corresponding to 16 LEDs or 1/6 of a layer.
 
+- <b>Issues</b>
+ - The voltage monitoring is valid only once the card is powered up.
+ - The S/N is read incorrectly if the Vdd is not ON. This requires the 
+   turn on procedure to re-issue the ON once the WIENER's power supplies are
+   turned on.
+   
 @section lpbregisters MSCB Registers
 @code
 node253(0xFD)> r
@@ -64,7 +70,7 @@ node253(0xFD)> r
             N/A                         0x02
             N/A                         0x04
             TEST mode Set for CPLD      0x08
-            EPPROM Save complete        0x10
+            EEPROM Save complete        0x10
             EEPROM Restore complete     0x20
             System shutdown (card OFF)  0x40
             Manual Shutdown (card OFF)  0x80
@@ -117,6 +123,7 @@ node253(0xFD)> r
  46: rRHumid   16bit U               0 (0x0000) byte
  47: eepValue  32bit F               0 byte
  48: eeCtrSet  32bit U               0 (0x00000000) byte
+@endcode
 
 @section lpblocation Location
 This card is located in each "crate" mounted on the surrounding structure
@@ -124,6 +131,5 @@ of each FGD (24 crates per FGD). Each crate contains 1 LPB card the relative
 address of card to the crate is 5.
 
 @section DataSheet
-<a href=http://www.linear.com/pc/downloadDocument.do?navId=H0,C1,C1155,C1005,C1156,P2289,D1753 > LTC2620 </a>
-
+<a href=http://www.linear.com/pc/downloadDocument.do?navId=H0,C1,C1155,C1005,C1156,P2289,D1753>LTC2620</a>
 */

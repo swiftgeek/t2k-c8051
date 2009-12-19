@@ -4,7 +4,7 @@
 # Project related configuration options
 #---------------------------------------------------------------------------
 DOXYFILE_ENCODING      = UTF-8
-PROJECT_NAME           = FGDC8051-FEB
+PROJECT_NAME           = FGDC8051-FEB64
 PROJECT_NUMBER         = 1
 OUTPUT_DIRECTORY       = ../
 CREATE_SUBDIRS         = NO
@@ -107,7 +107,8 @@ RECURSIVE              = YES
 EXCLUDE                = ../Support/fgdmsc.c \
                          ../PowerSwitch \
                          ../Application \
-                         "../Old Projects" \
+                         ../Old \
+                         Projects \
                          ../CCBertan
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = 
@@ -122,7 +123,7 @@ FILTER_SOURCE_FILES    = NO
 #---------------------------------------------------------------------------
 # configuration options related to source browsing
 #---------------------------------------------------------------------------
-SOURCE_BROWSER         = NO
+SOURCE_BROWSER         = YES
 INLINE_SOURCES         = NO
 STRIP_CODE_COMMENTS    = YES
 REFERENCED_BY_RELATION = NO
@@ -133,7 +134,7 @@ VERBATIM_HEADERS       = NO
 #---------------------------------------------------------------------------
 # configuration options related to the alphabetical class index
 #---------------------------------------------------------------------------
-ALPHABETICAL_INDEX     = NO
+ALPHABETICAL_INDEX     = YES
 COLS_IN_ALPHA_INDEX    = 5
 IGNORE_PREFIX          = 
 #---------------------------------------------------------------------------
@@ -144,7 +145,7 @@ HTML_OUTPUT            = html/feb64
 HTML_FILE_EXTENSION    = .html
 HTML_HEADER            = 
 HTML_FOOTER            = 
-HTML_STYLESHEET        = 
+HTML_STYLESHEET        = ../dox/fgd.css
 HTML_ALIGN_MEMBERS     = YES
 GENERATE_HTMLHELP      = NO
 GENERATE_DOCSET        = NO
@@ -156,10 +157,10 @@ HHC_LOCATION           =
 GENERATE_CHI           = NO
 CHM_INDEX_ENCODING     = 
 BINARY_TOC             = NO
-TOC_EXPAND             = YES
+TOC_EXPAND             = NO
 DISABLE_INDEX          = NO
 ENUM_VALUES_PER_LINE   = 4
-GENERATE_TREEVIEW      = ALL
+GENERATE_TREEVIEW      = NONE
 TREEVIEW_WIDTH         = 250
 FORMULA_FONTSIZE       = 10
 #---------------------------------------------------------------------------

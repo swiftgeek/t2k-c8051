@@ -1,42 +1,64 @@
 /*! @mainpage MainFGD8051 T2K-FGD Slow control documentation
 
 Online documentation for the slow control firmware code based
-on the 8051 micro-controller Silabs series 133 running under the MSCB OS.
-Described here beloaw are the functionalities and implementation of the slow control (SC)
-used in the different sub-projects of the FGD electronics.
+on the Silabs 8051 micro-controller series 133/310/410 running under the MSCB OS.
+Described here below are the functionalities and implementation of the slow control (SC) used in the different sub-projects of the ND280-FGD/TPC electronics.
 
-The <a href=http://ladd00.triumf.ca/viewcvs/fgddaq/trunk/slowcontrol/c8051 >SVN</a>
-repository is organized as follow:
+The <b><a href=http://ladd00.triumf.ca/viewcvs/fgddaq/trunk/slowcontrol/c8051 >SVN</a></b>
+<p>
+All the FGD and accessory cards are identify by a unique Serial Number (S/N) categorized as follow:
 @code
-- C8051/
-  - FEB64  : Frontend Board 64 channels
-  - CMB    : Crate Master Board
-  - LPB    : Light Pulser Board
-  - GSCIO  : General Slow Control IO
-  - LOADER : Initial micro-Controlled (uC) firmware
-  - TEMP36 : Project 36 channels Temperature readout
-  - /PowerSwitch/ : DCC 6 channnel Power switch
-  - /TPC-HV/ : Project Bertan HV control (GPIB)
- - Devices/
-  - All FEB64, CMB, LPB device drivers
- - Protocols/
-  - SPI, SMB, SST buses
- - Support/
-  - Supporting files for this documentation
- - Dox/
-  - The plain ASCII documentation
- - html/
-  - The web based documentation
- - Projects
-  - private development area 
+TR1100000 .. TR1199999 WLS fiber / 20000
+TR5000000 .. TR5009999 MPPC 
+TR6000000 .. TR6000099 Bus board 
+TR6200000 .. TR6200099 Backplane / 60
+TR6300000 .. TR6300199 FEB64 
+TR6400000 .. TR6400099 CMB /60
+TR6500000 .. TR6500099 LPB 
+TR6700000 .. TR6700099 ML405 
+TR6710000 .. TR6710099 DCC clock card / 50
+TR6720000 .. TR6720099 DCC optical card / 50
+TR6730000 .. TR6730199 Transceiver / 120
+TR6740000 .. TR6740099 DCC assembly / 30
+TR6810000 .. TR6810099 MSCB-ethernet box / 20
+TR6820000 .. TR6820029 TPC Temp36 / 30
+TR6820030 .. TR6820059 DCC Power Switch / 30
+TR6820060 .. TR6820069 MSCB Power Hub / 10
+TR6820070 .. TR6820099 MSCB GenericIO / 30
+@endcode 
+         
+This S/N code is stored within the Protected Memory (Read Only) of the
+external EEPROM located on the card (if applicable).
+The operational firmeware doesn't allow write access to the region.
+Upgrade of the firmware with a dedicated code "loader" is required to overwrite this S/N number (refer to expert). True for the FEB64, CMB, LPB, TEMP36.
+<p>
+@section gconvension Label convention
+The convension for the declaration of the variables on most of the card is the following.
+@code
+rXXXX  : Raw data, meant for DAC or ADC values.
+pXXXX  : Positive
+nXXXX  : Negative
+xDyyy  : Digital
+xAyyy  : Analog
+Vxxx   : Voltage
+Ixxx   : Current
+xyMon  : Monitored
+uCTemp : micro-controller Temperature
+Temp   : FGD Temperature
+xAsum  : Analog Sum
+ssTemp : Board Temperature
+eexxxx : EEPROM parameter
 @endcode
-
+<p>
 @section fgd8051-content Content
-@arg @ref FEB64     Front End Board 64 channels MPPC readout.
-@arg @ref CMB       Crate Master Board controlling 4 FEB64.
-@arg @ref LPB       Light Pulser Board.
-@arg @ref TEMP36    TPC 36 Temperature sense Board.
-@arg @ref GSCIO     General MSCB use mostly for Temperature/Humidity readout.
-@arg @ref PWRSWITCH 6 channel Power Switch for the DCC.
+Further information can be found on the following cards.
+<b>
+@arg <a href="../feb64/index.html">FEB64</a> FGD Frontend card.
+@arg <a href="../cmb/index.html">CMB</a> Crate Master Board controlling 4 FEB64.
+@arg <a href="../lpb/index.html">LPB</a> Light Pulser Board.
+@arg <a href="../temp36/index.html">TEMP36</a> TPC 36 Temperature sense Board.
+@arg <a href="../powerswitch/index.html">DCCSWITCH</a> Controllable Power switch for the DCCs.
+@arg <a href="../ccbertan/index.html">CCBERTAN</a> TPC Central Cathode Voltage control.
+</b>
 */
 

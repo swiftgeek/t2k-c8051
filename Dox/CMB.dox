@@ -1,295 +1,110 @@
-/*! @page CMB CMB board 
+/*! @mainpage Collector Master Board (CMB) 
 
 @section cmbpurpose Purpose
-The Crate Master Board (CMB) handles the operation of 4 FEB64 boards.
+Reads the FEBs card and tranmsmit the data to the DCCs.
+ 
+@section cmbdescription Description
+The Crate Master Board (CMB) handles the operation of 4 FEB64 boards. It 
+provides all the necessary signals for the operation of the SCAs, the 
+collection of the data and the transmission to the DCCs (optical link).
+It also receive the time marker signals (RJ45), the triggers and handles
+the ASUM data as FGD trigger source.
 
-@section cmbfunctions Functions
-- @ref cmbsnnumber : Card Serial Number.
-- @ref cmbinternaluit : Board condition monitoring.
-- @ref cmbuimonitoring : Voltages and Currents monitoring.
-- @ref cmbboardtemperatures : Board and micro controller temperature monitoring.
-- @ref cmbeeprom : Permanent configuration parameter saving/restoring.
-- The MSCB @ref user_data_type contains all the communication variables to the CMB card.
-  
  * <center> Block Diagram layout.
  *  \image html cmb-block.jpg
  * </center> 
 
 @section cmboperation Card Operation
 - By default at power up the main elements of the card are kept unpowered.
-The CMB can be controlled for the following operation:
-- Manual Power Up sequence, ie: turn ON all the DC Voltage (Def:OFF)
-- Manual Shutdown sequence, ie: turn OFF all the DC Voltage.
+- The CMB can be controlled for the following operation:
+ - Manual Power Up sequence, ie: turn ON all the DC Voltage (Def:OFF)
+ - Manual Shutdown sequence, ie: turn OFF all the DC Voltage.
 
 - <b>To power up the card</b>:
- - CTL register : Set bit ^ 0 [0x1]
- - The CSR register will show bit ^ 0 = 1/0 (1=on, 0=off)
+ - CTL register(idx:2) Set bit ^ 0 [0x1]
+ - CSR register(idx:3) will show bit ^ 0 = 1/0 (1=on, 0=off)
 
 - <b>To power down the card</b>:
- - CTL register : Set bit ^ 7 [0x80]  Manual Shutdown
- - The CSR register will show bit ^ 0 = 1/0 (1=on, 0=off)
+ - CTL register(idx:2) Set bit ^ 7 [0x80]  Manual Shutdown
+ - CSR register(idx:3) will show bit ^ 0 = 1/0 (1=on, 0=off)
 
 - <b>To Toggle the External Clock source</b>:
- - CTL register : Set bit ^1 [0x2]  Toggle Extenal Clock source
- - The CSR register will show bit ^ 1 = 1/0 (1=External, 0=Internal)
+ - CTL register(idx:2) Set bit ^1 [0x2]  Toggle Extenal Clock source
+ - CSR register(idx:3) will show bit ^ 1 = 1/0 (1=External, 0=Internal)
  
 - <b>To force a reconfigure cycle to the FPGA</b>:
- - CTL register : Set bit ^2 [0x4]  Trigger a reconfigure cycle
+ - CTL register(idx:2) Set bit ^2 [0x4]  Trigger a reconfigure cycle
  
+@section cmbregister MSCB Registers
+@code
+node44(0x2C)> r a
+  0: SerialN   32bit U        76400029 (0x048DC59D) byte
+  1: Error     16bit U               0 (0x0000) byte
+     I4d Current fault                  0x0001
+     V4d Voltage fault                  0x0002
+     V3.3a Voltage fault                0x0004
+     V2.5a Voltage fault                0x0008
+     V1.5d Voltage fault                0x0010
+     V1.8d Voltage fault                0x0020
+     V2.5d Voltage fault                0x0040
+     V3.3d Voltage fault                0x0080
+     uC Temperature fault               0x0100
+     FPGA Temperature fault             0x0200
+     VReg1 Temperature fault            0x0400
+     VReg2 Temperature fault            0x0800
+     read SST error                     0x1000
+     EEPROM  R/W error                  0x2000
+     ASUM Lock                          0x4000
+     Main 4V over Current               0x8000
+  2: Control    8bit U               0 (0x00/00000000) byte
+     Turn ON Card                       0x01
+     Toggle External Clock              0x02
+     Issue Configure pulse              0x04
+     Issue Debug command                0x08
+     Save Setting to EEPAGEx            0x10
+     Restore EEPAGEx to memory          0x20
+     Clear EEPAGEx                      0x40
+     Manual Card shutdown               0x80
+  3: Status     8bit U               5 (0x05/00000101) byte
+     Card ON                                              0x01
+     External Clock (1:Ext/0=Int)       0x02
+     Optical link (1=Link ON/0=OFF)     0x04
+     Watchdog state                     0x08
+     EEPAGEx save operation complete    0x10
+     EEPAGEx restore operation complete 0x20
+     System Shutdown                    0x40
+     Manual card shutdown               0x80
+  4: EEPage     8bit U               5 (0x05/00000101) byte
+     EEPAGE number                     [0..3]
+  5: Spare      8bit U               5 (0x05/00000101) byte
+  6: pDI4Mon   32bit F         1.40829 ampere
+  7: pDV4Mon   32bit F         3.93184 volt
+  8: pAV33Mon  32bit F         3.34015 volt
+  9: pAV25Mon  32bit F          2.5128 volt
+ 10: pDV15Mon  32bit F          1.5128 volt
+ 11: pDV18Mon  32bit F         1.82207 volt
+ 12: pDV25Mon  32bit F         2.50938 volt
+ 13: pDV33Mon  32bit F         3.30254 volt
+ 14: uCTemp    32bit F              33 deg. celsius
+ 15: FpgaTemp  32bit F         27.6275 deg. celsius
+ 16: Vrg1Temp  32bit F         28.5181 deg. celsius
+ 17: Vrg2Temp  32bit F         28.4087 deg. celsius
+ 18: rDI4Mon   16bit U             309 (0x0135) byte
+ 19: rDV4Mon   16bit U             820 (0x0334) byte
+ 20: rAV33Mon  16bit U             977 (0x03D1) byte
+ 21: rA25VMon  16bit U             735 (0x02DF) byte
+ 22: rDV15Mon  16bit U             631 (0x0277) byte
+ 23: rDV18Mon  16bit U             760 (0x02F8) byte
+ 24: rDV25Mon  16bit U             734 (0x02DE) byte
+ 25: rDV33Mon  16bit U             966 (0x03C6) byte
+ 26: eepValue  32bit F    -3.82632e+06 byte
+ 27: eeCtrSet  32bit U      3804124107 (0xE2BE53CB) byte
+@endcode
+
 @section cmblocation Location
 This card is located in each "crate" mounted on the surrounding structure
 of each FGD (24 crates per FGD). Each crate contains 1 CMB card.
-*/
-
-<!----------------------------------------------------------------->
-/*!@page cmbsnnumber S/N Card
-
-@section Purpose
-Identify individual electronics card within the FGD detector.
-
-@section Description
-This identification is done in 2 ways:
-- With a barcode placed on the back of the card.
-- Written in the external EEPROM Write protect region.
-
-All the FGD card are identify by a unique string following the convention below:
-@code
-FEB64 card:  TR76300000 .. TR763001000
-CMB   card:  TR76400000 .. TR764000100
-LPB   card:  TR76500000 .. TR765000100
-@endcode
-
-This code is stored within the Protected Memory (Read Only) of the
-external EEPROM located on the card. The operational firmeware doesn't allow
-write access to the region. Upgrade of the firmware with a dedicated code "loader"
-is required to overwrite this S/N number.
-
-@section MSCB Registers
-@code
-MSCB(0): SerialN   32bit U        76400003 (0x048C3EE3) byte
-@endcode
-
-@section Location
-On the CMB card
-*/
-
-/*!<!----------------------------------------------------------------->*/
-/*!@page cmbinternaluit CMB board condition monitoring
-
-@section Purpose
-Monitor periodically (~1Hz) all the DC Voltages required for the proper 
-operation of the CMB card. Corresponding current consumption is also 
-monitored as well as the local board temperature and the FPGA inner temperature.
-
-@section Description
-
-@section cmb-internal MSCB Registers
-@code
-MSCB(1): Error     16bit U                      0 (0x0000) (RO)
-Digital 4V Current monitoring fault                0x0001
-Digital 4V Voltage monitoring fault                0x0002
-Analog 3.3V Voltage monitoring fault               0x0004
-Analog 2.5V Voltage monitoring fault               0x0008
-Digital 1.5V Voltage monitoring fault              0x0010
-Digital 1.8V Voltage monitoring fault              0x0020
-Digital 2.5V Voltage monitoring fault              0x0040
-Digital 3.3V Voltage monitoring fault              0x0080
-micro-controller Temperature fault                 0x0100
-FPGA Temperature fault                             0x0200
-VReg1 Temperature fault                            0x0400
-VReg2 Temperature fault                            0x0800
-read SST error                                     0x1000
-EEPROM  R/W error                                  0x2000
-ASUM Lock                                          0x4000
-Main 4V over Current                               0x8000
-@endcode
-@code
-MSCB(2): Control    8bit U               0 (0x00/00000000) (WO)
-Turn ON Card                                         0x01
-Toggle External Clock                                0x02
-Issue Configure pulse                                0x04
-Issue Debug command                                  0x08
-Save current setting to EEPAGEx                      0x10
-Restore EEPAGEx to memory                            0x20
-Clear EEPAGEx                                        0x40
-Manual Card shutdown                                 0x80
-@endcode
-@code
-MSCB(3): Status     8bit U               3 (0x03/00000011) (RO)
-Card ON                                              0x01
-External Clock state (1:External, 0=Internal)        0x02
-Optical link state (1=Link ON, 0=Link off)           0x04
-Watchdog state                                       0x08
-EEPAGEx save operation complete                      0x10
-EEPAGEx restore operation complete                   0x20
-System Shutdown                                      0x40
-Manual card shutdown                                 0x80
-@endcode
-@code
-MSCB(4): EEPage     8bit U               0 (0x00/00000000) (WO)
-EEPAGE number                                      [0..3]
-@endcode
-@code
-MSCB(5): Spare register    8bit U        0 (0x00/00000000) (WO)
-currently implement an Crate Address Write/read back to/from the FPGA.
-@endcode
-
-@section Condition
--  board temperature T > 60degC : Shutdown the CMB card.
-- +4Vdigital off limits : Shutdown the CMB (@ref cmb_limits).
-- +1.5Vdigital off limits  : Shutdown CMB (@ref cmb_limits).
-- uC Temperature off limits: Shutdown CMB (@ref cmb_limits).
-- FPGA Temperature off limits: Shutdown CMB (@ref cmb_limits).
-
-*/                         
-
-/*!<!----------------------------------------------------------------->*/
-/*!@page cmbuimonitoring Vreg U/I Monitoring 
-
-@section monitoringpurpose Purpose
-Obtain continuous information regarding the CMB voltage and current of the regulators.
-This information is compared to pre-set parameters for possible actions.
-
-@section VoltageMonSec Voltage monitoring
-* <center> Diagram and Equations for monitoring voltage:
-* \image html VoltageMon.jpg
-* </center> 
-
-<center> Table of values associated with VMon </center>
-@code
-Usource   R1       R2         Attenuation   #of bits       VREF,Vref    (VREF/# of bits)   Offset      ConverFactor (V/Byte)
-+DIG_4V   18k/1%   6.04k/1%   0.2512479     10 bits(1024)  2.43V         0.002373          N/A         0.00944
-@endcode
-
-@section VMonExamples 
-* <center>
-*\image html VMonExample.jpg
-* </center>
-
-@section cmbCurrentMonSec Current monitoring
-* <center> Diagram and equation for monitoring current:
-* \image html CurrentMon.jpg
-* </center> 
-
-
-<center>Table of values associated with IMon</center>
-@code 
-Isource    R1      1/Gain    #of bits          VREF      VREF/# of bits   ConversionFactor(mA/Byte)
-+DIG_4V    0.05R   100       10 bits (1024)    2.43V     0.002373         474.6
-@endcode
-
-@section IMonExamples 
-* <center>
-*\image html IMonExample.jpg
-* </center>
-
-@section Condition
- - +I6a >= 10A : Board shutdown
 
 @section DataSheets
 <a hrf=http://www.chipcatalog.com/Datasheet/A0392B99E733E7F9E0AD6CB4C8AC3C4E.htm >INA194AIDBVT</a>
-*/
-
-/*!<!----------------------------------------------------------------->*/
-/*!@page cmbboardtemperatures Board Temperature monitoring
-
-@section Purpose
-Monitor periodically (~ 1Hz) the internal temperature of the micro-controller as well as the FPGA temperature.
-For the uC, the temperature is readout through its internal ADC[8].
-For board temperature, dedicated device ADT7486A used for the remote temperature has an internal sensor.
-This device uses a particular @ref SSTProtocol. 
-
-@section Condition
-- T > 50degC : Shutdown CMB card.
-
-@section cmb-SST MSCB Registers
-@code
-MSCB(14): uCTemp     32bit F     33.4 deg. celsius        (RO)
-MSCB(15): FpagTemp   32bit F     33.4 deg. celsius        (RO)
-MSCB(17): Vrg1Temp   32bit F     33.4 deg. celsius        (RO)
-MSCB(18): Vrg2Temp   32bit F     33.4 deg. celsius        (RO)
-@endcode
-*/
-
-<!----------------------------------------------------------------->
-/*!@page cmbeeprom Config Memory
-
-@section Purpose
-Manage access to the External Electrically Erasable Programmable Memory.
-
-@section Description
-The CMB board contains a 64K (8192 x 8) external memory, which one quarter of
-this memory is defined as a protected area.
-The standard CMB firmware doesn't contain any code for Write access to the protected memory
-ensuring a safe storage method for the main parameter i.e: Serial Number (S/N).
-To simplify the handling of this eepage, a unique structure maps all the necessary parameters
-following the S/N located as first element of the structure. The size of the structure can therefore
-not be larger then a quarter of the total memory providing a maximum of 3 R/W [0..2] accessible pages.
-
-<b>Note</b>  Protected page is accessible in ReadOnly at page [3].
-
-The current structure is:
-@code
-// EEPROM structure
-struct EEPAGE {
-unsigned long SerialN;    
-unsigned int structsze;
-unsigned int debug1;
-// 
-float lVIlimit[8], uVIlimit[8]; // i4 v4 a33 a25 d15 d18 d25 d33
-float luCTlimit, uuCTlimit;
-float lSSTlimit, uSSTlimit;
-float ext1offset[4];
-};
-@endcode
-
-The Write operation requires extra time. The completion of the Write operation is confirmed
-when and only when the control bit is turned off, status will reflect operation completion
-as well.
-
-@section cmb-eeprom MSCB Registers
-@code
-MSCB(1): Error     16bit U               0 (0x0000)        (RO)
-EEPROM  R/W error                           0x0800
-MSCB(2): Control    8bit U               0 (0x00/00000000) (WO)
-Save current setting to EEPAGEx                      0x10
-Restore EEPAGEx to memory                            0x20
-MSCB(3): Status     8bit U               3 (0x03/00000011) (RO)
-EEPAGEx save operation complete                      0x10
-EEPAGEx restore operation complete                   0x20
-MSCB(4): EEPage     8bit U               0 (0x00/00000000) (WO)
-EEPAGE number                                       [0..3]
-@endcode
-
-@section Operation
-The following steps will be used to store data into the page 2 of the external EEPROM.
--# w 4 2      // Set EEpage 2 for operation.
--# w 2 0x10   // Initiate Save command
--# Wait for control bit turned off and status turned on.
-
-@section DataSheet
-<a href=http://www.atmel.com/dyn/resources/prod_documents/doc3347.pdf > EEPROM AT2508A</a>
-*/
-
-/*!<!----------------------------------------------------------------->*/
-/*!@page cmb_limits CMB Limit parameters
-
-@section Purpose
-The parameter limits are accessible by expert operation, If change is required,
-please contact FGD-Slow Control Software team (midas@triumf.ca)...
-
-@section Limits
-<b>Limits given below are the initial values, may not reflect the current implemented limits.</b>
-
-<br>(L:Lower limit,H:Higher limit,p:Positive,n:Negative,d:Digital,a:Analog)
-@code
-// 0x02 - Low   i4 v4 a33 a25 d15 d18 d25 d33
- , 0.0, 3.0, 3.0, 2.0, 1.2, 1.5, 2.0, 3.0
-// 0x0A - High  i4 v4 a33 a25 d15 d18 d25 d33
- , 4.0, 4.5, 3.7, 2.7, 1.7, 2.0, 2.7, 3.7
-// 0x12 - LuC Temperature,  HuC Temperature
- , 10., 50.
-// 0x14 - LSST Temperature,  HSST Temperature
- , 10. ,50.
-@endcode
 */

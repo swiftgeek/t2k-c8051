@@ -1,4 +1,4 @@
-/*!\page FEB64 FEB64 board
+/*! @mainpage FrontEnd Board 64 (FEB64)
 
 @section feb64purpose Purpose
 The FEB64 board handles 64 MPPC Silicon PM mounted in the FGD detector.
@@ -38,36 +38,16 @@ temperature monitoring and control/monitoring of the high voltage fed to the MPP
 restored.
 
 - <b>To power up the card</b>:
- - Write 0x1 to Control Register (MSCB(2))
+ - CTL register(idx:2) Set bit ^ 0 [0x1]
+ - CSR register(idx:3) will show bit ^ 0 = 1/0 (1=on, 0=off)
 
-- The CSR register will show bit ^ 0 = 1/0 (1=on, 0=off)
+- <b>To power down the card</b>:
+ - CTL register(idx:2) Set bit ^ 7 [0x80]  Manual Shutdown
+ - CSR register(idx:3) will show bit ^ 0 = 1/0 (1=on, 0=off)
 
 - <b>To power up the Charge pump</b>:
 - The Charge Punmp is by default turned ON during the Card power up.
 - The CSR register will show bit ^ 1 = 1/0 (1=on, 0=off)
-
-- <b>To power down the card</b>:
-- CTL register : Set bit ^ 7 [0x80]  Manual Shutdown
-- The CSR register will show:
- - bit ^ 0 = 1/0 (1=on, 0=off)
- - bit ^ 7 = 1/0 (1=Manual Shutdown done)
-
-@section febconvension Label convention
-@code
-rXXXX  : Raw data, meant for DAC or ADC values.
-pXXXX  : Positive
-nXXXX  : Negative
-xDyyy  : Digital
-xAyyy  : Analog
-Vxxx   : Voltage
-Ixxx   : Current
-xyMon  : Monitored
-uCTemp : micro-controller Temperature
-Temp   : FGD Temperature
-xAsum  : Analog Sum
-ssTemp : Board Temperature
-eexxxx : EEPROM parameter
-@endcode
 
 @section feb64location Location
 This card is located in each "crate" mounted on the surrounding structure
@@ -84,18 +64,6 @@ Identify individual electronics card within the FGD detector.
 This identification is done in 2 ways:
 - With a barcode placed on the back of the card.
 - Written in the external EEPROM Write protect region.
-
-All the FGD card are identify by a unique string following the convention below:
-@code
-FEB64 card:  TR76300000 .. TR763001000
-CMB   card:  TR76400000 .. TR764000100
-LPB   card:  TR76500000 .. TR765000100
-@endcode
-
-This code is stored within the Protected Memory (Read Only) of the
-external EEPROM located on the card. The operational firmeware doesn't allow
-write access to the region. Upgrade of the firmware with a dedicated code "loader"
-is required to overwrite this S/N number.
 
 @section MSCB Registers
 @code
@@ -534,9 +502,10 @@ IBMon     100R    1.    16 bits (65536)    1.25V      5.96E-9
 @endcode
 
 @section DataSheet
-<a href=http://www.supertex.com/pdf/datasheets/HV7800.pdf >Current monitor HV7800</a>
-
-<a href=http://www.linear.com/pc/downloadDocument.do?navId=H0,C1,C1155,C1001,C1152,P36273,D19179 >16bit ADC LTC2495<a/>
+<a href=http://www.supertex.com/pdf/datasheets/HV7800.pdf>Current monitor HV7800
+</a>
+<a href=http://www.linear.com/pc/downloadDocument.do?navId=H0,C1,C1155,C1001,C1152,P36273,D19179>
+16bit ADC LTC2495<a/>
 */
 
 

@@ -1,113 +1,136 @@
-/*!\page TEMP36 TEMP36 board 
+/*! @mainpage Temperature 36 board (TEMP36) 
 
-@section temp36purpose Purpose
-The TEMP36 board provide readout of 36 individual remote temperature sensor, 
-8 ADC channels, 8 DAC channels and 8 general purpose I/O. Its main objective is to of the temp36 board is to measure tempearture at 36 different locations using 18 ADT7486A. The ADT7486A is a digital temperature
-sensor chip that is capable of measuring temperature with a resolution of 0.016 degrees Celsius. Each ADT7486A is connected to two diodes that can be
-placed in remote locations and due to properties of the diode and a combination of the chip itself each one will deviate from each other in terms of 
-absolute temperature. The ADT7486A contains a register to compensates for this offet. The absolute temperature of the diodes are calibrated with an extremely 
-precise temperature instrument in an isolated environment. These offset values are stored onto a 16kb external EEPROM chip and are read and sent to the 
-ADT7486A during initization. In addition, the temp36 board also contains a real time clock and an external DAC for generic purposes.
+@section t36purpose Purpose
+The TEMP36 board provide readout of 36 individual remote temperature sensors.
+A total of 9 boards are handling all 3 TPCs.
 
-\section temp36 Functions
-- @ref exttemp : 36 external temperature measurements
-- @ref memory : 16kb of memory
-- @ref rtc : Real Time Clock
-- @ref dac : DAC
-*/
+@section t36description Description
+The TPCs has 108 temperature sensors each. 72 are located inside the TPC volume and 36
+on the outside of the TPC box.
+Each sensor chip that is capable of measuring temperature with a resolution of 0.016 degrees Celsius. A dedicated temperature device (ADT7486A) monitors 2 remote sensor. These devices
+need to be caloibrated and therefore cannot be exchanged without carefull consideration.
+The ADT7486 has internal temperature offset registers and the TEMP36 board has a external 
+EEPROM which maintain this set of compensation. 
+- The power for the TEMP36 is from the FGD Xantrex PS located in the FGD rack at SS level.
+- The Ethernet/MSCB devices are powered by PoE coming from the FGD rack at the SS level.
 
- /*!\page exttemp Temperature Sensors
- \section Purpose
-ADT7486A is a digital temperature sensor chip that is capable of measuring temperature with a resolution of 0.016 degrees Celsius. 
-The ADT7486A drives current to a external temperature sensitive diode, calculates the temperature, and converts it into digital information 
-which can be accessed through SST protocol. 9 ADT7486A with different addresses are connected to one SST Line and a maximum of 2 diodes can be 
-attached to one chip. The diodes are connected to the chip using shielded twisted pair cables to reduce error in transmission and improve accuracy
-of the temperature reading in a noisy environment. Each temperature diode have a slight deviation from each other in absolute term which, in most cases,
-they do not differ by 1 degree Celsius. To adjust this effect, ADT7486A contains two internal registers, one for each channel, to correct this offset 
-with a resolution of 0.25 degrees Celsius. 
+@section t36operation Card Operation
+By default once the board is powered up, the readout sequence is started and readback
+temperature values are available. While individual instantaneous temperature can be readout
+(idx:11-46), a rolling average is available too (idx:48-83). This average is based on the
+counter(idx:5).
+- The MSCB interface is split in 3 chain, each responsible for one TPC. 
+ - MSCB519 (n200/g240, n202/g240, n203/g240)
+ - MSCB520 (n201/g240, n204/g240, n208/g240)
+ - MSCB521 (n205/g240, n206/g240, n207/g240)
+- The frontend code handling the monitoring is call fetemp36.cxx. It resides on the
+  t2ktpcgsc:online/gsc/tpc. The image name is fetemp36.exe. 
 
-The first picture below shows the microcontroller communicating with one ADT7486A chip. Since there is no clock line in this protocol, the two 
-binary states are interpreted by the timing of the on and off sequence. (Refer to the SST protocol section for more details). The total time to write
-and read from one chip is 2.1 miliseconds.  
+@section t36register MSCB Registers
+@code
+  0: SerialN   32bit U        76820000 (0x04942E20) byte
+  1: Error     16bit U           58754 (0xE582) byte
+     N/A
+  2: Control    8bit U               0 (0x00/00000000) byte
+            EEPROM Save                 0x10
+            EEPROM Restore              0x20
+  3: Status     8bit U               0 (0x00/00000000) byte
+            EEPROM Save complete        0x10
+            EEPROM Restore complete     0x20
+  4: EEPage     8bit U               0 (0x00/00000000) byte
+            EEPROM page should be          0      
+  5: Navge     16bit U              29 (0x001D) byte
+     Averaging counter - 1
+  6: TE01-08    8bit U              80 (0x50/01010000) byte
+     Temperature readout error sensors 1-8  
+  7: TE09-16    8bit U               0 (0x00/00000000) byte
+     Temperature readout error sensors 9-16  
+  8: TE17-24    8bit U              32 (0x20/00100000) byte
+     Temperature readout error sensors 17-24 
+  9: TE25-32    8bit U              32 (0x20/00100000) byte
+     Temperature readout error sensors 25-32
+ 10: TE33-36    8bit U               0 (0x00/00000000) byte
+     Temperature readout error sensors 33-36
+ Here below instantaneous temperature channels 1-36    
+ 11: Temp01    32bit F         16.4712 deg. celsius
+ 12: Temp02    32bit F         17.2681 deg. celsius
+ 13: Temp03    32bit F          16.815 deg. celsius
+ 14: Temp04    32bit F         17.7525 deg. celsius
+ 15: Temp05    32bit F         17.7994 deg. celsius
+ 16: Temp06    32bit F         17.1744 deg. celsius
+ 17: Temp07    32bit F         17.4087 deg. celsius
+ 18: Temp08    32bit F         16.7681 deg. celsius
+ 19: Temp09    32bit F         17.7369 deg. celsius
+ 20: Temp10    32bit F         17.2525 deg. celsius
+ 21: Temp11    32bit F         16.7837 deg. celsius
+ 22: Temp12    32bit F         17.3306 deg. celsius
+ 23: Temp13    32bit F           15.69 deg. celsius
+ 24: Temp14    32bit F         16.6744 deg. celsius
+ 25: Temp15    32bit F          16.815 deg. celsius
+ 26: Temp16    32bit F         17.3619 deg. celsius
+ 27: Temp17    32bit F         17.2681 deg. celsius
+ 28: Temp18    32bit F           17.19 deg. celsius
+ 29: Temp19    32bit F         18.5025 deg. celsius
+ 30: Temp20    32bit F          20.315 deg. celsius
+ 31: Temp21    32bit F         19.2369 deg. celsius
+ 32: Temp22    32bit F         18.8775 deg. celsius
+ 33: Temp23    32bit F         19.2681 deg. celsius
+ 34: Temp24    32bit F         18.8462 deg. celsius
+ 35: Temp25    32bit F         20.5962 deg. celsius
+ 36: Temp26    32bit F          21.065 deg. celsius
+ 37: Temp27    32bit F         20.0025 deg. celsius
+ 38: Temp28    32bit F         20.0025 deg. celsius
+ 39: Temp29    32bit F         19.9712 deg. celsius
+ 40: Temp30    32bit F         19.3462 deg. celsius
+ 41: Temp31    32bit F         19.9712 deg. celsius
+ 42: Temp32    32bit F         19.3931 deg. celsius
+ 43: Temp33    32bit F          18.815 deg. celsius
+ 44: Temp34    32bit F         18.7369 deg. celsius
+ 45: Temp35    32bit F         18.8775 deg. celsius
+ 46: Temp36    32bit F         18.9087 deg. celsius
+ 47: REF       32bit F               0 deg. celsius
+ Here below average temperature channels 1-36    
+ 48: Tavg01    32bit F         17.2573 deg. celsius
+ 49: Tavg02    32bit F         17.1086 deg. celsius
+ 50: Tavg03    32bit F         17.0623 deg. celsius
+ 51: Tavg04    32bit F         17.5838 deg. celsius
+ 52: Tavg05    32bit F         17.6517 deg. celsius
+ 53: Tavg06    32bit F         17.2385 deg. celsius
+ 54: Tavg07    32bit F         17.3505 deg. celsius
+ 55: Tavg08    32bit F         16.7697 deg. celsius
+ 56: Tavg09    32bit F         17.5973 deg. celsius
+ 57: Tavg10    32bit F         17.2104 deg. celsius
+ 58: Tavg11    32bit F          17.017 deg. celsius
+ 59: Tavg12    32bit F         17.0014 deg. celsius
+ 60: Tavg13    32bit F         16.5493 deg. celsius
+ 61: Tavg14    32bit F         16.6851 deg. celsius
+ 62: Tavg15    32bit F         17.0068 deg. celsius
+ 63: Tavg16    32bit F         17.5801 deg. celsius
+ 64: Tavg17    32bit F         17.0515 deg. celsius
+ 65: Tavg18    32bit F         17.1911 deg. celsius
+ 66: Tavg19    32bit F         18.7557 deg. celsius
+ 67: Tavg20    32bit F         19.3015 deg. celsius
+ 68: Tavg21    32bit F         19.2562 deg. celsius
+ 69: Tavg22    32bit F         18.8381 deg. celsius
+ 70: Tavg23    32bit F          19.031 deg. celsius
+ 71: Tavg24    32bit F         18.6722 deg. celsius
+ 72: Tavg25    32bit F         20.6711 deg. celsius
+ 73: Tavg26    32bit F         19.8171 deg. celsius
+ 74: Tavg27    32bit F         19.8904 deg. celsius
+ 75: Tavg28    32bit F         19.6345 deg. celsius
+ 76: Tavg29    32bit F         19.6442 deg. celsius
+ 77: Tavg30    32bit F         19.1415 deg. celsius
+ 78: Tavg31    32bit F         19.7158 deg. celsius
+ 79: Tavg32    32bit F         19.5768 deg. celsius
+ 80: Tavg33    32bit F         18.8753 deg. celsius
+ 81: Tavg34    32bit F         18.6684 deg. celsius
+ 82: Tavg35    32bit F         18.7616 deg. celsius
+ 83: Tavg36    32bit F          18.947 deg. celsius
+@endcode
 
-The second picture below shows a typical temperature reading from the diode. Temperature for most diodes fluctuates within 0.2 degree Celsius. A rolling average function
-has been implemented for the 36 channels. The user has to specify the maximum number of average point below 30 in order to initate the function. The index for the 
-MSCB registers are shown in the MSCB Registers section. In addition, if there is a transmission error, a speific bit in the unit byte TExx-xx variable will 
-be set. For example, if there is a temperature reading error for temp04 the TE01-08 variable will show 0000 1000(assuming the other temperature sensors are 
-reading correctly).   
+@section t36location Location
+The 9 TEMP36 cards are located at the B1 level, mounted on the skirt.
 
-*\image html temp36-adt7486a.gif
-
-*\image html temperaturereading.gif
-
-\section MSCB Registers
-\code
-- MSCB(9..44)   : Float : Temp[1..36]  : 36 external temperature in degrees Celsius
-- MSCB(67)      : Int   : Navg         : Maxmium number of rolling average 
-- MSCB(68..103) : Float : Tavg[1..36]  : 36 external rolling average temperature in degrees Celsius
-- MSCB(4..8)    : Float : TExx-xx      : Errors in Transmission
-\endcode
-*/
-
-/*!\page memory EEPROM
-\section Purpose
-AT25160AN is a 16Kb EEPROM chip. Quarter of the memory is protected and used to store the serial number of the board and 
-the 36 calibrated external temperature offset values. These values cannot be modified by the users. The rest of the memory is divided 
-into equal sized pages ranged from 0-5, and is intended for the users to save any modifications to the
-offset values. The MCU is capable of reading and writing from these pages by setting the MSCB variables.
-
-The EEPROM uses a standard SPI communication protocol. For each 32 bytes of transmission, the EEPROM transfers the data in its buffer to its memory;
-hence, this will require a transmission delay. Refer to the sections below for the principle of operation. 
-
-\section Operation
-- Write the desired offset value in the eepValue register (MSCB 45) to change the default value 
-- Write the correct key in the eeCtrSet register (MSCB 46) to modify or read the EEPAGE array 
- -0x3Cxx00yy
- -3C is the key for writing/reading EEPAGE array 
- -Set xx to 11 for reading from the EEPAGE array and 22 for writing to it
- -Set yy to be the particular index value to be modified or read from 
-- Write (0..5) to the eepage register(MSCB 5) to specify the page in the EEPROM to write or read 
-- Set the appropriate bit of control register (MSCB 1), and this will initiate 
- -Set a 1 for writing to the PAGE
- -Set a 2 for reading from the PAGE
- -Set a 4 for clearing the PAGE 
-- Wait for the appropriate bit of the status register(MSCB 2) to be set
- -1 for writing and clearing 
- -2 for reading
- 
-
-\section Example
-The following steps store data into the page 2 of the external EEPROM.
--# Write 1 into MSCB(45) (Temperature offset value)
--# Write 0x3C220001 into MSCB(46) (Change the temperature offset value for temperature02 to be 1)
--# Write 2 into MSCB(4) (Page 2 of the EEPROM)   
--# Write 1 into MSCB(1) (Write the default values and the change to page 2)
-\section temp36-eeprom MSCB Registers
-\code
-MSCB(1) : Byte : Control     : eeprom control
-MSCB(4) : Byte : EEPage  : eeprom page
-MSCB(2) : Byte : Status         : eeprom status
-MSCB(45): Float: eepValue  : eeprom value
-MSCB(46): Byte : eeCtrSet : eeprom set 
-\endcode
-*/
-
-/*!\page rtc Real Time Clock
-\section Purpose
-The DS1302 chip is a trickle charge timekeeping chip. It is connected to a supercapacitor and is intended to keep the time record even when 
-the main power is turned off. With the newest version of the msc application, upon connection, one can type in "sync" to synchronize the real time
-clock with the computer, and the clock along with other information can be read by typing in the letter "i". The chip consumes less than 300nA at 
-2V and the supercap is 0.47F; therefore, in theory the chip can keep track of the time for about one month with the main power turned off. 
-*/
-
-/*!\page dac Digital to Analog Conversion
-\section Purpose
-The LT1665CGN is a 8 bit digital to anaglog convertor and consists of 8 output ports. It is intended for generic purposes. The reference voltage 
-is 2.5V and is the maximum that the ports can output. Set the MSCB register which corresponds to the output pin on the board with a desired 
-value and in return the voltage will change to that level.
-
-\section MSCB Registers
-\code
-MSCB(59..66) : Int :DAC[0..7]  : Digital to Analog Raw Data 
-\endcode
+@section DataSheets
+<a href=http://www.onsemi.com/pub_link/Collateral/ADT7484A-86A-D.PDF>ADT7486</a>
 */
