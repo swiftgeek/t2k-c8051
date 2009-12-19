@@ -4,7 +4,7 @@
 # Project related configuration options
 #---------------------------------------------------------------------------
 DOXYFILE_ENCODING      = UTF-8
-PROJECT_NAME           = FGDC8051-LPB
+PROJECT_NAME           = FGDC8051-LiP0d
 PROJECT_NUMBER         = 1
 OUTPUT_DIRECTORY       = ../
 CREATE_SUBDIRS         = NO
@@ -93,9 +93,8 @@ WARN_LOGFILE           = zfgd8051.log
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = ./lpb.dox \
-                         ../lpb.c \
-                         ../lpb.h
+INPUT                  = ./lip0d.dox \
+                         ../generic-p0d.c
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.c \
                          *.cxx \
