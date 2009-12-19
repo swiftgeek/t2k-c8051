@@ -106,5 +106,6 @@ This card is located in each "crate" mounted on the surrounding structure
 of each FGD (24 crates per FGD). Each crate contains 1 CMB card.
 
 @section DataSheets
+<a href=../../support/T2K_CMB_RevB.pdf >CMB_Rev2 schematics</a><br>
 <a hrf=http://www.chipcatalog.com/Datasheet/A0392B99E733E7F9E0AD6CB4C8AC3C4E.htm >INA194AIDBVT</a>
 */

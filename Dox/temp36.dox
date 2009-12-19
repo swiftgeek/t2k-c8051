@@ -132,5 +132,7 @@ counter(idx:5).
 The 9 TEMP36 cards are located at the B1 level, mounted on the skirt.
 
 @section DataSheets
-<a href=http://www.onsemi.com/pub_link/Collateral/ADT7484A-86A-D.PDF>ADT7486</a>
+<a href=../../support/T2K_TEMP36_Rev0.pdf >TEMP36 schematics</a><br>
+<a href=../../support/TEMP36-report.pdf >TEMP36 report</a><br>
+<a href=http://www.onsemi.com/pub_link/Collateral/ADT7484A-86A-D.PDF>ADT7486</a><br>
 */

@@ -161,6 +161,9 @@ EEPAGE number                                      [0..3]
 
 @section Location
 Local (FEB64 card)
+
+@section DataSheets
+<a href=../../support/T2K_FEB_Rev2.pdf >FEB64_Rev2 schematics</a><br>
 */
 
 <!----------------------------------------------------------------->

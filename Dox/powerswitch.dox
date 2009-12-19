@@ -87,6 +87,8 @@ State of the channel(bitwise) ch1                    0x01
 @section pwrlocation Location
 This card is located on the back of of the "DCC crates" in the FGD/GSC rack.
 
+@section DataSheet
+<a href=../../support/DCCPowerSwitch.pdf >DCC Power Switch schematics</a><br>
 */
 
 

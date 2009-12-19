@@ -50,5 +50,9 @@ The main MSCB variables are:
 @section location Location
 SS level in the TPC rack. 3 BERTAN units with corresponding ccbertan MSCB interface.
 Fourth one on the top of the BERTAN-TPC3
+
+@section DataSheets
+<a href=../../support/MSCB-GPIB_Rev2.pdf >MSCB-GPIB_Rev2 schematics</a><br>
+<a href=../../support/MAN_225.pdf >Bertan HV unit</a>
 */
 
