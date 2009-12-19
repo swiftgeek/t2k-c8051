@@ -473,7 +473,7 @@ void user_init(unsigned char init)
   P0MDOUT |= 0x10;  // LPB_CS       (P0.4) PP
 
   P2MDOUT |= 0x40;  // CPLDMode     (P2.6) PP
-  CPLDMode = 0;     // Default no test
+  CPLDMode = 1;     // Default no test
 } // End of Init()
 
 
@@ -540,8 +540,8 @@ void user_loop(void) {
   // Switch CPLD Mode
   if (Cmode) {
     rCSR = user_data.status;
-    if (Smode) CPLDMode = Smode = 0;
-    else       CPLDMode = Smode = 1;
+    if (Smode) { CPLDMode = 0; Smode = 1; }
+    else       { CPLDMode = 1; Smode = 0; }
     Cmode = 0;  // Reset command
     publishCtlCsr();  // Publish Ctl/Csr
   } // Switch CPLD Mode
