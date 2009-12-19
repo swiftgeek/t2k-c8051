@@ -53,12 +53,12 @@ eexxxx : EEPROM parameter
 @section fgd8051-content Content
 Further information can be found on the following cards.
 <b>
-@arg <a href="../feb64/index.html">FEB64</a> FGD Frontend card.
-@arg <a href="../cmb/index.html">CMB</a> Crate Master Board controlling 4 FEB64.
-@arg <a href="../lpb/index.html">LPB</a> Light Pulser Board.
-@arg <a href="../temp36/index.html">TEMP36</a> TPC 36 Temperature sense Board.
-@arg <a href="../powerswitch/index.html">DCCSWITCH</a> Controllable Power switch for the DCCs.
-@arg <a href="../ccbertan/index.html">CCBERTAN</a> TPC Central Cathode Voltage control.
+@arg <a href="feb64/index.html">FEB64</a> FGD Frontend card.
+@arg <a href="cmb/index.html">CMB</a> Crate Master Board controlling 4 FEB64.
+@arg <a href="lpb/index.html">LPB</a> Light Pulser Board.
+@arg <a href="temp36/index.html">TEMP36</a> TPC 36 Temperature sense Board.
+@arg <a href="powerswitch/index.html">DCCSWITCH</a> Controllable Power switch for the DCCs.
+@arg <a href="ccbertan/index.html">CCBERTAN</a> TPC Central Cathode Voltage control.
 </b>
 */
 
