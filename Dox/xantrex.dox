@@ -1,0 +1,36 @@
+/*! @mainpage FGD Xantrex power supplies monitoring
+
+Documentation for the monitoring of the 2 FGD Xantrex power supplies through MSCB
+
+@section xanpurpose Purpose
+Monitor the voltage and current of the FGD Slow control Xantre power supply and the
+DDC Xantrex power supply.
+
+@section xandescription Description
+- Both Xantrex (FGD, DCC) have been configured for resistive remote control for 
+  the voltage output and maximum current limit. It has now also a Voltage and
+  current monitoring which is fed to the MSCB interface. Please refer to the
+  <a href=http://ladd00.triumf.ca/~daqweb/doc/fgddaq/infrastructure/html/">
+  infrastructure document </a> for more deatils.
+  
+@section xanoperation Card Operation
+- The MSCB node can be contacted through:
+ - MSCB522 GENERIC310_REV1/n11/g77 for the FGD Xantrex.
+ - MSCB510 GENERIC310_REV1/n10/g77 for the DCC Xantrex.
+ 
+- The frontend fexantrex.c/fexantrex.exe code handles the monitoring of 
+  both of the units. It resides on the t2kgsc0:online/gsc/fgd/ 
+
+@section xanregisters MSCB Registers
+@code
+@endcode
+  <br>
+
+@section location Location
+SS level on the back of the FGD rack behind the FGD-Xantrex and 
+on the back of the GSC/FGD rack behind the DCC-Xantrex units.
+
+@section DataSheets
+<a href=../../support/MSCB-GenericIO-Module-ver0.pdf >MSCB-GenericIO_Rev0 schematics</a><br>
+*/
+

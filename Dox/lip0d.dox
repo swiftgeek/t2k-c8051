@@ -1,58 +1,30 @@
-/*! @mainpage Central Cathode High Voltage control
+/*! @mainpage Light Injection Power supply monitoring (P0D)
 
-Documentation for the Central Cathode High Voltage control through MSCB
+Documentation for the light injection modules controlled through MSCB
 
-@section ccbpurpose Purpose
-The GPIB/MSCB interface provides monitoring and control to the BERTAN HV 
-power supplies. 
+@section lipurpose Purpose
+Monitor the Light Injection power supply modules.
 
-@section ccbdescription Description
-The Bertan 30KV unit is controlled through the GPIB port.
-The GPIB address is set to 4 by default.
-The main MSCB variables are:
-- Voltage setting (Udemand V) 
-- Ramp up voltage rate (RampUp V/s)
-- Ramp down voltage rate (RampDown V/s)
-- Upper voltage limit (Ulimit V)
-- Upper Current limit (Ilimit uA)
+@section lidescription Description
+- The MSCB interface reads back in a logic form the status of the +15V and
+ +5V of 4 individual channels. It also monitor the "Active state" of thos four
+ channels. A Reset command is available seding a pulse to the requested unit. 
 
-- There is a CCBERTAN MSCB/GPIB interface for each TPC (1, 2, 3). The model
- of the interface can be either CCBERTAN410 or CCBERTAN310 refering to the 
- micro-computer of the interface. Each unit has to have a unit MSCB address
- (1, 2, 3). A spare unit sit on the top of the TPC3, its MSCB address is 4.
-
-@section ccboperation Card Operation
+@section lioperation Card Operation
 - The frontend code handling the monitoring and the control is call 
-  feccbertan.c. It resides on the t2ktpcgsc:online/gsc/tpc. The image 
-  name is feccbertan.exe. A custom web page for the control is available
-  (ccbertan.html).
+  felip0d.c. It resides on the t2kpodgsc:online/... 
+  A custom web page for the control is available (LI.html).
 
-@section ccbregisters MSCB Registers
+@section liregisters MSCB Registers
 @code
-        0: Status     8bit U              32 (0x20/00100000) byte
-           Ramp up state                      0x01
-           Ramp down state                    0x02
-           Voltage limit reached              0x04
-           Current limit reached              0x08
-           Low current state                  0x10
-           High current state                 0x20
-        1: Udemand   32bit F               0 volt
-        2: Umeas     32bit F               0 volt
-        3: Imeas     32bit F               0 ampere
-        4: RampUp    16bit U              50 (0x0032) volt
-        5: RampDown  16bit U              50 (0x0032) volt
-        6: Ulimit    32bit F           28000 volt
-        7: Ilimit    32bit F              75 microampere
-        8: warning   STR32    "Warning! High current -  x.xxxx"
 @endcode
   <br>
 
 @section location Location
-SS level in the TPC rack. 3 BERTAN units with corresponding ccbertan MSCB interface.
-Fourth one on the top of the BERTAN-TPC3
+SS level in the LI rack on the top of the LI power supply module.
 
 @section DataSheets
 <a href=../../support/MSCB-GPIB_Rev2.pdf >MSCB-GPIB_Rev2 schematics</a><br>
-<a href=../../support/MAN_225.pdf >Bertan HV unit</a>
+<a href=../../support/lip0d-pin-interface.pdf >LiP0d/GPIB pin assignments</a><br>
 */
 

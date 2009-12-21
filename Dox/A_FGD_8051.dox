@@ -2,9 +2,10 @@
 
 Online documentation for the slow control firmware code based
 on the Silabs 8051 micro-controller series 133/310/410 running under the MSCB OS.
-Described here below are the functionalities and implementation of the slow control (SC) used in the different sub-projects of the ND280-FGD/TPC electronics.
+Described here below are the functionalities and implementation of the slow control (SC) used in the different sub-projects of the ND280-FGD/TPC/P0D electronics.
 
 The <b><a href=http://ladd00.triumf.ca/viewcvs/fgddaq/trunk/slowcontrol/c8051 >SVN</a></b>
+site contains all the source code related to these different projects.
 <p>
 All the FGD and accessory cards are identify by a unique Serial Number (S/N) categorized as follow:
 @code
@@ -58,7 +59,10 @@ Further information can be found on the following cards.
 @arg <a href="lpb/index.html">LPB</a> Light Pulser Board.
 @arg <a href="temp36/index.html">TEMP36</a> TPC 36 Temperature sense Board.
 @arg <a href="powerswitch/index.html">DCCSWITCH</a> Controllable Power switch for the DCCs.
+@arg <a href="fgd1wt/index.html">FGD1WT</a> FGD1 Water temperature monitoring.
+@arg <a href="xantrex/index.html">XANTREX</a> XANTREX poewr supplies monitoring.
 @arg <a href="ccbertan/index.html">CCBERTAN</a> TPC Central Cathode Voltage control.
+@arg <a href="lip0d/index.html">LiP0d</a> Light Injection power supply module control.
 </b>
 */
 

@@ -1,0 +1,54 @@
+/*! @mainpage FGD1 Water Temperature monitoring
+
+Documentation for FGD1 Water temperature moinoting through MSCB
+
+@section wttpurpose Purpose
+Monitor the temperature of the 2 water loops of the FGD1.
+
+@section wtdescription Description
+- The MSCB interface reads back the inlet and outlet water temperature of 
+  the loop1 (first loop in the beam direction) and loop2.
+  
+@section wtoperation Card Operation
+- The SMCB node can be contacted through the MSCB506(n35/g77).
+- The frontend fefgd1watertemp.c code handles the monitoring of these 4 
+  variables. It resides on the t2kgsc0:online/gsc/fgd/ 
+
+@section wtregisters MSCB Registers
+@code
+  0: Status     8bit U              41 (0x29/00101001) byte
+  1: ERROR      8bit U               0 (0x00/00000000) byte
+  2: IntTemp1  32bit F         16.7681 deg. celsius
+  3: IntTemp2  32bit F         16.4087 deg. celsius
+  4: ncount     8bit U              10 (0x0A/00001010) byte
+     Averaging counter 
+  5: Temp1     32bit F         12.1743 deg. celsius
+  6: Temp2     32bit F         11.6743 deg. celsius
+  7: Temp3     32bit F         11.7837 deg. celsius
+  8: Temp4     32bit F         11.3618 deg. celsius
+     Instantaneous temperatures
+  9: AvgTemp1  32bit F         12.1665 deg. celsius
+ 10: AvgTemp2  32bit F         11.6556 deg. celsius
+ 11: AvgTemp3  32bit F         11.8243 deg. celsius
+ 12: AvgTemp4  32bit F         11.4243 deg. celsius
+     Average temperatures
+ 13: SHTtemp   32bit F          124.17 deg. celsius
+ 14: RHumid    32bit F             0.1 percent
+ 15: rSHTtemp  16bit U               0 (0x0000) byte
+ 16: rSHThumi  16bit U               0 (0x0000) byte
+ 17: FCSorig    8bit U             111 (0x6F/01101111) byte
+ 18: FCSdevi    8bit U             111 (0x6F/01101111) byte
+ 19: ext01off  32bit F               0 byte
+ 20: ext02off  32bit F               0 byte
+ 21: ext11off  32bit F               0 byte
+ 22: ext12off  32bit F               0 byte@endcode
+  <br>
+
+@section location Location
+B1 level on the MSCB-FGD panel. CAT5 cable to the 4 sensors on the right-hand
+side (beam direction) of the FGD1.
+
+@section DataSheets
+<a href=../../support/MSCB-GenericIO-Module-ver0.pdf >MSCB-GenericIO_Rev0 schematics</a><br>
+*/
+

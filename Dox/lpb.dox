@@ -131,6 +131,6 @@ of each FGD (24 crates per FGD). Each crate contains 1 LPB card the relative
 address of card to the crate is 5.
 
 @section DataSheet
-<a href=../../support/T2K_LPB_Rev4.pdf >LPB_Rev4 schematic</a><br>
+<a href=../Support/T2K_LPB_Rev4.pdf >LPB_Rev4 schematic</a><br>
 <a href=http://www.linear.com/pc/downloadDocument.do?navId=H0,C1,C1155,C1005,C1156,P2289,D1753>LTC2620</a>
 */

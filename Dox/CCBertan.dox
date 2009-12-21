@@ -52,7 +52,7 @@ SS level in the TPC rack. 3 BERTAN units with corresponding ccbertan MSCB interf
 Fourth one on the top of the BERTAN-TPC3
 
 @section DataSheets
-<a href=../../support/MSCB-GPIB_Rev2.pdf >MSCB-GPIB_Rev2 schematics</a><br>
-<a href=../../support/MAN_225.pdf >Bertan HV unit</a>
+<a href=../Support/MSCB-GPIB_Rev2.pdf >MSCB-GPIB_Rev2 schematics</a><br>
+<a href=../Support/MAN_225.pdf >Bertan HV unit</a>
 */
 

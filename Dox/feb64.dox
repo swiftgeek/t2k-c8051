@@ -52,6 +52,9 @@ restored.
 @section feb64location Location
 This card is located in each "crate" mounted on the surrounding structure
 of each FGD (24 crates per FGD). Each crate contains 4 FEB64 cards.
+
+@section DataSheets
+<a href=../Support/T2K_FEB_Rev2.pdf >FEB64_Rev2 schematics</a><br>
 */
 
 <!----------------------------------------------------------------->
@@ -163,7 +166,7 @@ EEPAGE number                                      [0..3]
 Local (FEB64 card)
 
 @section DataSheets
-<a href=../../support/T2K_FEB_Rev2.pdf >FEB64_Rev2 schematics</a><br>
+<a href=../Support/T2K_FEB_Rev2.pdf >FEB64_Rev2 schematics</a><br>
 */
 
 <!----------------------------------------------------------------->
