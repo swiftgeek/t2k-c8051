@@ -1,0 +1,253 @@
+// CMB
+
+IMPORTANT:
+The CMB requires to have the 6 address traces cut on the back of the card
+just after the 6 vias in order to have the proper MSCB address.
+
+First Step:
+
+Setup backplane with Vss(+5V)
+Check Vss to be +5V
+Power OFF
+ - Insert CMB
+ - Connect JTAB from Silabs adaptor
+  - Pin1 (red band) top right
+Power ON [Current consumption should be ~0mA]
+
+2 programming methods:
+B) using the programmer for multiple card programming
+A) individual card programming
+
+
+// A
+
+Start the MCU32.exe
+ - C:\SiLabs\MCU\IDE.exe
+Open cloader.wsp project
+ - Project - Open (Alt-P O) - C:\_T2K\c8051\cloader.wsp
+ - Build project (Ctl-Shft-F7)
+ - Connect (Alt-C)
+ - Download code ( Alt-D)
+ - Disconnect (Alt-C)
+Power OFF, wait 2 seconds, Power ON
+- Current consumption should be ~120mA
+
+Start command prompt for msc tool (MSDOS terminal)
+H:\>c:
+C:\>cd \_t2k\c8051
+C:\_T2K\c8051>dir *.hex
+ Volume in drive C is OSDisk
+ Volume Serial Number is 4859-A0D3
+ Directory of C:\_T2K\c8051
+01/12/2009  13:29            40,153 ccbertan410.hex
+29/05/2009  10:23            32,751 cloader.hex
+09/11/2009  14:49            44,916 cmb.hex
+29/10/2009  17:37            75,077 feb64.hex
+29/09/2009  11:49            36,054 floader.hex
+29/10/2009  13:11            33,011 generic-p0d.hex
+01/12/2009  13:30            32,814 lloader.hex
+11/12/2009  19:56            52,517 lpb.hex
+01/12/2009  13:29            37,189 powerswitch.hex
+02/12/2009  14:57            99,269 subm_260.hex
+29/10/2009  13:11            48,995 temp36.hex
+09/06/2009  14:15            32,569 tloader.hex
+              12 File(s)        565,315 bytes
+               0 Dir(s)  138,449,133,568 bytes free
+
+C:\_T2K\c8051>msc
+Connected to submaster at usb0
+node28(0x1C)> sc
+Found node "CMB", NA 12 (0x000C), GA 65535 (0xFFFF), Rev. 9094
+
+One node found
+node28(0x1C)> a 12
+node12(0xC)> r
+  0: SerialN   32bit U        76400072 (0x048DC5C8) byte
+  1: Control    8bit U               0 (0x00/00000000) byte
+  2: EEPage     8bit U               0 (0x00/00000000) byte
+  3: Status     8bit U               0 (0x00/00000000) byte
+  4: SNWp      32bit U        76400072 (0x048DC5C8) byte
+  5: StrcSzWp  16bit U             110 (0x006E) byte
+  6: SN0       32bit U        76400072 (0x048DC5C8) byte
+  7: StrcSze0  16bit U             110 (0x006E) byte
+node12(0xC)> up cmb.hex
+
+[===========================]
+node12(0xC)> 
+Replace the cloader with the final CMB code
+node12(0XC)> up cmb.hex
+node12(0xC)> i
+Node name        : CMB
+Node address     : 12 (0xC)
+Group address    : 400 (0x190)
+Protocol version : 5
+SVN revision     : 9420
+Uptime           : 0d 00h 07m 07s
+node12(0xC)> r
+  0: SerialN   32bit U        76400072 (0x048DC5C8) byte
+  1: Error     16bit U             254 (0x00FE) byte
+  2: Control    8bit U               0 (0x00/00000000) byte
+  3: Status     8bit U               6 (0x06/00000110) byte
+  4: EEPage     8bit U               0 (0x00/00000000) byte
+  5: Spare      8bit U               0 (0x00/00000000) byte
+  6: pDI4Mon   32bit F       0.0410182 ampere
+  7: pDV4Mon   32bit F       0.0719238 volt
+  8: pAV33Mon  32bit F               0 volt
+  9: pAV25Mon  32bit F               0 volt
+ 10: pDV15Mon  32bit F               0 volt
+ 11: pDV18Mon  32bit F               0 volt
+ 12: pDV25Mon  32bit F       0.0102563 volt
+ 13: pDV33Mon  32bit F       0.0376066 volt
+ 14: uCTemp    32bit F            33.8 deg. celsius
+ 15: FpgaTemp  32bit F         24.5337 deg. celsius
+ 16: Vrg1Temp  32bit F         26.9244 deg. celsius
+ 17: Vrg2Temp  32bit F         22.7369 deg. celsius
+ 18: rDI4Mon   16bit U               9 (0x0009) byte
+ 19: rDV4Mon   16bit U              15 (0x000F) byte
+ 20: rAV33Mon  16bit U               0 (0x0000) byte
+ 21: rA25VMon  16bit U               0 (0x0000) byte
+ 22: rDV15Mon  16bit U               0 (0x0000) byte
+ 23: rDV18Mon  16bit U               0 (0x0000) byte
+ 24: rDV25Mon  16bit U               3 (0x0003) byte
+ 25: rDV33Mon  16bit U              11 (0x000B) byte
+
+Card programmed, the card is off and the +4V was not connected in this case.
+
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+// B
+Setup backplane with Vss(+5V)
+Check Vss to be +5V
+Power OFF
+ - Insert CMB
+ - Connect JTAB from Silabs adaptor
+  - Pin1 (red band) top right
+Power ON 
+
+Start MCUProductionProgrammer.exe
+ - C:\SiLabs\MCU\Utilities\Production Programmer
+ - Link on Desktop  "Card Programmer"
+ - Prg menu .. Configure prg Settings
+ - Load Settings
+  - file c:\_T2K\c8051\ProgramSettings-cloader.pgs
+ - adjust "Starting Serial Number" ex: 76400060
+ - Accept Settings button
+   Should be ready to load C:\_T2K\c8051\cloader.hex
+ - Press "Program Device" wait until completion
+   - screen dump after successful flashing
+   Debug Adapter: EC30000F51D
+   Part Number: C8051F133
+   Erase Code Space: No
+   Hex File (Not Banked): C:\_T2K\c8051\cloader.hex
+   Flash Persistence: No
+   Serialize Parts: Yes
+   Serial Number Code Location: 0x01B89
+   Serial Number Size (Bytes): 4
+   Starting Serial: 76400060
+   Serial Increment: 1
+   Lock Code Space: No
+   14:49:21 - May 18 2010 - Starting New Programming Session
+   14:49:29 - Device Programmed and Verified with Serial 76400060
+Power OFF, wait 2 seconds, Power ON
+Start command prompt fro msc tool (MSDOS terminal)
+Example:
+Microsoft Windows XP [Version 5.1.2600]
+(C) Copyright 1985-2001 Microsoft Corp.
+H:\>c:
+C:\>cd \_t2k\c8051
+C:\_T2K\c8051>dir *.hex
+ Volume in drive C is OSDisk
+ Volume Serial Number is 4859-A0D3
+ Directory of C:\_T2K\c8051
+01/12/2009  13:29            40,153 ccbertan410.hex
+29/05/2009  10:23            32,751 cloader.hex
+09/11/2009  14:49            44,916 cmb.hex
+29/10/2009  17:37            75,077 feb64.hex
+29/09/2009  11:49            36,054 floader.hex
+29/10/2009  13:11            33,011 generic-p0d.hex
+01/12/2009  13:30            32,814 lloader.hex
+11/12/2009  19:56            52,517 lpb.hex
+01/12/2009  13:29            37,189 powerswitch.hex
+02/12/2009  14:57            99,269 subm_260.hex
+29/10/2009  13:11            48,995 temp36.hex
+09/06/2009  14:15            32,569 tloader.hex
+              12 File(s)        565,315 bytes
+               0 Dir(s)  138,449,133,568 bytes free
+
+C:\_T2K\c8051>msc
+Connected to submaster at usb0
+> sc
+Found node "CMB", NA 508 (0x01FC), GA 65535 (0xFFFF), Rev. 5404
+One node found
+> a 508
+node508(0x1FC)> r
+  0: SerialN   32bit U        76400060 (0x048DC5BC) byte
+  1: Control    8bit U               0 (0x00/00000000) byte
+  2: EEPage     8bit U               0 (0x00/00000000) byte
+  3: Status     8bit U              15 (0x0F/00001111) byte
+  4: SNWp      32bit U        76400060 (0x048DC5BC) byte
+  5: StrcSzWp  16bit U             110 (0x006E) byte
+  6: SN0       32bit U        76400060 (0x048DC5BC) byte
+  7: StrcSze0  16bit U             110 (0x006E) byte
+node508(0x1FC)>
+node508(0x1FC)> up cmb.hex
+[===========================]
+node508(0x1FC)> r
+  0: SerialN   32bit U        76400060 (0x048DC5BC) byte
+  1: Error     16bit U             252 (0x00FC) byte
+  2: Control    8bit U               0 (0x00/00000000) byte
+  3: Status     8bit U               6 (0x06/00000110) byte
+  4: EEPage     8bit U               0 (0x00/00000000) byte
+  5: Spare      8bit U               0 (0x00/00000000) byte
+  6: pDI4Mon   32bit F      0.00455757 ampere
+  7: pDV4Mon   32bit F         4.31063 volt
+  8: pAV33Mon  32bit F               0 volt
+  9: pAV25Mon  32bit F               0 volt
+ 10: pDV15Mon  32bit F               0 volt
+ 11: pDV18Mon  32bit F               0 volt
+ 12: pDV25Mon  32bit F       0.0170939 volt
+ 13: pDV33Mon  32bit F        0.379485 volt
+ 14: uCTemp    32bit F            35.5 deg. celsius
+ 15: FpgaTemp  32bit F         22.8619 deg. celsius
+ 16: Vrg1Temp  32bit F         25.2525 deg. celsius
+ 17: Vrg2Temp  32bit F         21.2369 deg. celsius
+ 18: rDI4Mon   16bit U               1 (0x0001) byte
+ 19: rDV4Mon   16bit U             899 (0x0383) byte
+ 20: rAV33Mon  16bit U               0 (0x0000) byte
+ 21: rA25VMon  16bit U               0 (0x0000) byte
+ 22: rDV15Mon  16bit U               0 (0x0000) byte
+ 23: rDV18Mon  16bit U               0 (0x0000) byte
+ 24: rDV25Mon  16bit U               5 (0x0005) byte
+ 25: rDV33Mon  16bit U             111 (0x006F) byte
+>>>>>>>>>>>>>>>>>>>>>
+In this case the +4V was also connected 
+>>>>>>>>>>>>>>>>>>>>>
+node508(0x1FC)> w 2 1             <<< turn ON the card
+  0: SerialN   32bit U        76400061 (0x048DC5BD) byte
+  1: Error     16bit U               0 (0x0000) byte
+  2: Control    8bit U               0 (0x00/00000000) byte
+  3: Status     8bit U               7 (0x07/00000111) byte
+  4: EEPage     8bit U               0 (0x00/00000000) byte
+  5: Spare      8bit U               0 (0x00/00000000) byte
+  6: pDI4Mon   32bit F        0.273454 ampere
+  7: pDV4Mon   32bit F         4.29145 volt
+  8: pAV33Mon  32bit F         3.33673 volt
+  9: pAV25Mon  32bit F         2.49913 volt
+ 10: pDV15Mon  32bit F         1.49841 volt
+ 11: pDV18Mon  32bit F         1.81008 volt
+ 12: pDV25Mon  32bit F         2.50596 volt
+ 13: pDV33Mon  32bit F         3.31622 volt
+ 14: uCTemp    32bit F            32.1 deg. celsius
+ 15: FpgaTemp  32bit F         22.3775 deg. celsius
+ 16: Vrg1Temp  32bit F         24.2681 deg. celsius
+ 17: Vrg2Temp  32bit F         21.2525 deg. celsius
+ 18: rDI4Mon   16bit U              60 (0x003C) byte
+ 19: rDV4Mon   16bit U             895 (0x037F) byte
+ 20: rAV33Mon  16bit U             976 (0x03D0) byte
+ 21: rA25VMon  16bit U             731 (0x02DB) byte
+ 22: rDV15Mon  16bit U             625 (0x0271) byte
+ 23: rDV18Mon  16bit U             755 (0x02F3) byte
+ 24: rDV25Mon  16bit U             733 (0x02DD) byte
+ 25: rDV33Mon  16bit U             970 (0x03CA) byte
+
