@@ -114,23 +114,23 @@
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp17",       &user_data.Temp[16],    //27
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp18",       &user_data.Temp[17],    //28
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp19",       &user_data.Temp[18],    //29
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp20",       &user_data.Temp[19],    //30
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp21",       &user_data.Temp[20],    //31
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp22",       &user_data.Temp[21],    //32
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp23",       &user_data.Temp[22],    //33
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp24",       &user_data.Temp[23],    //34
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp25",       &user_data.Temp[24],    //35
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp26",       &user_data.Temp[25],    //36
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp27",       &user_data.Temp[26],    //37
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp28",       &user_data.Temp[27],    //38
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp29",       &user_data.Temp[28],    //39
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp30",       &user_data.Temp[29],    //40
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp31",       &user_data.Temp[30],    //41
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp32",       &user_data.Temp[31],    //42
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp33",       &user_data.Temp[32],    //43
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp34",       &user_data.Temp[33],    //44
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp35",       &user_data.Temp[34],    //45
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Temp36",       &user_data.Temp[35],    //46
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Temp20",       &user_data.Temp[19],    //30
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Temp21",       &user_data.Temp[20],    //31
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Temp22",       &user_data.Temp[21],    //32
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Temp23",       &user_data.Temp[22],    //33
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Temp24",       &user_data.Temp[23],    //34
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Temp25",       &user_data.Temp[24],    //35
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Temp26",       &user_data.Temp[25],    //36
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Temp27",       &user_data.Temp[26],    //37
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Temp28",       &user_data.Temp[27],    //38
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Temp29",       &user_data.Temp[28],    //39
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Temp30",       &user_data.Temp[29],    //40
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Temp31",       &user_data.Temp[30],    //41
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Temp32",       &user_data.Temp[31],    //42
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Temp33",       &user_data.Temp[32],    //43
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Temp34",       &user_data.Temp[33],    //44
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Temp35",       &user_data.Temp[34],    //45
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Temp36",       &user_data.Temp[35],    //46
 
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "REF",          &user_data.ref   ,      //47
 
@@ -153,31 +153,31 @@
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg17",       &user_data.AT[16],      //64
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg18",       &user_data.AT[17],      //65
    4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg19",       &user_data.AT[18],      //66
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg20",       &user_data.AT[19],      //67
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg21",       &user_data.AT[20],      //68
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg22",       &user_data.AT[21],      //69
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg23",       &user_data.AT[22],      //70
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg24",       &user_data.AT[23],      //71
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg25",       &user_data.AT[24],      //72
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg26",       &user_data.AT[25],      //73
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg27",       &user_data.AT[26],      //74
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg28",       &user_data.AT[27],      //75
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg29",       &user_data.AT[28],      //76
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg30",       &user_data.AT[29],      //77
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg31",       &user_data.AT[30],      //78
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg32",       &user_data.AT[31],      //79
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg33",       &user_data.AT[32],      //80
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg34",       &user_data.AT[33],      //81
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg35",       &user_data.AT[34],      //82
-   4, UNIT_CELSIUS,         0, 0, MSCBF_FLOAT, "Tavg36",       &user_data.AT[35],      //83
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Tavg20",       &user_data.AT[19],      //67
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Tavg21",       &user_data.AT[20],      //68
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Tavg22",       &user_data.AT[21],      //69
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Tavg23",       &user_data.AT[22],      //70
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Tavg24",       &user_data.AT[23],      //71
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Tavg25",       &user_data.AT[24],      //72
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Tavg26",       &user_data.AT[25],      //73
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Tavg27",       &user_data.AT[26],      //74
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Tavg28",       &user_data.AT[27],      //75
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Tavg29",       &user_data.AT[28],      //76
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Tavg30",       &user_data.AT[29],      //77
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Tavg31",       &user_data.AT[30],      //78
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Tavg32",       &user_data.AT[31],      //79
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Tavg33",       &user_data.AT[32],      //80
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Tavg34",       &user_data.AT[33],      //81
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Tavg35",       &user_data.AT[34],      //82
+   4, UNIT_CELSIUS,         0, 0, MSCBF_HIDDEN|MSCBF_FLOAT, "Tavg36",       &user_data.AT[35],      //83
 
    4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,"eepValue",      &user_data.eepValue,    //84
    4, UNIT_BYTE,            0, 0,MSCBF_HIDDEN,"eeCtrSet",      &user_data.eeCtrSet,    //85
 
-   4, UNIT_CELSIUS, 0, 0,MSCBF_HIDDEN|MSCBF_FLOAT, "SHTtemp",  &user_data.SHTtemp1,    //86
-   4, 10,           0, 0,MSCBF_HIDDEN|MSCBF_FLOAT, "SHThumi",  &user_data.SHThumi1,    //87   
-   4, UNIT_CELSIUS, 0, 0,MSCBF_HIDDEN|MSCBF_FLOAT, "SHTtemp2", &user_data.SHTtemp2,    //88
-   4, 10,           0, 0,MSCBF_HIDDEN|MSCBF_FLOAT, "SHThumi2", &user_data.SHThumi2,    //89  
+   4, UNIT_CELSIUS, 0, 0,MSCBF_FLOAT, "SHTtemp",  &user_data.SHTtemp1,    //86
+   4, 10,           0, 0,MSCBF_FLOAT, "SHThumi",  &user_data.SHThumi1,    //87   
+   4, UNIT_CELSIUS, 0, 0,MSCBF_FLOAT, "SHTtemp2", &user_data.SHTtemp2,    //88
+   4, 10,           0, 0,MSCBF_FLOAT, "SHThumi2", &user_data.SHThumi2,    //89  
 
    2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC0",         &user_data.DAC[0],      //90
    2, UNIT_BYTE,            0, 0,MSCBF_HIDDEN, "DAC1",         &user_data.DAC[1],      //91
@@ -370,6 +370,7 @@ void user_init(unsigned char init)
    user_data.terror[3]=0;
    user_data.terror[4]=0;
    user_data.status=0;
+   rCTL = user_data.control=0x4;
 
   //temporary humidity sensor
   user_data.SHTtemp1 = 0;
@@ -396,12 +397,13 @@ void user_init(unsigned char init)
 // Humidity sensor initialization
 #ifdef _HUMSEN_
   SFRPAGE  = CONFIG_PAGE;
-   P1MDOUT |= 0xBB;
+   P1MDOUT |= 0x07;
   SHT_VDD1=1;
   SHT_GND1=0;
   // Initializing the SHTxx communication
    HumiSensor_Init(humsen1);
 #ifdef MORETHANONEHUM
+   P3MDOUT |= 0x07;
   SHT_VDD2=1;
   SHT_GND2=0;
   HumiSensor_Init(humsen2);

@@ -623,10 +623,10 @@ sbit RS485_ENABLE = P0 ^ 2; //MSCB communication enable port
 #define RAM_WRITE_PROTECT  P2 ^ 2
 
 // SHT
-#define SHT_DATA1 P1^2
+#define SHT_DATA1 P1^3
 #define SHT_SCK1  P1^0
-#define SHT_DATA2 P1^6
-#define SHT_SCK2  P1^4
+#define SHT_DATA2 P3^3
+#define SHT_SCK2  P3^0
 
 #define HAVE_RTC
 //

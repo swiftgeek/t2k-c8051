@@ -97,10 +97,10 @@ struct EEPAGE xdata eepage={
 /*****HUMIDITY SENSOR VARIABLES*****/
 #define humsen1 1
 #define humsen2 2
-sbit SHT_GND1=P1^3;
+sbit SHT_GND1=P1^2;
 sbit SHT_VDD1=P1^1;
-sbit SHT_GND2=P1^7;
-sbit SHT_VDD2=P1^5;
+sbit SHT_GND2=P3^2;
+sbit SHT_VDD2=P3^1;
 
 /*****DAC VARIABLES******/
 #define First_DACIndex   90
