@@ -384,11 +384,29 @@ unsigned int NodeAdd_get(void)
   char xdata pca_add=0;
 
   PCA9539_Read(BACKPLANE_READ, &pca_add, 1);
-  //C C C C C C 0 B B is the MSCB Addr[8..0], 9 bits
-  //Modifying what the board reads from the PCA
-  //Externally, the crate address are reversed
+  // C C C C C C 0 B B is the MSCB Addr[8..0], 9 bits
+  // Modifying what the board reads from the PCA
+  // Externally, the crate address are reversed
   crate_add= ((~pca_add)<<1)  & 0x01F8;
-  //Internally, the board address are not reversed
+  // Internally, the board address are not reversed
+/*3 was in te laptop version but not in the SVN
+  if (crate_add == 504) {
+    // expect a SMB bus problem
+    // Try to reset
+    SFRPAGE = SMB0_PAGE;
+    ENSMB = 0;      // Disable SMB
+    delay_us(100);  // pause 
+    SFRPAGE = CONFIG_PAGE;
+    PCA9539_Init(); //PCA General I/O (Bias Enables and Backplane Addr) initialization
+    delay_us(10);
+    PCA9539_WriteByte(BIAS_OUTPUT_ENABLE);
+*/
+//    P1MDOUT |= 0x04;  // PCARESETN in PP
+//    delay_us(100);
+//    PCARESETN = 0;
+//    delay_us(10);
+//    PCARESETN = 1;
+//  }
   return (crate_add | ((pca_add) & 0x0003));
 }
 
@@ -455,7 +473,7 @@ void switchonoff(unsigned char command)
 #ifdef _LTC1665_
     //-----------------------------------------------------------------------------
     // SPI Dac (Bias voltages, 64 channels)
-    //SST and PCARESETN is maintained ==1 and PP
+    // SST and PCARESETN is maintained ==1 and PP
     // P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn | .3:SST_DRV2 .2:PCARESETN .1:SST_DRV1 .0:DACRESETN 
     SFRPAGE  = CONFIG_PAGE;
     P2MDOUT |= 0x18; // Set SPI_MOSI and SPI_SCK in PP
@@ -567,7 +585,7 @@ void switchonoff(unsigned char command)
     P2MDOUT &= 0x1F; // Set OD
     P2 &= 0x0F;
 
-    //SST and PCARESETN is maintained ==1 and PP
+    //SST and PCARESETN is maintained high and PP
     // P1.7:ASUMSync .6:ASUMTestn .5:ASUMPWDn .4:ASUMCSn | .3:SST_DRV2 .2:PCARESETN .1:SST_DRV1 .0:DACRESETN 
     P1MDOUT  &= ~0xF9;  // in OD
     PCARESETN = 1;
@@ -1073,11 +1091,12 @@ void user_loop(void) {
       PublishVariable(&(user_data.regTemp), temperature, pcbssTT);
     } else publishErr(RdssT);
   }  // SPup
-  else {
-    PublishVariable(&(user_data.adcTemp), -128.0, pcbssTT);
-    PublishVariable(&(user_data.afterTemp), -128.0, pcbssTT);
-    PublishVariable(&(user_data.regTemp), -128.0, pcbssTT);
-  }  // Not SPup
+//-PAA remove code to prevent overwriting the temp in case the power is off due to over limit.
+//  else {
+//    PublishVariable(&(user_data.adcTemp), -128.0, pcbssTT);
+//    PublishVariable(&(user_data.afterTemp), -128.0, pcbssTT);
+//    PublishVariable(&(user_data.regTemp), -128.0, pcbssTT);
+//  }  // Not SPup
 
   // ext Temp error not yet published...
   sstExtTime = uptime();
@@ -1399,7 +1418,8 @@ void user_loop(void) {
       break;
     }
     DISABLE_INTERRUPTS;
-    user_data.debugsmb = calState;
+    SFRPAGE = SMB0_PAGE;
+    user_data.debugsmb = SMB0STA;
     ENABLE_INTERRUPTS;
   }  // Calibration
 
