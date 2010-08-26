@@ -290,7 +290,7 @@ void user_init(unsigned char init)
   unsigned char xdata i, pca_add=0;
   unsigned int xdata crate_add=0, board_address=0;
   if(init) {
-     crate_add = cur_sub_addr();
+//     crate_add = cur_sub_addr();
   }
 
   /* Format the SVN and store this code SVN revision into the system */
@@ -585,7 +585,10 @@ void user_loop(void) {
 #ifdef _LTC2620_
   // Get current status of the Card, don't update DAC in case of no Power, keep flag up
   rCSR = user_data.status;    
-  if(SPup && LTC2620_Flag) {
+//-PAA remove flag condition, this will compare the dac to mirror every time, but won't set the DAC
+//     if the value is unchanged. Will fix the the dac setting in case of block of dac change is requested.
+//  if(SPup && LTC2620_Flag) {
+  if(SPup) {
     for(ltc2620_idx=0; ltc2620_idx < 16; ltc2620_idx++) {
       if(bDacdoitNOW || (ltc2620mirror[ltc2620_idx]!= user_data.rdac[ltc2620_idx])) {
         ltc2620_chip = (ltc2620_idx > 7) ? 2 : 1;
