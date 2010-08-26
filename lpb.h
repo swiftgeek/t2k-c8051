@@ -49,7 +49,7 @@
 //                       D2A    Vss    Iss Vdd    Idd   I5  I3.3  I1.8
 float code coeff[8]  = {4.615, 3.136, 0.1, 3.136, 0.4, 0.4, 0.2, 0.01};
 float code offset[8] = {    0,     0,   0,     0,   0,   0,   0,   0};
-unsigned char xdata ltc2620mirror[16];
+unsigned int xdata ltc2620mirror[16];
 
 /*****EEPROM VARIABLES*****/
 
