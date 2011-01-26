@@ -573,6 +573,9 @@ void read_hvi(void)
   user_data.u_meas = hv;
   user_data.i_meas = current;
   ENABLE_INTERRUPTS;
+  
+  // Publish locally new readback voltage for ramping
+  u_actual = hv;
 
   if ( current >= user_data.i_limit )  {
     user_data.status |= STATUS_ILIMIT;
@@ -636,16 +639,14 @@ void ramp_hv(void)
          /* remember start time */
          t_ramp = time();
       }
-
       /* ramp up */
       if (chn_bits & RAMP_UP) {
          delta = time() - t_ramp;  // delta is milli-seconds since last ramp step
          if (delta > MINDEL) {
             u_actual += (float) user_data.ramp_up;
-
+            // u_actual is now the new setting voltage
             if (u_actual >= user_data.u_demand) {
-               /* finish ramping */
-
+               // Set the final requested voltage.               
                u_actual = user_data.u_demand;
                chn_bits &= ~RAMP_UP;
                user_data.status &= ~STATUS_RAMP_UP;
@@ -661,10 +662,10 @@ void ramp_hv(void)
          delta = time() - t_ramp;  // delta is milli-seconds since last ramp step
          if (delta > MINDEL) {
             u_actual -= (float) user_data.ramp_down;
-
+            // u_actual is now the new setting voltage
             if (u_actual <= user_data.u_demand) {
-               /* finish ramping */
-
+               // finish ramping 
+               // Set the final requested voltage.               
                u_actual = user_data.u_demand;
                chn_bits &= ~RAMP_DOWN;
                user_data.status &= ~STATUS_RAMP_DOWN;
@@ -678,7 +679,6 @@ void ramp_hv(void)
 }
 
 /*---- User loop function ------------------------------------------*/
-
 void user_loop(void)
 {
   /* set voltage limit if changed */
